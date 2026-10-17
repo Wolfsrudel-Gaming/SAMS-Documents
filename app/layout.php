@@ -12,6 +12,7 @@ $navGroups = [
         'document_new' => ['Neues Dokument', 'documents.issue.*', 'doc-plus'],
         'drafts'       => ['Entwürfe & Freigaben', 'documents.issue.*|documents.approve|documents.drafts_all', 'edit'],
         'invoices'     => ['Rechnungen', 'invoices.manage', 'docs'],
+        'duty'         => ['Dienstzeiten', 'duty.clock|duty.view|duty.manage', 'clock'],
         'shared'       => ['Für mich freigegeben', 'documents.shared_view', 'external'],
     ],
     'Verwaltung' => [
@@ -60,6 +61,12 @@ $active = $activeMap[$current] ?? $current;
         <kbd>F2</kbd>
     </form>
     <div class="topbar-right">
+        <?php if (can('duty.clock')): $dutyOpen = duty_open_session((int) $user['id']); ?>
+            <form method="post" action="<?= e(url('duty')) ?>" class="duty-toggle<?= $dutyOpen ? ' on' : '' ?>">
+                <?= csrf_field() ?><input type="hidden" name="action" value="toggle"><input type="hidden" name="return" value="<?= e($current) ?>">
+                <button title="<?= $dutyOpen ? 'Dienst beenden' : 'Dienst beginnen' ?>"><span class="dot"></span><?= $dutyOpen ? 'Im Dienst <small data-elapsed="' . duty_seconds($dutyOpen) . '">' . e(duty_format(duty_seconds($dutyOpen))) . '</small>' : 'Außer Dienst' ?></button>
+            </form>
+        <?php endif; ?>
         <a class="userchip" href="<?= e(url('profile')) ?>" title="Mein Profil">
             <span class="avatar"><?= e(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></span>
             <span class="who"><strong><?= e(user_display($user)) ?></strong><small><?= e(user_rank_name($user)) ?></small></span>

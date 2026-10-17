@@ -91,6 +91,8 @@ function tablet_user_info(array $u): array
         'badge' => (string) $u['badge_number'],
         'can_print' => in_array('documents.print', $perms, true),
         'can_manage_printers' => in_array('printers.manage', $perms, true),
+        'can_duty' => in_array('duty.clock', $perms, true),
+        'on_duty' => in_array('duty.clock', $perms, true) && duty_open_session((int) $u['id']) !== null,
     ];
 }
 

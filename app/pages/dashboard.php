@@ -14,6 +14,9 @@ if (can('documents.view')) {
 if (can('documents.issue.*|documents.approve')) {
     $stats['Entwürfe & Freigaben'] = draft_inbox_count();
 }
+if (can('duty.view')) {
+    $stats['Im Dienst'] = count(duty_on_now());
+}
 if (can('documents.shared_view')) {
     $stats['Für mich freigegeben'] = count(array_filter(all("SELECT * FROM document_shares WHERE kind = 'user' AND user_id = ?", [$me['id']]), 'share_active'));
 }

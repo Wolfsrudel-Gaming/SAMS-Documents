@@ -458,3 +458,20 @@ html.in-tablet .topbar-right { display: none; }
 .fe-move { width: 2.2rem; white-space: nowrap; }
 .fe-move .btn-icon { display: block; line-height: 1; padding: .1rem .3rem; }
 .tpl-editor code { background: var(--row-alt); padding: 0 .25rem; border-radius: 2px; font-size: .8rem; }
+
+/* Dienstzeit-Schalter in der Kopfleiste */
+.duty-toggle button { display: inline-flex; align-items: center; gap: .4rem; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); color: #cfd8e3; border-radius: 14px; padding: .2rem .7rem; font-size: .8rem; cursor: pointer; white-space: nowrap; }
+.duty-toggle button:hover { background: rgba(255,255,255,.16); }
+.duty-toggle .dot { width: 8px; height: 8px; border-radius: 50%; background: #8a96a3; }
+.duty-toggle.on button { color: #fff; border-color: #2fa35b; background: rgba(47,163,91,.22); }
+.duty-toggle.on .dot { background: #3ddc7a; box-shadow: 0 0 0 3px rgba(61,220,122,.25); }
+.duty-toggle small { opacity: .85; font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) { .duty-toggle small { display: none; } }
+.duty-now { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .5rem; }
+.duty-now .person { display: flex; gap: .5rem; align-items: center; padding: .4rem .5rem; border: 1px solid var(--line-soft); border-left: 3px solid var(--success); border-radius: var(--radius); background: #fff; }
+.duty-now .person small { display: block; color: var(--muted); }
+.stat.muted-stat { border-left-color: var(--line); }
+.stat.muted-stat strong { color: var(--muted); }
+details.inline-edit summary { cursor: pointer; color: var(--primary); font-size: .85rem; }
+details.inline-edit[open] { min-width: 320px; text-align: left; }
+tr.selected td { background: var(--primary-soft); }

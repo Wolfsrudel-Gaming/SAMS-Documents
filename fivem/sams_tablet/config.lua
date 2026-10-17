@@ -28,6 +28,10 @@ Config.JobPollInterval = 6             -- Sekunden: neue Druckaufträge prüfen 
 Config.WaypointOnPrint = true          -- Wegpunkt zum Drucker setzen, wenn ein Auftrag bereitliegt
 Config.PrinterBlip = { sprite = 184, color = 1, scale = 0.7, label = 'SAMS Drucker' }
 
+-- Dienstzeit: Befehl zum Stempeln (nil = aus) und automatisches Ausstempeln beim Verlassen des Servers
+Config.DutyCommand = 'dienst'
+Config.DutyEndOnDisconnect = true
+
 -- Dokument zeigen: maximale Entfernung zum anderen Spieler
 Config.ShowDistance = 3.0
 
@@ -58,4 +62,7 @@ Config.Text = {
     noSpace = 'Du hast keinen Platz im Inventar.',
     nobodyNear = 'Niemand in der Nähe.',
     showed = 'Du zeigst das Dokument.',
+    dutyOn = 'Du bist jetzt im Dienst.',
+    dutyOff = 'Du bist jetzt außer Dienst (%s).',
+    dutyLogin = 'Melde dich zuerst im Tablet an, um zu stempeln.',
 }

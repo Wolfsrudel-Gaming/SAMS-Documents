@@ -33,6 +33,10 @@ $keys = [
         'seal_text'  => ['Umschrift Dienstsiegel', 'SAN ANDREAS MEDICAL SERVICES'],
         'currency'   => ['Währungssymbol', '$'],
     ],
+    'Dienstzeiten' => [
+        'duty_max_hours' => ['Vergessene Schichten automatisch beenden nach (Stunden)', '12'],
+        'duty_command'   => ['Befehl im Spiel (Hinweistext, ohne /)', 'dienst'],
+    ],
 ];
 if (is_post()) {
     csrf_check();
@@ -41,6 +45,11 @@ if (is_post()) {
             $v = mb_substr((string) post($k), 0, 300);
             if (str_starts_with($k, 'theme_') && $v !== '' && !preg_match('/^#[0-9a-f]{6}$/i', $v)) {
                 $v = '';
+            }
+            if ($k === 'duty_max_hours') {
+                $v = (string) max(1, min(48, (int) $v ?: 12));
+            } elseif ($k === 'duty_command') {
+                $v = preg_replace('/[^a-z0-9_]/i', '', $v) ?: 'dienst';
             }
             save_setting($k, $v);
         }

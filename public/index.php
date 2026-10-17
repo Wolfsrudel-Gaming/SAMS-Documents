@@ -33,6 +33,7 @@ $routes = [
     'shared'          => 'documents.shared_view',
     'prices'          => 'prices.manage',
     'templates'       => 'templates.manage',
+    'duty'            => 'duty.clock|duty.view|duty.manage',
     'users'           => 'users.view',
     'user_edit'       => 'users.view',
     'ranks'           => 'ranks.manage',

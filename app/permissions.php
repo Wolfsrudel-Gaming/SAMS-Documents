@@ -57,6 +57,11 @@ function permission_catalog(): array
             'users.2fa_reset'      => '2FA anderer zurücksetzen',
             'users.scope_department' => 'Einschränkung: nur Personal der eigenen Abteilungen verwalten',
         ],
+        'Dienstzeiten' => [
+            'duty.clock'  => 'Dienst beginnen/beenden (stempeln)',
+            'duty.view'   => 'Sehen, wer im Dienst ist',
+            'duty.manage' => 'Dienstzeiten aller einsehen und korrigieren',
+        ],
         'Organisation' => [
             'ranks.manage'          => 'Ränge und Rechte verwalten',
             'departments.manage'    => 'Abteilungen verwalten',

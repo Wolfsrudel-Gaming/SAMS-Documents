@@ -19,6 +19,8 @@
  *   job_pickup     {job_id, printer_id, token?, license, player}   → Items für ox_inventory
  *   jobs_since     {since_id}  (-1 = Startwert holen)              → neue Aufträge (für Benachrichtigungen)
  *   document_item  {token}                                         → Ansichts-URL eines Dokument-Items
+ *   duty_set       {token, on}                                     → Dienst beginnen/beenden
+ *   duty_status    {token}                                         → im Dienst? seit wann?
  */
 declare(strict_types=1);
 define('SAMS_IGNORE_MAINTENANCE', true);
@@ -184,6 +186,23 @@ switch ($action) {
             respond(['ok' => false], 404);
         }
         respond(['ok' => true, 'number' => $doc['number'], 'revoked' => $doc['status'] === 'revoked', 'url' => document_view_url($in('token'), $in('variant'))]);
+        // no break
+
+    // -------------------------------------------------------- Dienstzeit
+    case 'duty_set':
+    case 'duty_status':
+        $tu = $tokenUser();
+        if (!$tu) {
+            respond(['ok' => false, 'error' => 'Anmeldung abgelaufen'], 401);
+        }
+        if (!in_array('duty.clock', user_permissions($tu[1]), true)) {
+            respond(['ok' => false, 'error' => 'Dein Rang darf keine Dienstzeiten stempeln.'], 403);
+        }
+        if ($action === 'duty_set') {
+            duty_set((int) $tu[1]['id'], in_array(strtolower($in('on')), ['1', 'true', 'on', 'yes'], true), 'game');
+        }
+        $open = duty_open_session((int) $tu[1]['id']);
+        respond(['ok' => true, 'on_duty' => (bool) $open, 'since' => $open['started_at'] ?? null, 'seconds' => $open ? duty_seconds($open) : 0]);
         // no break
 
     default:

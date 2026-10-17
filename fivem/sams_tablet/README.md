@@ -38,6 +38,8 @@ Den API-Schlüssel zeigt das Einrichtungsskript des Websystems am Ende an. Alter
 | `Config.PrintDuration` | Dauer des Druckens (Fortschrittsbalken) |
 | `Config.WaypointOnPrint` | Wegpunkt zum Drucker setzen, wenn ein Auftrag bereitliegt |
 | `Config.PrinterBlip` | Kartensymbol für Drucker (nur für angemeldete Mitarbeitende, wenn im Websystem aktiviert) |
+| `Config.DutyCommand` | Befehl zum Stempeln (Standard `/dienst`, `nil` = aus) |
+| `Config.DutyEndOnDisconnect` | Beim Verlassen des Servers automatisch ausstempeln |
 | `Config.Anim` | Animationen und Requisiten (Tablet, Klemmbrett, Drucker) |
 | `Config.Text` | Alle Texte |
 
@@ -49,9 +51,25 @@ Den API-Schlüssel zeigt das Einrichtungsskript des Websystems am Ende an. Alter
 - Beim Öffnen erzeugt der Server einen Einmal-Link (60 Sekunden gültig), mit dem das Tablet eine normale Sitzung im Websystem öffnet.
 - Abmelden im Tablet, „Alle Sitzungen beenden“ durch die Leitung, Passwortwechsel oder Kontosperre beenden die Tablet-Anmeldung sofort. Aktive Tablets sieht jeder unter *Mein Profil*.
 
+## Dienstzeit
+
+- `/dienst` stempelt ein bzw. aus (erfordert die Anmeldung im Tablet und das Recht „Dienst beginnen/beenden“).
+- Im Websystem geht das genauso über den Schalter oben rechts. Beide Wege führen zur selben Schicht.
+- Beim Abmelden im Tablet und – je nach `Config.DutyEndOnDisconnect` – beim Verlassen des Servers wird automatisch ausgestempelt. Vergessene Schichten beendet das Websystem nach der eingestellten Höchstdauer.
+- Andere Resourcen (z. B. Dispatch, Fahrzeuggarage) können den Status abfragen:
+
+```lua
+-- serverseitig
+local imDienst = exports.sams_tablet:IsOnDuty(source)
+exports.sams_tablet:SetOnDuty(source, true)
+AddEventHandler('sams:dutyChanged', function(src, onDuty) ... end)
+```
+
 ## Exports
 
 ```lua
+-- clientseitig
 exports.sams_tablet:openTablet()
 exports.sams_tablet:closeTablet()
+exports.sams_tablet:toggleDuty()
 ```

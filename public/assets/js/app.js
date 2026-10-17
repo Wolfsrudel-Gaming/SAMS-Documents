@@ -307,3 +307,17 @@
         }
     });
 })();
+
+// Laufende Dienstzeit in der Kopfleiste (vom Server gemessene Dauer, unabhängig von der Uhr des Geräts)
+(function () {
+    'use strict';
+    var el = document.querySelector('.duty-toggle small[data-elapsed]');
+    if (!el) { return; }
+    var start = Date.now() - parseInt(el.dataset.elapsed, 10) * 1000;
+    function tick() {
+        var s = Math.max(0, Math.floor((Date.now() - start) / 1000));
+        el.textContent = Math.floor(s / 3600) + ':' + ('0' + Math.floor(s % 3600 / 60)).slice(-2) + ' h';
+    }
+    tick();
+    setInterval(tick, 30000);
+})();

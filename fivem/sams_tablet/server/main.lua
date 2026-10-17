@@ -4,6 +4,7 @@
 ]]
 
 local sessions = {} ---@type table<number, { token: string, user: table }>
+local onDuty = {} ---@type table<number, boolean>
 local printers = {} ---@type table<number, table>
 
 -- ---------------------------------------------------------------- Hilfen --
@@ -28,6 +29,7 @@ local function getSession(src)
     local data, status = Api.post('tablet_session', { token = token })
     if data and data.ok then
         sessions[src] = { token = token, user = data.user }
+        onDuty[src] = data.user.on_duty == true
         return sessions[src]
     end
     if status == 401 then
@@ -38,6 +40,7 @@ end
 
 local function clearSession(src)
     sessions[src] = nil
+    onDuty[src] = nil
     DeleteResourceKvp(kvpKey(src))
     TriggerClientEvent('sams:session', src, false)
 end
@@ -108,6 +111,11 @@ end)
 lib.callback.register('sams:tablet:logout', function(src)
     local s = sessions[src] or getSession(src)
     if s then
+        -- Abmelden beendet auch den Dienst (danach ist kein Ausstempeln mehr möglich)
+        if onDuty[src] then
+            Api.post('duty_set', { token = s.token, on = false })
+            TriggerEvent('sams:dutyChanged', src, false)
+        end
         Api.post('tablet_logout', { token = s.token })
     end
     clearSession(src)
@@ -119,8 +127,50 @@ RegisterNetEvent('sams:tablet:webLogout', function()
     clearSession(source)
 end)
 
+-- ----------------------------------------------------------------- Dienst --
+
+local function setDuty(src, on, silent)
+    local s = getSession(src)
+    if not s then
+        return { error = Config.Text.dutyLogin }
+    end
+    local data = Api.post('duty_set', { token = s.token, on = on })
+    if not data or not data.ok then
+        return { error = data and data.error or Config.Text.offline }
+    end
+    onDuty[src] = data.on_duty
+    TriggerEvent('sams:dutyChanged', src, data.on_duty)
+    if not silent then
+        TriggerClientEvent('sams:duty', src, data.on_duty)
+    end
+    return { ok = true, onDuty = data.on_duty, seconds = data.seconds }
+end
+
+lib.callback.register('sams:duty:toggle', function(src)
+    local current = onDuty[src]
+    if current == nil and getSession(src) then
+        local st = Api.post('duty_status', { token = sessions[src].token })
+        current = st and st.on_duty or false
+    end
+    return setDuty(src, not current)
+end)
+
+--- Für andere Resourcen: exports.sams_tablet:IsOnDuty(source)
+exports('IsOnDuty', function(src)
+    return onDuty[src] == true
+end)
+exports('SetOnDuty', function(src, on)
+    return setDuty(src, on == true, false)
+end)
+
 AddEventHandler('playerDropped', function()
-    sessions[source] = nil
+    local src = source
+    if Config.DutyEndOnDisconnect and onDuty[src] and sessions[src] then
+        Api.post('duty_set', { token = sessions[src].token, on = false })
+        TriggerEvent('sams:dutyChanged', src, false)
+    end
+    sessions[src] = nil
+    onDuty[src] = nil
 end)
 
 -- ---------------------------------------------------------------- Drucker --

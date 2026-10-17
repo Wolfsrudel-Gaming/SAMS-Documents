@@ -1,6 +1,6 @@
 # SAMS Dokumenten- & Aktensystem – Konzept Version 1
 
-Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design, Etappe 1–3 und Tablet/Drucker umgesetzt
+Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1–4 umgesetzt
 
 Dieses Konzept fasst die Fragerunde (60 Fragen) und die anschließenden Festlegungen zusammen.
 Es beschreibt, was in Version 1 gebaut wird, in welcher Reihenfolge, und was bewusst später kommt.
@@ -121,12 +121,12 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - ✅ **Vorlagen-Editor** *(v1.10.0)*: Leitung legt neue Dokumentarten im Browser an (Felder per Klick, Layout Brief/Formular/Protokoll, Text mit Platzhaltern wie `{{patient.name}}` und `**fett**`, Stempel, Bezug Patient oder Personal, Ausstellrechte je Rang). Die Vorlage wird beim Ausstellen eingefroren – spätere Änderungen verändern keine bestehenden Dokumente.
 - ✅ Logo, Farben und Briefkopf im Admin-Panel
 
-### Etappe 4 – Tablet und FiveM-Resource ✅ *Tablet, Drucker und Dokument-Items umgesetzt in v1.4.0 (Dienstzeit folgt)*
+### Etappe 4 – Tablet und FiveM-Resource ✅ *Tablet, Drucker und Dokument-Items v1.4.0, Dienstzeit v1.11.0*
 - Eigene Resource `sams_tablet`: Tablet-Item und Befehl, eigene NUI-Oberfläche mit Tablet-Rahmen und Animation
 - Anmeldung im Tablet mit denselben Zugangsdaten, die Sitzung bleibt pro Spieler gemerkt
 - Dokumente werden als **ox_inventory-Item mit Metadaten** an den Patienten übergeben
 - Dokument zeigen: Papier-Prop, Animation, Original-Ansicht beim Gegenüber
-- On-/Off-Duty-Meldung an das System, manuelles Stempeln im Browser als Ausweichlösung
+- ✅ On-/Off-Duty: `/dienst` im Spiel oder Schalter in der Kopfleiste des Websystems (dieselbe Schicht), automatisches Ausstempeln beim Abmelden/Verlassen, vergessene Schichten enden nach einstellbarer Höchstdauer; „Jetzt im Dienst“, Wochenstunden, Korrekturen und Nachträge durch die Leitung; `IsOnDuty`-Export und `sams:dutyChanged`-Event für andere Resourcen
 - Absicherung: Die Resource spricht serverseitig mit einem API-Schlüssel, nie aus dem Client
 
 ### Etappe 5 – Personal, Ausbildung, Wiki, Kommunikation
