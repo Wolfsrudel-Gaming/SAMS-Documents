@@ -17,7 +17,7 @@ $errors = [];
 if (is_post()) {
     csrf_check();
     if (post('action') === 'delete') {
-        require_role('admin');
+        require_perm('patients.delete');
         q('DELETE FROM patients WHERE id = ?', [$id]);
         audit('patient.delete', 'patient', $id, patient_name($patient));
         flash('success', 'Patientenakte gelöscht.');
@@ -98,7 +98,7 @@ ob_start(); ?>
 
     <div class="form-actions">
         <button class="btn primary">Speichern</button>
-        <?php if ($patient && can('admin')): ?>
+        <?php if ($patient && can('patients.delete')): ?>
             <button class="btn danger" name="action" value="delete" formnovalidate onclick="return confirm('Akte inkl. aller Einträge endgültig löschen? Ausgestellte Dokumente bleiben erhalten.')">Akte löschen</button>
         <?php endif; ?>
     </div>

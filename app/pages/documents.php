@@ -37,7 +37,7 @@ $pages = max(1, (int) ceil($total / $per));
 ob_start(); ?>
 <div class="page-head">
     <div><h1>Dokumente</h1><p class="muted"><?= $total ?> Dokument(e)</p></div>
-    <?php if (can('medic')): ?><a class="btn primary" href="<?= e(url('document_new')) ?>">+ Neues Dokument</a><?php endif; ?>
+    <?php if (can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new')) ?>">+ Neues Dokument</a><?php endif; ?>
 </div>
 <form class="card filter" action="index.php">
     <input type="hidden" name="p" value="documents">

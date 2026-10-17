@@ -5,7 +5,8 @@
  *
  *   php bin/sams status                     Version, Datenbank, offene Migrationen
  *   php bin/sams migrate                    Offene Datenbank-Migrationen ausführen
- *   php bin/sams create-admin [benutzer]    Admin-Konto anlegen (fragt Name und Passwort ab)
+ *   php bin/sams create-admin [benutzer]    Hauptadministrator anlegen (fragt Name und Passwort ab)
+ *   php bin/sams reset-password <benutzer>  Notfall: Einmalpasswort setzen, Sperre/2FA aufheben
  *   php bin/sams backup [tag]               Datenbank-Backup erstellen
  *   php bin/sams backups                    Vorhandene Backups auflisten
  *   php bin/sams restore <datei>            Backup einspielen (überschreibt die Datenbank!)
@@ -74,16 +75,35 @@ switch ($cmd) {
             exit(1);
         }
         $name = ask('Name (Vorname Nachname): ');
-        $password = ask('Passwort (min. 8 Zeichen): ', true);
-        if (strlen($password) < 8 || $name === '') {
-            $out('Name fehlt oder Passwort zu kurz.');
+        $password = ask('Passwort (min. 10 Zeichen): ', true);
+        if (password_problems($password, $username) || $name === '') {
+            $out('Name fehlt oder Passwort zu kurz/zu einfach (min. 10 Zeichen).');
             exit(1);
         }
         insert('users', [
             'username' => $username, 'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-            'name' => $name, 'title' => '', 'role' => 'admin', 'rank_name' => 'Administrator', 'created_at' => now(),
+            'name' => $name, 'title' => '', 'role' => 'admin', 'created_at' => now(), 'password_changed_at' => now(),
+            'rank_id' => scalar('SELECT id FROM ranks ORDER BY level DESC LIMIT 1'), 'is_superadmin' => 1,
         ]);
-        $out("Admin-Konto \"$username\" angelegt.");
+        $out("Hauptadministrator \"$username\" angelegt.");
+        break;
+
+    case 'reset-password':
+        $u = one('SELECT * FROM users WHERE username = ?', [$args[0] ?? '']);
+        if (!$u) {
+            $out('Benutzer nicht gefunden.');
+            exit(1);
+        }
+        $pw = generate_password();
+        update('users', (int) $u['id'], [
+            'password_hash' => password_hash($pw, PASSWORD_DEFAULT), 'must_change_password' => 1, 'active' => 1,
+            'totp_enabled' => 0, 'totp_secret' => '', 'recovery_codes' => '',
+        ]);
+        end_sessions((int) $u['id']);
+        q("DELETE FROM login_attempts WHERE username = ?", [$u['username']]);
+        audit('user.password_reset', 'user', (int) $u['id'], $u['username'] . ' – über Kommandozeile');
+        $out("Einmalpasswort für {$u['username']}: $pw");
+        $out('Konto entsperrt, 2FA zurückgesetzt. Beim Login muss ein neues Passwort festgelegt werden.');
         break;
 
     case 'backup':

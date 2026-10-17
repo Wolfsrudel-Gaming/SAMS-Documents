@@ -14,8 +14,8 @@ if (!$patient) {
     not_found('Patientenakte nicht gefunden.');
 }
 // Bearbeiten nur durch Verfasser oder ärztlichen Dienst
-if ($entry && (int) $entry['created_by'] !== (int) $me['id'] && !can('doctor')) {
-    forbidden('Nur der Verfasser oder der ärztliche Dienst darf diesen Eintrag bearbeiten.');
+if ($entry && (int) $entry['created_by'] !== (int) $me['id'] && !can('entries.edit_all')) {
+    forbidden('Nur der Verfasser oder Berechtigte dürfen diesen Eintrag bearbeiten.');
 }
 
 $data = $entry ?? ['type' => 'Behandlung', 'title' => '', 'content' => '', 'confidential' => 0, 'occurred_at' => date('Y-m-d H:i:s')];

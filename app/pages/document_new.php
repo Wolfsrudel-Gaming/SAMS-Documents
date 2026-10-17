@@ -21,12 +21,12 @@ if (!$type) {
         <section class="card">
             <h2><?= e($cat) ?></h2>
             <div class="tiles">
-            <?php foreach ($types as $k => $t): $allowed = can($t['role']); ?>
+            <?php foreach ($types as $k => $t): $allowed = can('documents.issue.' . $k); ?>
                 <a class="tile<?= $allowed ? '' : ' disabled' ?>" href="<?= $allowed ? e(url('document_new', ['type' => $k, 'patient' => $patientId ?: null])) : '#' ?>"
-                   title="<?= $allowed ? '' : 'Erfordert Rolle: ' . e(ROLES[$t['role']]) ?>">
+                   title="<?= $allowed ? '' : 'Dein Rang darf dieses Dokument nicht ausstellen' ?>">
                     <span class="tile-code"><?= e($t['code']) ?></span>
                     <strong><?= e($t['title']) ?></strong>
-                    <small><?= $allowed ? e(ROLES[$t['role']]) . ' +' : 'nur ' . e(ROLES[$t['role']]) ?></small>
+                    <small><?= $allowed ? e($t['category']) : 'keine Berechtigung' ?></small>
                 </a>
             <?php endforeach; ?>
             </div>
@@ -38,8 +38,8 @@ if (!$type) {
     return;
 }
 
-if (!can($type['role'])) {
-    forbidden('Dieses Dokument darf nur durch „' . ROLES[$type['role']] . '“ ausgestellt werden.');
+if (!can('documents.issue.' . $type['key'])) {
+    forbidden('Dein Rang darf „' . $type['title'] . '“ nicht ausstellen.');
 }
 
 // Vorbelegung: aus Vorlage (?from=ID) oder Standardwerten

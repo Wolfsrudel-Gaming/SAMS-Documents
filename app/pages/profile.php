@@ -7,14 +7,16 @@ if (is_post()) {
     csrf_check();
     $action = post('action');
     if ($action === 'profile') {
+        // Rang, Dienstnummer und Abteilungen vergibt die Leitung – hier nur persönliche Angaben
         $row = [];
-        foreach (['name', 'title', 'rank_name', 'department', 'badge_number', 'doctor_number', 'phone'] as $f) {
-            $row[$f] = mb_substr((string) post($f), 0, 190);
+        foreach (['name', 'title', 'department', 'doctor_number', 'phone'] as $f) {
+            $row[$f] = mb_substr(trim((string) post($f)), 0, 190);
         }
         if ($row['name'] === '') {
             $errors[] = 'Name darf nicht leer sein.';
         } else {
             update('users', (int) $me['id'], $row);
+            audit('user.update', 'user', (int) $me['id'], $me['username'] . ' – eigenes Profil');
             flash('success', 'Profil gespeichert.');
             redirect(url('profile'));
         }
@@ -31,39 +33,48 @@ if (is_post()) {
         } else {
             $errors[] = 'Ungültige Unterschrift.';
         }
-    } elseif ($action === 'password') {
-        $old = (string) ($_POST['old'] ?? '');
-        $new = (string) ($_POST['new'] ?? '');
-        if (!password_verify($old, $me['password_hash'])) {
-            $errors[] = 'Aktuelles Passwort ist falsch.';
-        } elseif (strlen($new) < 8) {
-            $errors[] = 'Neues Passwort muss mindestens 8 Zeichen haben.';
-        } elseif ($new !== (string) ($_POST['new2'] ?? '')) {
-            $errors[] = 'Die Passwörter stimmen nicht überein.';
-        } else {
-            update('users', (int) $me['id'], ['password_hash' => password_hash($new, PASSWORD_DEFAULT)]);
-            audit('user.password', 'user', (int) $me['id']);
-            flash('success', 'Passwort geändert.');
-            redirect(url('profile'));
-        }
     }
 }
+$rank = rank_by_id((int) $me['rank_id']);
+$deps = all('SELECT d.* FROM departments d JOIN user_departments ud ON ud.department_id = d.id WHERE ud.user_id = ? ORDER BY d.sort, d.name', [$me['id']]);
+$quals = all('SELECT q.* FROM qualifications q JOIN user_qualifications uq ON uq.qualification_id = q.id WHERE uq.user_id = ? ORDER BY q.sort, q.name', [$me['id']]);
+$twofaRequired = in_array('security.2fa_required', user_permissions($me), true);
 $sampleDoc = ['issuer_snapshot' => issuer_snapshot($me), 'verify_code' => 'PROFIL' . $me['id']];
 ob_start(); ?>
-<div class="page-head"><div><h1>Mein Profil</h1><p class="muted"><?= e(ROLES[$me['role']]) ?> · Benutzer <span class="mono"><?= e($me['username']) ?></span></p></div></div>
+<div class="page-head"><div><h1>Mein Profil</h1><p class="muted"><?= e(user_rank_name($me)) ?> · Benutzer <span class="mono"><?= e($me['username']) ?></span></p></div></div>
 <?php foreach ($errors as $err): ?><div class="flash error"><?= e($err) ?></div><?php endforeach; ?>
 
 <div class="grid-2">
-<form method="post" class="card form-grid">
-    <?= csrf_field() ?><input type="hidden" name="action" value="profile">
-    <h3 class="form-heading">Angaben auf Dokumenten</h3>
-    <?php require __DIR__ . '/_user_fields.php'; ?>
-    <div class="form-actions"><button class="btn primary">Speichern</button></div>
-</form>
+<div>
+    <section class="card">
+        <h2>Dienst</h2>
+        <dl class="kv">
+            <dt>Rang</dt><dd><?= rank_badge($rank) ?> <?= e($rank['name'] ?? '–') ?><?= $me['is_superadmin'] ? ' <span class="badge black">Hauptadministrator</span>' : '' ?></dd>
+            <dt>Dienstnummer</dt><dd class="mono"><?= e($me['badge_number'] ?: '–') ?></dd>
+            <dt>Abteilungen</dt><dd><?php foreach ($deps as $d): ?><?= tag_badge($d) ?> <?= e($d['name']) ?><br><?php endforeach; ?><?= $deps ? '' : '–' ?></dd>
+            <dt>Qualifikationen</dt><dd><?php foreach ($quals as $qq): ?><?= tag_badge($qq) ?> <?= e($qq['name']) ?><br><?php endforeach; ?><?= $quals ? '' : '–' ?></dd>
+        </dl>
+        <p class="hint">Rang, Dienstnummer, Abteilungen und Qualifikationen werden von deiner Leitung gepflegt.</p>
+    </section>
+    <form method="post" class="card form-grid">
+        <h2>Angaben auf Dokumenten</h2>
+        <?= csrf_field() ?><input type="hidden" name="action" value="profile">
+        <?php require __DIR__ . '/_user_fields.php'; ?>
+        <div class="form-actions"><button class="btn primary">Speichern</button></div>
+    </form>
+    <section class="card">
+        <h2>Sicherheit</h2>
+        <dl class="kv">
+            <dt>Passwort</dt><dd>zuletzt geändert <?= e(fmt_datetime($me['password_changed_at']) ?: 'nie') ?> · <a href="<?= e(url('password_change')) ?>">Passwort ändern</a></dd>
+            <dt>2FA</dt><dd><?= $me['totp_enabled'] ? '<span class="badge green">aktiv</span>' : '<span class="badge grey">nicht aktiv</span>' ?><?= $twofaRequired ? ' <span class="badge orange">Pflicht für deinen Rang</span>' : '' ?> · <a href="<?= e(url('twofa')) ?>"><?= $me['totp_enabled'] ? 'Verwalten' : 'Einrichten' ?></a></dd>
+            <dt>Letzte Anmeldung</dt><dd><?= e(fmt_datetime($me['last_login'])) ?></dd>
+        </dl>
+    </section>
+</div>
 
 <div class="card">
-    <h3 class="form-heading">Unterschrift</h3>
-    <p class="muted small">Unterschreiben Sie einmalig mit Maus, Stift oder Finger. Die Unterschrift wird auf allen Dokumenten gedruckt, die Sie ausstellen. Bereits ausgestellte Dokumente behalten die damalige Unterschrift.</p>
+    <h2>Unterschrift</h2>
+    <p class="muted small">Unterschreibe einmalig mit Maus, Stift oder Finger. Die Unterschrift wird auf allen Dokumenten gedruckt, die du ausstellst. Bereits ausgestellte Dokumente behalten die damalige Unterschrift.</p>
     <form method="post" id="sigform">
         <?= csrf_field() ?><input type="hidden" name="action" value="signature">
         <div class="sigpad big" data-input="signature-input"><canvas width="700" height="220"></canvas><button type="button" class="btn small sig-clear">Neu</button></div>
@@ -71,22 +82,13 @@ ob_start(); ?>
         <div class="form-actions"><button class="btn primary">Unterschrift speichern</button>
             <?php if ($me['signature']): ?><button class="btn danger" name="remove" value="1">Entfernen</button><?php endif; ?></div>
     </form>
-    <h3 class="form-heading">So erscheinen Sie auf Dokumenten</h3>
+    <h3 class="form-heading">So erscheinst du auf Dokumenten</h3>
     <div class="stamp-preview">
         <div class="sp-stamp"><?= doctor_stamp_svg($sampleDoc) ?></div>
         <div class="sp-sig"><?= signature_html($me, -3) ?></div>
     </div>
 </div>
 </div>
-
-<form method="post" class="card form-grid">
-    <?= csrf_field() ?><input type="hidden" name="action" value="password">
-    <h3 class="form-heading">Passwort ändern</h3>
-    <div class="field w-third"><label>Aktuelles Passwort</label><input type="password" name="old" autocomplete="current-password" required></div>
-    <div class="field w-third"><label>Neues Passwort</label><input type="password" name="new" autocomplete="new-password" minlength="8" required></div>
-    <div class="field w-third"><label>Wiederholen</label><input type="password" name="new2" autocomplete="new-password" minlength="8" required></div>
-    <div class="form-actions"><button class="btn">Passwort ändern</button></div>
-</form>
 <?php
 $content = ob_get_clean();
 $title = 'Mein Profil';

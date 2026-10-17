@@ -11,8 +11,8 @@ $type = doc_type($doc['type']);
 if (is_post() && post('action') === 'revoke') {
     csrf_check();
     $reason = mb_substr((string) post('reason'), 0, 1000);
-    if ((int) $doc['issued_by'] !== (int) $me['id'] && !can('admin')) {
-        forbidden('Nur der Aussteller oder die Leitung können ein Dokument stornieren.');
+    if (!can_revoke($doc)) {
+        forbidden('Dein Rang darf dieses Dokument nicht stornieren.');
     }
     if ($reason === '') {
         flash('error', 'Bitte einen Stornierungsgrund angeben.');
@@ -42,7 +42,7 @@ ob_start(); ?>
         <button class="btn primary" onclick="window.print()">Drucken / PDF</button>
         <button class="btn" data-export-png="<?= e($fileName) ?>">Als Bild speichern</button>
         <button class="btn" data-copy="<?= e(verify_url($doc['verify_code'])) ?>">Prüflink kopieren</button>
-        <?php if (can($type['role'] ?? 'admin')): ?><a class="btn" href="<?= e(url('document_new', ['type' => $doc['type'], 'from' => $id])) ?>">Als Vorlage verwenden</a><?php endif; ?>
+        <?php if (can('documents.issue.' . $doc['type'])): ?><a class="btn" href="<?= e(url('document_new', ['type' => $doc['type'], 'from' => $id])) ?>">Als Vorlage verwenden</a><?php endif; ?>
         <?php if ($doc['patient_id']): ?><a class="btn" href="<?= e(url('patient', ['id' => $doc['patient_id']])) ?>">Zur Akte</a><?php endif; ?>
     </div>
 </div>
@@ -61,7 +61,7 @@ ob_start(); ?>
 
 <div class="doc-stage" id="doc-stage"><?= $html ?></div>
 
-<?php if ($doc['status'] !== 'revoked' && ((int) $doc['issued_by'] === (int) $me['id'] || can('admin'))): ?>
+<?php if ($doc['status'] !== 'revoked' && can_revoke($doc)): ?>
 <details class="card no-print revoke">
     <summary>Dokument stornieren</summary>
     <form method="post" class="form-grid">

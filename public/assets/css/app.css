@@ -374,3 +374,42 @@ pre.logbox { background: #14202c; color: #c3dcf5; padding: .8rem; border-radius:
 .color-row input[type=text] { width: 110px; font-family: Consolas, monospace; }
 .theme-preview { display: flex; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; height: 60px; }
 .theme-preview .tp-top { height: 16px; }
+
+/* ---------- Personal, Ränge, Rechte ---------- */
+.rank-badge { display: inline-block; min-width: 2.4rem; text-align: center; padding: .05rem .4rem; border-radius: 2px; font: 700 .74rem/1.4 Consolas, monospace;
+    color: #fff; background: var(--rc, #64717f); vertical-align: middle; letter-spacing: .03em; }
+.tag-badge { display: inline-block; padding: 0 .35rem; border-radius: 2px; font: 600 .72rem/1.5 Consolas, monospace; vertical-align: middle;
+    color: var(--tc, #64717f); background: color-mix(in srgb, var(--tc, #64717f) 12%, #fff); border: 1px solid color-mix(in srgb, var(--tc, #64717f) 35%, #fff); }
+h1 .rank-badge, h1 .badge { margin-left: .3rem; font-size: .75rem; vertical-align: 3px; }
+.choices.vertical { display: grid; gap: .3rem; }
+.choice.locked { opacity: .55; }
+.choice.special { font-style: italic; }
+.locked-row td { color: var(--muted); cursor: not-allowed; }
+.grid-side.wide-side { grid-template-columns: 1fr 380px; }
+.grid-side.wide-side.reverse { grid-template-columns: 1fr 360px; }
+@media (max-width: 1150px) { .grid-side.wide-side, .grid-side.wide-side.reverse { grid-template-columns: 1fr; } }
+.action-list { display: grid; gap: .45rem; margin-top: .8rem; padding-top: .8rem; border-top: 1px solid var(--line-soft); }
+.action-list .btn { width: 100%; justify-content: flex-start; }
+.inline-form { display: flex; gap: .35rem; align-items: center; }
+.inline-form input { flex: 1; }
+.inline-form .btn { width: auto !important; }
+.sig-mini { max-height: 34px; vertical-align: middle; }
+.onetime { border-color: #e2c56f; background: #fffbea; }
+.onetime > h2:first-child { background: linear-gradient(#fff6d6, #f7e6a8); color: #6e5200; }
+.credentials { display: flex; gap: 1rem; flex-wrap: wrap; margin: .6rem 0; }
+.credentials div { background: #fff; border: 1px solid #e2c56f; border-radius: 2px; padding: .4rem .7rem; min-width: 200px; }
+.credentials span { display: block; font-size: .75rem; color: var(--muted); }
+.credentials strong { font-size: 1.15rem; letter-spacing: .04em; user-select: all; }
+.codes { display: grid; grid-template-columns: repeat(4, max-content); gap: .4rem 1.2rem; margin: .6rem 0; font-size: 1.05rem; }
+.twofa-setup { display: flex; gap: 1.2rem; align-items: flex-start; flex-wrap: wrap; margin-bottom: .6rem; }
+.twofa-qr { width: 180px; height: 180px; padding: 8px; background: #fff; border: 1px solid var(--line); }
+.twofa-qr svg { width: 100%; height: 100%; display: block; }
+.twofa-setup ol { margin: 0; padding-left: 1.2rem; line-height: 1.8; flex: 1; min-width: 260px; }
+code.secret { font-size: .95rem; letter-spacing: .05em; }
+.code-input { font-size: 1.25rem; letter-spacing: .3em; text-align: center; }
+.narrow-form { max-width: 640px; }
+.perm-tools { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.perm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: .7rem; }
+.perm-group { border: 1px solid var(--line); border-radius: 2px; padding: .3rem .7rem .6rem; margin: 0; display: grid; gap: .25rem; align-content: start; }
+.perm-group legend { padding: 0 .3rem; font-weight: 700; font-size: .85rem; }
+.perm-group legend .choice { font-weight: 700; font-size: .85rem; }

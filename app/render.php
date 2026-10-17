@@ -168,7 +168,7 @@ function doc_patient_box(array $doc, bool $full = true): string
 function doc_signature(array $doc, string $stamp = 'rect', string $caption = '', bool $withPlace = true): string
 {
     $u = $doc['issuer_snapshot'] ?? [];
-    $caption = $caption ?: (in_array($u['role'] ?? '', ['doctor', 'admin'], true) ? 'Unterschrift und Stempel des Arztes / der Ärztin' : 'Unterschrift');
+    $caption = $caption ?: ((($u['doctor_number'] ?? '') !== '' || in_array($u['role'] ?? '', ['doctor', 'admin'], true)) ? 'Unterschrift und Stempel des Arztes / der Ärztin' : 'Unterschrift');
     $rot = doc_rand($doc, 'sig', -4, 3);
     ob_start(); ?>
     <div class="sigblock">

@@ -6,21 +6,23 @@ $current = $_GET['p'] ?? 'dashboard';
 $orgShort = setting('org_short', 'SAMS');
 $navGroups = [
     'Klinik' => [
-        'dashboard'    => ['Übersicht', 'trainee', 'home'],
-        'patients'     => ['Patientenakten', 'trainee', 'patients'],
-        'documents'    => ['Dokumente', 'trainee', 'docs'],
-        'document_new' => ['Neues Dokument', 'medic', 'doc-plus'],
+        'dashboard'    => ['Übersicht', '', 'home'],
+        'patients'     => ['Patientenakten', 'patients.view', 'patients'],
+        'documents'    => ['Dokumente', 'documents.view', 'docs'],
+        'document_new' => ['Neues Dokument', 'documents.issue.*', 'doc-plus'],
     ],
     'Verwaltung' => [
-        'users'    => ['Personal', 'admin', 'users'],
-        'settings' => ['Einstellungen', 'admin', 'settings'],
-        'audit'    => ['Zugriffsprotokoll', 'admin', 'log'],
-        'system'   => ['System & Updates', 'admin', 'server'],
+        'users'    => ['Personal', 'users.view', 'users'],
+        'ranks'    => ['Ränge & Rechte', 'ranks.manage', 'shield'],
+        'org'      => ['Abteilungen & Qualifikationen', 'departments.manage|qualifications.manage', 'folder'],
+        'settings' => ['Einstellungen', 'settings.manage', 'settings'],
+        'audit'    => ['Zugriffsprotokoll', 'audit.view', 'log'],
+        'system'   => ['System & Updates', 'system.manage', 'server'],
     ],
 ];
 // Unterseiten der passenden Navigation zuordnen
 $activeMap = ['patient' => 'patients', 'patient_edit' => 'patients', 'patient_print' => 'patients', 'entry_edit' => 'patients',
-    'document' => 'documents', 'user_edit' => 'users'];
+    'document' => 'documents', 'user_edit' => 'users', 'rank_edit' => 'ranks', 'password_change' => 'profile', 'twofa' => 'profile'];
 $active = $activeMap[$current] ?? $current;
 ?><!doctype html>
 <html lang="de">
@@ -53,14 +55,14 @@ $active = $activeMap[$current] ?? $current;
     <div class="topbar-right">
         <a class="userchip" href="<?= e(url('profile')) ?>" title="Mein Profil">
             <span class="avatar"><?= e(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></span>
-            <span class="who"><strong><?= e(user_display($user)) ?></strong><small><?= e($user['rank_name'] ?: ROLES[$user['role']]) ?></small></span>
+            <span class="who"><strong><?= e(user_display($user)) ?></strong><small><?= e(user_rank_name($user)) ?></small></span>
         </a>
         <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="iconbtn" title="Abmelden"><?= icon('logout') ?></button></form>
     </div>
 </header>
 <nav class="sidenav">
     <?php foreach ($navGroups as $group => $items):
-        $visible = array_filter($items, fn($i) => can($i[1]));
+        $visible = array_filter($items, fn($i) => $i[1] === '' || can($i[1]));
         if (!$visible) continue; ?>
         <div class="nav-group"><?= e($group) ?></div>
         <?php foreach ($visible as $p => [$label, $role, $ic]): ?>
@@ -80,7 +82,7 @@ $active = $activeMap[$current] ?? $current;
 <?php if ($user): ?>
 <footer class="statusbar">
     <span class="sb-item"><span class="dot ok"></span>Verbunden</span>
-    <span class="sb-item"><?= icon('user') ?><?= e($user['username']) ?> · <?= e($user['rank_name'] ?: ROLES[$user['role']]) ?></span>
+    <span class="sb-item"><?= icon('user') ?><?= e($user['username']) ?> · <?= e(user_rank_name($user)) ?></span>
     <span class="sb-item hide-sm"><?= e(setting('org_name', 'San Andreas Medical Services')) ?></span>
     <span class="sb-spacer"></span>
     <span class="sb-item hide-sm"><?= e(version_label()) ?></span>

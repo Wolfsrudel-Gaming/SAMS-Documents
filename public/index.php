@@ -4,26 +4,34 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/app/bootstrap.php';
 start_session();
 
+/**
+ * Seite => benötigtes Recht.
+ * null = öffentlich, '' = nur angemeldet, 'a|b' = eines der Rechte, 'x.*' = irgendein Recht mit diesem Präfix.
+ */
 $routes = [
-    // Seite            => Mindestrolle (null = öffentlich)
-    'login'             => null,
-    'logout'            => 'trainee',
-    'dashboard'         => 'trainee',
-    'patients'          => 'trainee',
-    'patient'           => 'trainee',
-    'patient_edit'      => 'trainee',
-    'patient_print'     => 'trainee',
-    'entry_edit'        => 'trainee',
-    'documents'         => 'trainee',
-    'document_new'      => 'medic',
-    'document'          => 'trainee',
-    'users'             => 'admin',
-    'user_edit'         => 'admin',
-    'settings'          => 'admin',
-    'audit'             => 'admin',
-    'system'            => 'admin',
-    'profile'           => 'trainee',
-    'search'            => 'trainee',
+    'login'           => null,
+    'logout'          => '',
+    'password_change' => '',
+    'twofa'           => '',
+    'dashboard'       => '',
+    'profile'         => '',
+    'search'          => '',
+    'patients'        => 'patients.view',
+    'patient'         => 'patients.view',
+    'patient_edit'    => 'patients.edit',
+    'patient_print'   => 'patients.view',
+    'entry_edit'      => 'entries.create',
+    'documents'       => 'documents.view',
+    'document'        => 'documents.view',
+    'document_new'    => 'documents.issue.*',
+    'users'           => 'users.view',
+    'user_edit'       => 'users.view',
+    'ranks'           => 'ranks.manage',
+    'rank_edit'       => 'ranks.manage',
+    'org'             => 'departments.manage|qualifications.manage',
+    'settings'        => 'settings.manage',
+    'audit'           => 'audit.view',
+    'system'          => 'system.manage',
 ];
 
 $page = $_GET['p'] ?? 'dashboard';
@@ -32,7 +40,10 @@ if (!is_string($page) || !array_key_exists($page, $routes)) {
 }
 
 if ($routes[$page] !== null) {
-    require_role($routes[$page]);
+    require_login();
+    if ($routes[$page] !== '') {
+        require_perm($routes[$page]);
+    }
 }
 
 require SAMS_ROOT . '/app/pages/' . $page . '.php';

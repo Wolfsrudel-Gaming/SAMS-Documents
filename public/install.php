@@ -37,9 +37,7 @@ if (!$installed && is_post()) {
     if (!preg_match('/^[A-Za-z0-9._\-]{3,40}$/', $in['admin_user'])) {
         $errors[] = 'Benutzername ungültig (3–40 Zeichen: Buchstaben, Ziffern, . _ -).';
     }
-    if (strlen($pw) < 8) {
-        $errors[] = 'Das Passwort muss mindestens 8 Zeichen haben.';
-    }
+    $errors = array_merge($errors, password_problems($pw, $in['admin_user']));
     if ($in['admin_name'] === '') {
         $errors[] = 'Bitte deinen Namen angeben.';
     }
@@ -83,8 +81,10 @@ if (!$installed && is_post()) {
                     'name' => $in['admin_name'],
                     'title' => '',
                     'role' => 'admin',
-                    'rank_name' => 'Administrator',
+                    'rank_id' => scalar('SELECT id FROM ranks ORDER BY level DESC LIMIT 1'),
+                    'is_superadmin' => 1,
                     'created_at' => now(),
+                    'password_changed_at' => now(),
                 ]);
             }
             save_setting('org_name', $in['org_name']);
@@ -142,7 +142,7 @@ if (!$installed && is_post()) {
         <h3 class="form-heading">Admin-Konto</h3>
         <div class="field w-half"><label>Dein Name</label><input name="admin_name" value="<?= e($in['admin_name']) ?>" required placeholder="Vorname Nachname"></div>
         <div class="field w-half"><label>Benutzername</label><input name="admin_user" value="<?= e($in['admin_user']) ?>" required></div>
-        <div class="field w-half"><label>Passwort (min. 8 Zeichen)</label><input type="password" name="admin_pass" minlength="8" required></div>
+        <div class="field w-half"><label>Passwort (min. 10 Zeichen)</label><input type="password" name="admin_pass" minlength="10" required></div>
         <div class="form-actions"><button class="btn primary">Einrichten</button></div>
     </form>
 <?php endif; ?>

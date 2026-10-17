@@ -36,7 +36,7 @@ ob_start(); ?>
     <table class="tbl">
         <thead><tr><th style="width:24mm">Datum</th><th>Eintrag</th><th style="width:34mm">Verfasser/in</th></tr></thead>
         <tbody>
-        <?php foreach ($entries as $en): $hidden = $en['confidential'] && !can('doctor') && (int) $en['created_by'] !== (int) $me['id']; ?>
+        <?php foreach ($entries as $en): $hidden = $en['confidential'] && !can('entries.confidential') && (int) $en['created_by'] !== (int) $me['id']; ?>
             <tr><td><?= e(fmt_datetime($en['occurred_at'])) ?></td>
                 <td><strong><?= e($en['type']) ?>: <?= e($en['title']) ?></strong><br><?= $hidden ? '<em>vertraulich</em>' : nl($en['content']) ?></td>
                 <td><?= e(trim($en['author_title'] . ' ' . $en['author'])) ?></td></tr>

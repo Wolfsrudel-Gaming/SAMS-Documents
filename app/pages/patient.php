@@ -23,7 +23,7 @@ foreach ($docs as $d) {
 }
 usort($timeline, fn($a, $b) => strcmp($b['at'], $a['at']));
 
-$canSeeConfidential = fn($en) => !$en['confidential'] || can('doctor') || (int) $en['created_by'] === (int) $me['id'];
+$canSeeConfidential = fn($en) => !$en['confidential'] || can('entries.confidential') || (int) $en['created_by'] === (int) $me['id'];
 
 ob_start(); ?>
 <div class="patient-banner">
@@ -42,7 +42,7 @@ ob_start(); ?>
         <a class="btn" href="<?= e(url('patient_edit', ['id' => $id])) ?>"><?= icon('edit') ?>Stammdaten</a>
         <a class="btn" href="<?= e(url('patient_print', ['id' => $id])) ?>" target="_blank"><?= icon('print') ?>Drucken</a>
         <a class="btn" href="<?= e(url('entry_edit', ['patient' => $id])) ?>"><?= icon('plus') ?>Akteneintrag</a>
-        <?php if (can('medic')): ?><a class="btn primary" href="<?= e(url('document_new', ['patient' => $id])) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
+        <?php if (can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new', ['patient' => $id])) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
     </div>
 </div>
 

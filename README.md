@@ -12,7 +12,7 @@ mit Tinteneffekt, handschriftliche Unterschrift, Barcode und QR-Code zur Echthei
 
 ## Dokumentarten
 
-| Kürzel | Dokument | Aussehen | Mindestrolle |
+| Kürzel | Dokument | Aussehen | Standard-Vorlage* |
 |---|---|---|---|
 | AU | Arbeitsunfähigkeitsbescheinigung | A5-Vordruck rosa, 3 Ausfertigungen (Krankenkasse, Arbeitgeber **ohne Diagnose**, Versicherte/r) | Arzt |
 | AT | Ärztliches Attest | A4-Brief | Arzt |
@@ -27,6 +27,8 @@ mit Tinteneffekt, handschriftliche Unterschrift, Barcode und QR-Code zur Echthei
 | TB | Todesbescheinigung | A4-Formular, vertraulicher/nichtvertraulicher Teil | Arzt |
 | RE | Rechnung | A4-Brief mit Positionen, Summen, „BEZAHLT“-Stempel | Rettungsdienst |
 | SC | Allgemeines Schreiben | A4-Brief, optional mit Dienstsiegel | Rettungsdienst |
+
+\* Wer welches Dokument ausstellen darf, ist pro Rang frei einstellbar (*Verwaltung → Ränge & Rechte*). Die Spalte zeigt die Vorbelegung.
 
 Jedes Dokument erhält eine fortlaufende Nummer (z. B. `SAMS-AU-2026-00042`) und einen Prüfcode.
 Ausgestellte Dokumente sind **unveränderlich** (Patienten- und Ausstellerdaten werden eingefroren) und können nur
@@ -43,7 +45,10 @@ Ausgestellte Dokumente sind **unveränderlich** (Patienten- und Ausstellerdaten 
   (nur ärztlicher Dienst); chronologischer Verlauf aus Einträgen und Dokumenten; Akte als PDF drucken
 - **Öffentliche Echtheitsprüfung** `verify.php` – QR-Code scannen oder Prüfcode eingeben. Zeigt gültig / abgelaufen /
   storniert / nicht gefunden, aber keine medizinischen Inhalte (nur Initialen + Geburtsjahr)
-- **Rollen**: Auszubildende · Rettungsdienst · Ärztlicher Dienst · Leitung
+- **Personalverwaltung**: Konten werden von Admin/Chiefs angelegt, das System erzeugt ein Startpasswort, das beim ersten Login geändert werden muss. Passwort zurücksetzen, Konto sperren (mit Grund), alle Sitzungen beenden, 2FA zurücksetzen, Verlauf aller Änderungen
+- **Ränge & Rechte**: frei anlegbare Ränge mit Rangstufe und einzelnen Rechten (über 40, z. B. pro Dokumentart). Hierarchie-Regel: Man verwaltet nur Konten und Ränge unterhalb der eigenen Stufe und vergibt nur Rechte, die man selbst hat. Optional „nur Personal der eigenen Abteilungen verwalten“
+- **Abteilungen & Qualifikationen**: frei anlegbar, eine Person kann mehreren Abteilungen angehören; Dienstnummern werden manuell vergeben
+- **Sicherheit**: Zwei-Faktor-Anmeldung per Authenticator-App (Pflicht pro Rang einstellbar, Standard für die Leitung) mit Wiederherstellungscodes, Sperre nach 5 Fehlversuchen
 - **Unterschrift** einmalig im Profil mit Maus/Stift/Finger zeichnen; Arztstempel wird automatisch aus Name,
   Fachrichtung und Arzt-Nr. erzeugt
 - **Zugriffsprotokoll**: wer hat wann welche Akte geöffnet, welches Dokument ausgestellt oder storniert
@@ -138,7 +143,8 @@ Der Webhook legt nur eine Anforderung ab; `sams-update.path` startet das Update 
 ```
 php bin/sams status                  Version, Datenbank, offene Migrationen, letztes Update
 php bin/sams migrate                 Datenbank-Migrationen ausführen
-php bin/sams create-admin [name]     Admin-Konto anlegen
+php bin/sams create-admin [name]     Hauptadministrator anlegen
+php bin/sams reset-password <name>   Notfall: Einmalpasswort setzen, Sperre und 2FA aufheben
 php bin/sams backup [tag]            Backup erstellen        php bin/sams backups   Backups auflisten
 php bin/sams restore <datei>         Backup einspielen
 php bin/sams maintenance on|off      Wartungsmodus

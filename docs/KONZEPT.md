@@ -1,6 +1,6 @@
 # SAMS Dokumenten- & Aktensystem – Konzept Version 1
 
-Stand: 17.10.2026 · Status: **Entwurf zur Freigabe**
+Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1 umgesetzt
 
 Dieses Konzept fasst die Fragerunde (60 Fragen) und die anschließenden Festlegungen zusammen.
 Es beschreibt, was in Version 1 gebaut wird, in welcher Reihenfolge, und was bewusst später kommt.
@@ -68,7 +68,7 @@ Anforderungen (500 Nutzer, Tablet, mehrere Fraktionen, Verkauf) trägt:
 
 Jede Etappe endet mit einem testbaren Stand. Nach jeder Etappe gibt es Feedback, bevor die nächste startet.
 
-### Etappe 1 – Benutzer-, Rang- und Rechteverwaltung *(höchste Priorität)*
+### Etappe 1 – Benutzer-, Rang- und Rechteverwaltung ✅ *umgesetzt in v1.3.0*
 
 Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder meldet sich an und ändert sein Passwort.
 
@@ -191,9 +191,9 @@ settings        Einstellungen, Logo, Briefkopf
 - Archivierung statt Löschen, tägliches automatisches Datenbank-Backup mit Aufbewahrungsfrist
 - HTTPS-Pflicht im Betrieb, Docker-Setup mit nginx
 
-## 8. Offene Fragen
-1. **Dienstnummern:** automatisch fortlaufend vergeben (z. B. SAMS-001) oder frei eintragen?
-2. **Startpasswort:** reicht „einmal anzeigen und selbst weitergeben“, oder soll es später per Discord-DM verschickt werden?
-3. **Chiefs:** Wie viele Leitungsebenen gibt es (z. B. Direktor → Chief → Abteilungsleitung)? Davon hängt die Rang-Vorlage ab.
-4. **Abteilungsleitungen:** Dürfen sie nur Personal ihrer eigenen Abteilung verwalten?
-5. **Mehrere Abteilungen pro Person:** erlaubt (z. B. Notarzt + Klinik)?
+## 8. Entscheidungen zu Etappe 1
+1. **Dienstnummern** werden vorerst manuell eingetragen (müssen eindeutig sein).
+2. **Startpasswort** wird einmal angezeigt und von der Leitung weitergegeben (Kopierknopf für eine fertige Nachricht).
+3. **Rangstruktur** ist frei anlegbar. Vorlage: Administrator (100) → Ärztliche Direktion/Chief (90) → Oberarzt (70) → Arzt (50) → Notfallsanitäter (30) → Rettungssanitäter (20) → Auszubildende (10).
+4. **Abteilungsbeschränkung** ist ein Recht pro Rang („nur Personal der eigenen Abteilungen verwalten“).
+5. **Mehrere Abteilungen pro Person** sind erlaubt. Abteilungen und Qualifikationen sind frei anlegbar.

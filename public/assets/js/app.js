@@ -231,3 +231,34 @@
         text.addEventListener('input', function () { if (/^#[0-9a-f]{6}$/i.test(text.value)) { color.value = text.value; } });
     });
 })();
+
+/* Rechte-Auswahl im Rang-Editor */
+(function () {
+    'use strict';
+    var boxes = function (scope) {
+        return Array.prototype.filter.call(scope.querySelectorAll('input[name="perms[]"]'), function (b) { return !b.disabled; });
+    };
+    document.querySelectorAll('[data-perm-all]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            boxes(document).forEach(function (b) { b.checked = btn.dataset.permAll === '1'; });
+            sync();
+        });
+    });
+    var sync = function () {
+        document.querySelectorAll('.perm-group').forEach(function (g) {
+            var toggle = g.querySelector('.perm-group-toggle');
+            var list = boxes(g);
+            toggle.disabled = list.length === 0;
+            toggle.checked = list.length > 0 && list.every(function (b) { return b.checked; });
+            toggle.indeterminate = !toggle.checked && list.some(function (b) { return b.checked; });
+        });
+    };
+    document.querySelectorAll('.perm-group').forEach(function (g) {
+        g.querySelector('.perm-group-toggle').addEventListener('change', function (e) {
+            boxes(g).forEach(function (b) { b.checked = e.target.checked; });
+            sync();
+        });
+        g.addEventListener('change', function (e) { if (e.target.name === 'perms[]') { sync(); } });
+    });
+    sync();
+})();

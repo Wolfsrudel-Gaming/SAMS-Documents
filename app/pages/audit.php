@@ -13,9 +13,16 @@ $labels = [
     'entry.delete' => 'Eintrag gelöscht', 'document.issue' => 'Dokument ausgestellt', 'document.view' => 'Dokument angesehen',
     'document.revoke' => 'Dokument storniert', 'user.create' => 'Konto angelegt', 'user.update' => 'Konto geändert',
     'user.signature' => 'Unterschrift geändert', 'user.password' => 'Passwort geändert', 'settings.update' => 'Einstellungen geändert',
-    'patient.print' => 'Akte gedruckt',
+    'patient.print' => 'Akte gedruckt', 'user.password_reset' => 'Passwort zurückgesetzt', 'user.sessions_ended' => 'Sitzungen beendet',
+    'user.2fa_reset' => '2FA zurückgesetzt', 'user.2fa_enabled' => '2FA aktiviert', 'user.2fa_disabled' => '2FA abgeschaltet',
+    'user.2fa_codes' => 'Neue 2FA-Codes', 'user.2fa_recovery_used' => '2FA-Wiederherstellungscode benutzt', 'user.deactivate' => 'Konto gesperrt',
+    'user.reactivate' => 'Konto entsperrt', 'rank.create' => 'Rang angelegt', 'rank.update' => 'Rang geändert', 'rank.delete' => 'Rang gelöscht',
+    'departments.create' => 'Abteilung angelegt', 'departments.update' => 'Abteilung geändert', 'departments.delete' => 'Abteilung gelöscht',
+    'qualifications.create' => 'Qualifikation angelegt', 'qualifications.update' => 'Qualifikation geändert', 'qualifications.delete' => 'Qualifikation gelöscht',
+    'system.update_request' => 'Update angefordert', 'system.migrate' => 'Migrationen ausgeführt', 'system.backup' => 'Backup erstellt',
+    'system.backup_download' => 'Backup heruntergeladen',
 ];
-$links = ['patient' => 'patient', 'document' => 'document', 'user' => 'user_edit'];
+$links = ['patient' => 'patient', 'document' => 'document', 'user' => 'user_edit', 'rank' => 'rank_edit'];
 ob_start(); ?>
 <div class="page-head"><div><h1>Zugriffsprotokoll</h1><p class="muted">Alle Zugriffe auf Akten und Dokumente werden protokolliert (<?= $total ?> Einträge).</p></div>
     <form action="index.php"><input type="hidden" name="p" value="audit">

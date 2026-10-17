@@ -6,7 +6,7 @@
     </div>
     <div class="btn-row">
         <a class="btn" href="<?= e(url('patient_edit')) ?>"><?= icon('plus') ?>Neue Patientenakte</a>
-        <?php if (can('medic')): ?><a class="btn primary" href="<?= e(url('document_new')) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
+        <?php if (can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new')) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
     </div>
 </div>
 
@@ -20,11 +20,11 @@
     <?php endforeach; ?>
 </div>
 
-<?php if (can('medic')): ?>
+<?php if (can_issue_any()): ?>
 <section class="card">
     <h2>Dokument ausstellen</h2>
     <div class="tiles">
-        <?php foreach (document_types() as $key => $t): if (!can($t['role'])) continue; ?>
+        <?php foreach (document_types() as $key => $t): if (!can('documents.issue.' . $key)) continue; ?>
             <a class="tile" href="<?= e(url('document_new', ['type' => $key])) ?>">
                 <span class="tile-code"><?= e($t['code']) ?></span>
                 <strong><?= e($t['short']) ?></strong>
