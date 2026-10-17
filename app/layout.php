@@ -64,7 +64,7 @@ $active = $activeMap[$current] ?? $current;
     <form class="quicksearch" action="index.php" role="search">
         <input type="hidden" name="p" value="search">
         <?= icon('search') ?>
-        <input name="q" id="quicksearch" placeholder="Patient, Bürger-ID, Dokument-Nr. oder Prüfcode …" autocomplete="off">
+        <input name="q" id="quicksearch" placeholder="Suchen: Patient, Diagnose, Dokument-Nr., Wiki, Personal …" autocomplete="off">
         <kbd>F2</kbd>
     </form>
     <div class="topbar-right">

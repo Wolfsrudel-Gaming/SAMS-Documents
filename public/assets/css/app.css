@@ -579,3 +579,11 @@ body.portal { background: var(--bg); }
 .att figcaption small { display: block; color: var(--muted); font-size: .7rem; }
 .att figcaption form { position: absolute; top: .2rem; right: .2rem; }
 .att-upload { border-top: 1px solid var(--line-soft); padding-top: .5rem; }
+
+/* Suche */
+.search-results { list-style: none; margin: 0; padding: 0; }
+.search-results li { padding: .45rem 0; border-bottom: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: .1rem; }
+.search-results li:last-child { border-bottom: 0; }
+.search-results a { font-weight: 600; }
+.search-results .snippet { font-size: .88rem; color: var(--text); }
+mark { background: #fff1a8; color: inherit; padding: 0 .1em; border-radius: 2px; }
