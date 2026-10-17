@@ -172,6 +172,15 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
         throw $ex;
     }
     audit('document.issue', 'document', $id, $type['short'] . ' ' . patient_name($patient) . ($cosigner ? ' (freigegeben durch ' . user_display($cosigner) . ')' : ''));
+    $person = document_person_snapshot($patient, $data);
+    $number = (string) scalar('SELECT number FROM documents WHERE id = ?', [$id]);
+    notify_webhook('documents', log_embed('📄 ' . $type['title'] . ' ausgestellt', '', 0x1e7a43, array_values(array_filter([
+        ['name' => 'Nummer', 'value' => $number, 'inline' => true],
+        ['name' => 'Ausgestellt von', 'value' => user_display($issuer), 'inline' => true],
+        $person ? ['name' => 'Für', 'value' => initials_name($person), 'inline' => true] : null,
+        $cosigner ? ['name' => 'Freigegeben von', 'value' => user_display($cosigner), 'inline' => true] : null,
+    ]))));
+    notify_patient_dm($patient['id'] ?? null, 'Der ' . org('org_short') . ' hat für dich ein neues Dokument ausgestellt: ' . $type['title'] . ' (' . $number . '). Du findest es im Bürgerportal: ' . base_url() . '/portal.php?page=documents');
     return $id;
 }
 

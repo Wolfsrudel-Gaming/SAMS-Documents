@@ -53,6 +53,8 @@ Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt au
 
 - **Patientenakten**: Personalien, Bürger-ID (z. B. `citizenid` aus ESX/QBCore), Versicherung, Blutgruppe, Allergien
   (Warnhinweis), Vorerkrankungen, Medikation, Notfallkontakt, Organspende, Patientenverfügung, Kennzeichnungen
+- **Statistik & Berichte**: Aktivität, Fallzahlen, Finanzen, Qualität; Wochen-/Monatsbericht nach Discord und als PDF
+- **Discord**: Webhooks (Dokument-Log, Freigaben, Personal-Log, Bürgerportal, Berichte), Direktnachrichten an Bürger, Discord-Login und Rollen-Sync (Rolle → Rang)
 - **Bürgerportal** (`/portal.php`): Discord-Login, eigene Dokumente, Terminanfragen, Anträge und Bewerbungen – bearbeitet im Websystem
 - **Schwarzes Brett & Nachrichten**: Aushänge mit Zielgruppe und Lesebestätigung, interne Nachrichten an Personen oder Abteilungen
 - **Wiki**: SOPs und Wissen mit Versionsgeschichte und Wiki-Links; pflegt auch die Vorschlagslisten der Formulare
@@ -267,3 +269,14 @@ die Dokumente sind nicht für reale Verwendung bestimmt.
 
 Verwendete Bibliotheken: [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) (MIT),
 [html2canvas](https://html2canvas.hertzen.com/) (MIT), Schrift „Herr Von Muellerhoff“ (SIL OFL 1.1).
+
+## Discord einrichten (optional)
+
+1. Auf https://discord.com/developers/applications eine Anwendung anlegen.
+2. Unter *OAuth2* die Redirect-URIs eintragen: `APP_URL/index.php?p=discord_login` (Mitarbeitende) und `APP_URL/portal.php?action=callback` (Bürgerportal).
+3. `DISCORD_CLIENT_ID` und `DISCORD_CLIENT_SECRET` in die `.env` eintragen.
+4. Für Direktnachrichten und Rollen-Sync zusätzlich einen Bot anlegen, auf den Server einladen und `DISCORD_BOT_TOKEN` sowie `DISCORD_GUILD_ID` setzen.
+5. Im Websystem unter *Verwaltung → Discord* die Webhook-Adressen der Kanäle, Berichte und die Zuordnung Discord-Rolle → Rang einstellen.
+
+Nachrichten werden über eine Warteschlange verschickt; `php bin/sams cron` läuft automatisch mit dem Update-Timer mit.
+

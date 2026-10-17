@@ -26,6 +26,10 @@ const PERSONNEL_MANUAL = ['note', 'praise', 'warning', 'training', 'qualificatio
 
 function personnel_event(int $userId, string $kind, string $title, string $text = '', ?string $date = null, bool $confidential = false, ?int $documentId = null): void
 {
+    if (!$confidential && in_array($kind, ['hire', 'rank', 'promotion', 'qualification', 'training', 'praise', 'termination'], true)) {
+        $u = one('SELECT name, title FROM users WHERE id = ?', [$userId]);
+        notify_webhook('personnel', log_embed('👤 ' . user_display($u) . ' – ' . (PERSONNEL_KINDS[$kind][1] ?? $kind), $title, $kind === 'termination' ? 0xb3261e : 0x0b4f9c));
+    }
     insert('personnel_events', [
         'user_id' => $userId, 'kind' => $kind, 'title' => mb_substr($title, 0, 190), 'text' => $text,
         'event_date' => $date ?: date('Y-m-d'), 'confidential' => $confidential ? 1 : 0, 'document_id' => $documentId,

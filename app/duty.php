@@ -41,9 +41,15 @@ function duty_set(int $userId, bool $on, string $source, ?int $actingUserId = nu
     $open = duty_open_session($userId);
     if ($on && !$open) {
         insert('duty_sessions', ['user_id' => $userId, 'started_at' => now(), 'source' => $source, 'created_at' => now()]);
+        if (setting('discord_duty_log', '0') === '1') {
+            notify_webhook('personnel', '🟢 **' . user_display(one('SELECT name, title FROM users WHERE id = ?', [$userId])) . '** ist im Dienst.');
+        }
         audit_as($actingUserId ?? $userId, 'duty.on', 'user', $userId, DUTY_SOURCES[$source] ?? $source);
     } elseif (!$on && $open) {
         update('duty_sessions', (int) $open['id'], ['ended_at' => now(), 'end_source' => $source]);
+        if (setting('discord_duty_log', '0') === '1') {
+            notify_webhook('personnel', '🔴 **' . user_display(one('SELECT name, title FROM users WHERE id = ?', [$userId])) . '** ist außer Dienst (' . duty_format(duty_seconds($open)) . ').');
+        }
         audit_as($actingUserId ?? $userId, 'duty.off', 'user', $userId, (DUTY_SOURCES[$source] ?? $source) . ' · ' . duty_format(duty_seconds($open)));
     }
     return $on;

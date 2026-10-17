@@ -71,6 +71,7 @@ if ($c && is_post()) {
         } else {
             insert('appointments', ['citizen_id' => $c['id'], 'patient_id' => $c['patient_id'], 'kind' => $kind,
                 'preferred' => mb_substr(trim((string) post('preferred')), 0, 190), 'note' => mb_substr(trim((string) post('note')), 0, 2000), 'created_at' => now()]);
+            notify_webhook('portal', log_embed('📅 Terminanfrage: ' . $kind, ($c['ic_name'] ?: $c['discord_name']) . ($c['patient_id'] ? '' : ' (nicht verknüpft)') . ' · Wunsch: ' . (trim((string) post('preferred')) ?: '–'), 0x0b4f9c));
             flash('success', 'Terminanfrage gesendet. Du siehst hier, sobald der SAMS den Termin bestätigt.');
         }
         redirect($purl(['page' => 'appointments']));
@@ -89,6 +90,7 @@ if ($c && is_post()) {
         } else {
             insert('portal_requests', ['citizen_id' => $c['id'], 'patient_id' => $c['patient_id'], 'kind' => $kind,
                 'subject' => mb_substr(trim((string) post('subject')), 0, 190), 'text' => $text, 'created_at' => now()]);
+            notify_webhook('portal', log_embed('📝 Antrag: ' . REQUEST_KINDS[$kind], ($c['ic_name'] ?: $c['discord_name']), 0x0b4f9c));
             flash('success', 'Antrag eingereicht.');
         }
         redirect($purl(['page' => 'requests']));
@@ -106,6 +108,7 @@ if ($c && is_post()) {
             flash('error', 'Du hast bereits eine laufende Bewerbung.');
         } else {
             insert('applications', $row + ['citizen_id' => $c['id'], 'created_at' => now()]);
+            notify_webhook('portal', log_embed('🙋 Neue Bewerbung: ' . $row['ic_name'], 'Bereich: ' . ($row['department'] ?: 'egal') . ' · Discord: ' . $c['discord_name'], 0x1e7a43));
             flash('success', 'Vielen Dank für deine Bewerbung! Wir melden uns.');
         }
         redirect($purl(['page' => 'apply']));

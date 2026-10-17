@@ -208,6 +208,7 @@ if (is_post()) {
     } elseif ($action === 'submit' && $approval && !$errors) {
         $id = $saveDraft('pending', (int) $me['id'], mb_substr(trim((string) post('submit_note')), 0, 1000));
         audit('draft.submit', 'document', null, $type['short'] . ' Entwurf #' . $id . ' zur Freigabe');
+        notify_webhook('approvals', log_embed('🕓 Freigabe angefragt: ' . $type['title'], user_display($me) . ' hat ein Dokument zur Gegenzeichnung eingereicht. ' . base_url() . '/index.php?p=draft&id=' . $id, 0x9a6200));
         flash('success', 'Zur Freigabe eingereicht. Das Dokument wird ausgestellt, sobald es freigegeben ist.');
         redirect(url('drafts'));
     } elseif ($action === 'issue' && !$approval && !$errors) {

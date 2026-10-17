@@ -25,17 +25,29 @@ if (is_post()) {
             update('appointments', $id, ['status' => ['confirm' => 'confirmed', 'decline' => 'declined', 'done' => 'done'][$do], 'scheduled_at' => $when ?? $a['scheduled_at'],
                 'location' => mb_substr(trim((string) post('location')), 0, 190) ?: $a['location'], 'staff_note' => $note ?: $a['staff_note'], 'handled_by' => $me['id'], 'handled_at' => now()]);
             audit('portal.appointment', 'appointment', $id, $a['kind'] . ' → ' . $do);
+            $cit = one('SELECT discord_id FROM citizens WHERE id = ?', [$a['citizen_id']]);
+            if ($cit && in_array($do, ['confirm', 'decline'], true)) {
+                notify_dm((string) $cit['discord_id'], $do === 'confirm'
+                    ? 'Dein Termin beim ' . org('org_short') . ' (' . $a['kind'] . ') ist bestätigt: ' . fmt_datetime($when) . (trim((string) post('location')) !== '' ? ', ' . trim((string) post('location')) : '') . ($note !== '' ? '. Hinweis: ' . $note : '')
+                    : 'Deine Terminanfrage beim ' . org('org_short') . ' (' . $a['kind'] . ') wurde leider abgelehnt.' . ($note !== '' ? ' Hinweis: ' . $note : ''));
+            }
             flash('success', 'Termin aktualisiert.');
         }
     } elseif ($tab === 'requests' && can('portal.manage') && ($r = one('SELECT * FROM portal_requests WHERE id = ?', [$id]))) {
         $status = in_array(post('status'), ['open', 'in_progress', 'done', 'rejected'], true) ? (string) post('status') : $r['status'];
         update('portal_requests', $id, ['status' => $status, 'reply' => $note !== '' ? $note : $r['reply'], 'handled_by' => $me['id'], 'handled_at' => now()]);
         audit('portal.request', 'request', $id, (REQUEST_KINDS[$r['kind']] ?? $r['kind']) . ' → ' . $status);
+        if ($status !== $r['status'] && in_array($status, ['done', 'rejected'], true) && ($cit = one('SELECT discord_id FROM citizens WHERE id = ?', [$r['citizen_id']]))) {
+            notify_dm((string) $cit['discord_id'], 'Dein Antrag beim ' . org('org_short') . ' („' . (REQUEST_KINDS[$r['kind']] ?? $r['kind']) . '“) wurde ' . ($status === 'done' ? 'bearbeitet' : 'abgelehnt') . '. Details im Bürgerportal: ' . base_url() . '/portal.php?page=requests');
+        }
         flash('success', 'Antrag aktualisiert.');
     } elseif ($tab === 'applications' && can('portal.applications') && ($ap = one('SELECT * FROM applications WHERE id = ?', [$id]))) {
         $status = in_array(post('status'), ['new', 'invited', 'accepted', 'rejected'], true) ? (string) post('status') : $ap['status'];
         update('applications', $id, ['status' => $status, 'staff_note' => $note !== '' ? $note : $ap['staff_note'], 'handled_by' => $me['id'], 'handled_at' => now()]);
         audit('portal.application', 'application', $id, $ap['ic_name'] . ' → ' . $status);
+        if ($status !== $ap['status'] && $status !== 'new' && ($cit = one('SELECT discord_id FROM citizens WHERE id = ?', [$ap['citizen_id']]))) {
+            notify_dm((string) $cit['discord_id'], 'Neuigkeiten zu deiner Bewerbung beim ' . org('org_short') . ': ' . PORTAL_STATUS[$status][1] . '. Details im Bürgerportal: ' . base_url() . '/portal.php?page=apply');
+        }
         flash('success', 'Bewerbung aktualisiert.' . ($status === 'accepted' && can('users.create') ? ' Lege jetzt unter Personal ein Konto an.' : ''));
     } elseif ($tab === 'citizens' && can('portal.manage') && ($ci = one('SELECT * FROM citizens WHERE id = ?', [$id]))) {
         if ($do === 'block') {

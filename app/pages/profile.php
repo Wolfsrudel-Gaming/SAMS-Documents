@@ -72,6 +72,7 @@ ob_start(); ?>
         <h2>Sicherheit</h2>
         <dl class="kv">
             <dt>Passwort</dt><dd>zuletzt geändert <?= e(fmt_datetime($me['password_changed_at']) ?: 'nie') ?> · <a href="<?= e(url('password_change')) ?>">Passwort ändern</a></dd>
+            <?php if (discord_configured()): ?><dt>Discord</dt><dd><?= $me['discord_id'] ? '<span class="badge green">verknüpft</span> <span class="mono small">' . e($me['discord_id']) . '</span>' : '<span class="badge grey">nicht verknüpft</span>' ?> · <a href="<?= e(url('discord_login', ['link' => 1])) ?>"><?= $me['discord_id'] ? 'Neu verknüpfen' : 'Verknüpfen' ?></a></dd><?php endif; ?>
             <dt>2FA</dt><dd><?= $me['totp_enabled'] ? '<span class="badge green">aktiv</span>' : '<span class="badge grey">nicht aktiv</span>' ?><?= $twofaRequired ? ' <span class="badge orange">Pflicht für deinen Rang</span>' : '' ?> · <a href="<?= e(url('twofa')) ?>"><?= $me['totp_enabled'] ? 'Verwalten' : 'Einrichten' ?></a></dd>
             <dt>Letzte Anmeldung</dt><dd><?= e(fmt_datetime($me['last_login'])) ?></dd>
         </dl>

@@ -67,6 +67,7 @@ ob_start(); ?>
                 <label>Benutzername<input name="username" autocomplete="username" required autofocus value="<?= e(post('username')) ?>"></label>
                 <label>Passwort<input name="password" type="password" autocomplete="current-password" required></label>
                 <button class="btn primary block">Anmelden</button>
+                <?php if (discord_configured()): ?><a class="btn block discord-btn" href="<?= e(url('discord_login')) ?>">Mit Discord anmelden</a><?php endif; ?>
                 <p class="muted small">Passwort vergessen? Deine Leitung kann es zurücksetzen.</p>
             <?php endif; ?>
         </div>

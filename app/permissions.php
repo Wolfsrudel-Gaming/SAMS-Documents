@@ -93,6 +93,8 @@ function permission_catalog(): array
         'System' => [
             'settings.manage' => 'Einstellungen (Briefkopf, Design, Logo)',
             'templates.manage' => 'Vorlagen-Editor: eigene Dokumentarten anlegen',
+            'stats.view'       => 'Statistik und Berichte ansehen',
+            'discord.manage'   => 'Discord-Anbindung (Webhooks, Berichte, Rollen-Sync) einrichten',
             'audit.view'      => 'Zugriffsprotokoll ansehen',
             'system.manage'   => 'System, Updates und Backups',
         ],

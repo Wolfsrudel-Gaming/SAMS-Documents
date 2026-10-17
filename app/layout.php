@@ -29,6 +29,8 @@ $navGroups = [
         'templates' => ['Vorlagen-Editor', 'templates.manage', 'edit'],
         'prices'   => ['Gebührenordnung', 'prices.manage', 'settings'],
         'printers' => ['Drucker', 'printers.manage', 'print'],
+        'stats'    => ['Statistik', 'stats.view', 'log'],
+        'discord'  => ['Discord', 'discord.manage', 'external'],
         'audit'    => ['Zugriffsprotokoll', 'audit.view', 'log'],
         'system'   => ['System & Updates', 'system.manage', 'server'],
     ],

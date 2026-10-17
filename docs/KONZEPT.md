@@ -1,6 +1,6 @@
 # SAMS Dokumenten- & Aktensystem – Konzept Version 1
 
-Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1–6 umgesetzt
+Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1–7 umgesetzt (Version 1 vollständig)
 
 Dieses Konzept fasst die Fragerunde (60 Fragen) und die anschließenden Festlegungen zusammen.
 Es beschreibt, was in Version 1 gebaut wird, in welcher Reihenfolge, und was bewusst später kommt.
@@ -144,11 +144,13 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - Bearbeitung im Websystem unter *Bürgerportal* (Zähler in der Navigation), Bürgerkonten sperren/lösen
 - Einrichtung: `DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET` in der `.env`, Redirect `APP_URL/portal.php?action=callback`
 
-### Etappe 7 – Statistik und Discord
-- Dashboards: Aktivität pro Mitarbeiter, Fallzahlen, Finanzen, Qualität
-- Wochen- und Monatsbericht automatisch nach Discord und als PDF
-- Discord-Webhooks: Freigaben, Personal-Log, Dokument-Log, DM an Patienten
-- Discord-Login für Mitarbeitende und **Rollen-Sync** (Discord-Rolle → Rang)
+### Etappe 7 – Statistik und Discord ✅ *umgesetzt in v1.17.0*
+- Statistik: Aktivität pro Mitarbeiter/in (Dienstzeit, Dokumente, Einträge, Fälle), Fallzahlen, Dokumente pro Tag/Art, Finanzen, Qualität (Stornoquote, Nachträge, Freigaben, Prüfungen); Zeitraum frei wählbar
+- Wochen- und Monatsbericht automatisch nach Discord (montags bzw. am 1. ab 8 Uhr) und jederzeit als druckbares A4/PDF
+- Discord-Webhooks je Kanal: Dokument-Log, Freigaben, Personal-Log (optional mit Dienstbeginn/-ende), Bürgerportal, Berichte; nur Initialen, nie medizinische Inhalte
+- Direktnachrichten an verknüpfte Bürger (neues Dokument, Termin bestätigt/abgelehnt, Antrag erledigt, Bewerbungsstatus) über den Bot
+- Discord-Login für Mitarbeitende (2FA bleibt Pflicht), Verknüpfung im Profil, **Rollen-Sync** (höchste zugeordnete Rolle → Rang) stündlich und bei jeder Anmeldung
+- Versand über eine Warteschlange (nach der Seitenauslieferung bzw. per `php bin/sams cron`, läuft mit dem Update-Timer mit) – Discord bremst das System nie aus
 
 ### Später (nach Version 1)
 - Leitstelle: Notrufe aus dem Spiel, Live-Karte, Fahrzeugstatus, Disponent und Selbstdisposition

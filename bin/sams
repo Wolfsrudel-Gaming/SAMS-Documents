@@ -12,6 +12,9 @@
  *   php bin/sams restore <datei>            Backup einspielen (überschreibt die Datenbank!)
  *   php bin/sams maintenance on|off         Wartungsmodus ein-/ausschalten
  *   php bin/sams update:request             Sofortige Update-Prüfung anfordern
+ *   php bin/sams cron                       Regelmäßige Aufgaben (läuft mit dem Update-Timer mit):
+ *                                           Discord-Nachrichten senden, Berichte, Rollen-Sync, Dienstzeiten
+ *   php bin/sams report weekly|monthly      Bericht sofort nach Discord senden (letzte Woche / letzter Monat)
  */
 declare(strict_types=1);
 
@@ -137,6 +140,42 @@ switch ($cmd) {
     case 'update:request':
         request_update('cli');
         $out('Update-Prüfung angefordert. Der Update-Timer übernimmt beim nächsten Lauf.');
+        break;
+
+    case 'cron':
+        duty_autoclose();
+        // Wochenbericht montags ab 8 Uhr für die Vorwoche, Monatsbericht am 1. ab 8 Uhr
+        if ((int) date('G') >= 8) {
+            if (setting('report_weekly', '0') === '1' && date('N') === '1' && setting('report_last_weekly') !== date('o-W')) {
+                [$f, $t, $label] = stats_period('lastweek');
+                notify_webhook('reports', stats_discord_embed(stats_collect($f, $t), $label));
+                save_setting('report_last_weekly', date('o-W'));
+                $out('Wochenbericht ' . $label . ' eingereiht.');
+            }
+            if (setting('report_monthly', '0') === '1' && date('j') === '1' && setting('report_last_monthly') !== date('Y-m')) {
+                [$f, $t, $label] = stats_period('lastmonth');
+                notify_webhook('reports', stats_discord_embed(stats_collect($f, $t), $label));
+                save_setting('report_last_monthly', date('Y-m'));
+                $out('Monatsbericht ' . $label . ' eingereiht.');
+            }
+        }
+        // Rollen-Sync stündlich
+        if (discord_role_map() && time() - (int) setting('discord_last_sync', '0') >= 3600) {
+            save_setting('discord_last_sync', (string) time());
+            foreach (discord_sync_all() as $c) {
+                $out('Rollen-Sync: ' . $c);
+            }
+        }
+        $n = discord_flush(100);
+        if ($n) {
+            $out("$n Discord-Nachricht(en) gesendet.");
+        }
+        break;
+
+    case 'report':
+        [$f, $t, $label] = stats_period(($args[0] ?? 'weekly') === 'monthly' ? 'lastmonth' : 'lastweek');
+        notify_webhook('reports', stats_discord_embed(stats_collect($f, $t), $label));
+        $out('Bericht ' . $label . ': ' . discord_flush(10) . ' Nachricht(en) gesendet' . (valid_webhook_url((string) setting('webhook_reports', '')) ? '.' : ' (kein Webhook für Berichte eingerichtet).'));
         break;
 
     default:

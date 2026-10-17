@@ -560,3 +560,11 @@ body.portal { background: var(--bg); }
 .page-tabs { margin-bottom: 12px; }
 .field.w-three-quarters { flex: 3 1 calc(75% - .8rem); }
 .portal-item .form-grid { border-top: 1px solid var(--line-soft); padding-top: .5rem; margin-top: .4rem; }
+
+/* Statistik */
+.daybars { display: flex; gap: 3px; height: 140px; align-items: flex-end; }
+.daybars div { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; text-align: center; min-width: 0; }
+.daybars span { display: block; background: var(--primary); border-radius: 2px 2px 0 0; min-height: 1px; }
+.daybars small { font-size: .62rem; color: var(--muted); margin-top: 2px; overflow: hidden; }
+.hbars td.bar { width: 45%; }
+.hbars td.bar span { display: block; height: 10px; background: var(--primary); border-radius: 2px; min-width: 2px; }

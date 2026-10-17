@@ -19,6 +19,8 @@ if (is_post() && post('action') === 'revoke') {
     } elseif ($doc['status'] !== 'revoked') {
         q('UPDATE documents SET status = ?, revoked_reason = ?, revoked_by = ?, revoked_at = ? WHERE id = ?', ['revoked', $reason, $me['id'], now(), $id]);
         audit('document.revoke', 'document', $id, $reason);
+        notify_webhook('documents', log_embed('🚫 ' . ($type['title'] ?? 'Dokument') . ' storniert', '', 0xb3261e, [
+            ['name' => 'Nummer', 'value' => $doc['number'], 'inline' => true], ['name' => 'Storniert von', 'value' => user_display($me), 'inline' => true]]));
         flash('success', 'Dokument wurde storniert. Die Echtheitsprüfung zeigt es ab sofort als ungültig an.');
     }
     redirect(url('document', ['id' => $id]));

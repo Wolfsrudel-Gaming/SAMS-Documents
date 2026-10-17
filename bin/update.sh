@@ -87,6 +87,9 @@ flock -n 9 || exit 0
 
 touch "$STORAGE/update/last-check"
 
+# Regelmäßige Aufgaben (Discord-Warteschlange, Berichte, Rollen-Sync) – Fehler dürfen das Update nicht stören
+php_run cron >>"$LOG" 2>&1 || true
+
 REQUESTED=0
 if [[ -f "$STORAGE/update/request" ]]; then
     REQUESTED=1
