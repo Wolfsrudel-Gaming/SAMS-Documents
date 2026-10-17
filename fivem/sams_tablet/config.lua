@@ -40,6 +40,10 @@ Config.Pharmacies = {
 Config.PharmacyBlip = { sprite = 51, color = 2, scale = 0.7 }
 Config.PharmacyDuration = 3000         -- ms Fortschrittsbalken beim Einlösen
 
+-- Fahndung: Kennzeichenabfrage per Befehl (nil = aus); nur für Konten mit dem Recht „Fahndungen einsehen“
+Config.WantedCommand = 'kennzeichen'
+Config.WantedRequiresDuty = true       -- nur im Dienst
+
 -- Dokument zeigen: maximale Entfernung zum anderen Spieler
 Config.ShowDistance = 3.0
 
@@ -78,4 +82,7 @@ Config.Text = {
     noPrescription = 'Du hast kein Rezept dabei.',
     redeeming = 'Rezept wird eingelöst …',
     redeemed = 'Erhalten: %s',
+    wantedNone = '%s: keine Fahndung.',
+    wantedNoVehicle = 'Kein Fahrzeug vor dir. Kennzeichen angeben: /kennzeichen ABC123',
+    wantedDuty = 'Fahndungsabfragen nur im Dienst.',
 }

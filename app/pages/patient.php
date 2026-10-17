@@ -122,6 +122,10 @@ ob_start(); ?>
     </div>
 </div>
 
+<?php foreach (wanted_for_record($p) as $w): ?>
+<div class="flash error wanted-alert"><strong>🚨 <?= $w['source'] === 'warrant' ? 'Offener Haftbefehl' : 'Zur Fahndung ausgeschrieben' ?>:</strong> <?= e(mb_strimwidth((string) $w['reason'], 0, 200, '…')) ?>
+    <span class="badge <?= (int) $w['danger'] >= 3 ? 'red' : 'orange' ?>"><?= e(WANTED_DANGER[(int) $w['danger']]) ?></span> <a href="<?= e(url('wanted')) ?>">Fahndung</a></div>
+<?php endforeach; ?>
 <?php if (trim((string) $p['allergies']) !== '' || trim((string) $p['flags']) !== '' || !empty($extra['danger'])): ?>
 <div class="alertbar">
     <?php if (!empty($extra['danger'])): ?><div><strong><?= icon('warn') ?> Gefährdungshinweise:</strong> <?php foreach ((array) $extra['danger'] as $dk): ?><span class="badge red"><?= e(DANGER_FLAGS[$dk] ?? $dk) ?></span> <?php endforeach; ?></div><?php endif; ?>

@@ -19,6 +19,7 @@ if (is_post() && post('action') === 'revoke') {
     } elseif ($doc['status'] !== 'revoked') {
         q('UPDATE documents SET status = ?, revoked_reason = ?, revoked_by = ?, revoked_at = ? WHERE id = ?', ['revoked', $reason, $me['id'], now(), $id]);
         audit('document.revoke', 'document', $id, $reason);
+        wanted_close_for_document($id, 'Dokument storniert: ' . $reason);
         notify_webhook('documents', log_embed('🚫 ' . ($type['title'] ?? 'Dokument') . ' storniert', '', 0xb3261e, [
             ['name' => 'Nummer', 'value' => $doc['number'], 'inline' => true], ['name' => 'Storniert von', 'value' => user_display($me), 'inline' => true]]));
         flash('success', 'Dokument wurde storniert. Die Echtheitsprüfung zeigt es ab sofort als ungültig an.');
@@ -61,14 +62,28 @@ if (is_post() && in_array(post('action'), ['share', 'share_revoke'], true)) {
         }
         redirect(url('document', ['id' => $id]) . '#shares');
     }
-    $kind = post('kind') === 'user' ? 'user' : 'link';
+    $kind = in_array(post('kind'), ['user', 'faction'], true) ? (string) post('kind') : 'link';
+    $targetFaction = $kind === 'faction' ? faction_by_id((int) post('target_faction_id')) : null;
     $agency = array_key_exists((string) post('agency'), SHARE_AGENCIES) ? (string) post('agency') : 'other';
     $hours = array_key_exists((string) post('hours'), SHARE_DURATIONS) ? (int) post('hours') : 168;
     $target = $kind === 'user' ? one('SELECT * FROM users WHERE id = ? AND active = 1', [(int) post('user_id')]) : null;
     if ($doc['status'] === 'revoked') {
         flash('error', 'Stornierte Dokumente können nicht freigegeben werden.');
-    } elseif ($kind === 'user' && (!$target || !in_array('documents.shared_view', user_permissions($target), true))) {
+    } elseif ($kind === 'user' && (!$target || ((int) $target['faction_id'] === fid() && !in_array('documents.shared_view', user_permissions($target), true)))) {
         flash('error', 'Bitte ein Konto wählen, das freigegebene Dokumente ansehen darf.');
+    } elseif ($kind === 'faction' && (!$targetFaction || (int) $targetFaction['id'] === fid() || !$targetFaction['active'])) {
+        flash('error', 'Bitte eine andere Behörde wählen.');
+    } elseif ($kind === 'faction') {
+        $hoursF = array_key_exists((string) post('hours'), SHARE_DURATIONS) ? (int) post('hours') : 168;
+        insert('document_shares', ['document_id' => $id, 'kind' => 'faction', 'target_faction_id' => $targetFaction['id'], 'agency' => (string) $targetFaction['code'],
+            'recipient' => mb_substr(trim((string) post('recipient')) ?: $targetFaction['name'], 0, 190), 'purpose' => mb_substr(trim((string) post('purpose')), 0, 190),
+            'expires_at' => $hoursF > 0 ? date('Y-m-d H:i:s', time() + $hoursF * 3600) : null, 'created_by' => $me['id'], 'created_at' => now()]);
+        audit('document.share', 'document', $id, $doc['number'] . ' → ' . $targetFaction['name']);
+        $prev = fid();
+        set_faction_context((int) $targetFaction['id']);
+        notify_users_with('documents.view', 'share', 'Dokument von ' . (faction_by_id($prev)['short'] ?? '') . ' freigegeben: ' . ($type['title'] ?? 'Dokument') . ' ' . $doc['number'], url('shared', ['id' => $id]));
+        set_faction_context($prev);
+        flash('success', 'Dokument für ' . $targetFaction['name'] . ' freigegeben.');
     } else {
         $recipient = trim((string) post('recipient')) ?: ($target ? user_display($target) : '');
         $token = create_share($doc, $kind, $target ? (int) $target['id'] : null, $agency, $recipient, trim((string) post('purpose')), $hours);
@@ -312,7 +327,8 @@ ob_start(); ?>
 <?php if (can('documents.share')):
     $shares = all('SELECT s.*, u.name AS user_name, c.name AS creator FROM document_shares s LEFT JOIN users u ON u.id = s.user_id
         LEFT JOIN users c ON c.id = s.created_by WHERE s.document_id = ? ORDER BY s.id DESC', [$id]);
-    $shareAccounts = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 ORDER BY name'), fn($u) => in_array('documents.shared_view', user_permissions($u), true)));
+    $shareAccounts = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 AND ' . fw() . ' ORDER BY name'), fn($u) => in_array('documents.shared_view', user_permissions($u), true)));
+    $shareFactions = other_factions();
     $newShareUrl = $_SESSION['new_share_url'] ?? null;
     unset($_SESSION['new_share_url']); ?>
 <section class="card no-print" id="shares">
@@ -326,8 +342,8 @@ ob_start(); ?>
         <thead><tr><th>Empfänger</th><th>Art</th><th>Gültig bis</th><th class="right">Abrufe</th><th>Status</th><th></th></tr></thead>
         <tbody>
         <?php foreach ($shares as $sh): $active = share_active($sh); ?>
-            <tr><td><strong><?= e(SHARE_AGENCIES[$sh['agency']] ?? $sh['agency']) ?></strong><?= $sh['recipient'] ? '<br><small>' . e($sh['recipient']) . '</small>' : '' ?><?= $sh['purpose'] ? '<br><small class="muted">' . e($sh['purpose']) . '</small>' : '' ?></td>
-                <td class="small"><?= $sh['kind'] === 'user' ? 'Konto ' . e($sh['user_name']) : 'Link' ?><br><span class="muted">von <?= e($sh['creator']) ?>, <?= e(fmt_datetime($sh['created_at'])) ?></span></td>
+            <tr><td><strong><?= e($sh['kind'] === 'faction' ? (faction_by_id((int) $sh['target_faction_id'])['name'] ?? $sh['recipient']) : (SHARE_AGENCIES[$sh['agency']] ?? $sh['agency'])) ?></strong><?= $sh['recipient'] ? '<br><small>' . e($sh['recipient']) . '</small>' : '' ?><?= $sh['purpose'] ? '<br><small class="muted">' . e($sh['purpose']) . '</small>' : '' ?></td>
+                <td class="small"><?= $sh['kind'] === 'user' ? 'Konto ' . e($sh['user_name']) : ($sh['kind'] === 'faction' ? 'Behörde' : 'Link') ?><br><span class="muted">von <?= e($sh['creator']) ?>, <?= e(fmt_datetime($sh['created_at'])) ?></span></td>
                 <td class="small"><?= $sh['expires_at'] ? e(fmt_datetime($sh['expires_at'])) : 'unbegrenzt' ?></td>
                 <td class="right small"><?= (int) $sh['views'] ?><?= $sh['last_viewed_at'] ? '<br><span class="muted">' . e(fmt_datetime($sh['last_viewed_at'])) . '</span>' : '' ?></td>
                 <td><?= $active ? '<span class="badge green">aktiv</span>' : '<span class="badge grey">' . ($sh['revoked'] ? 'widerrufen' : 'abgelaufen') . '</span>' ?></td>
@@ -342,10 +358,12 @@ ob_start(); ?>
         <form method="post" class="form-grid">
             <?= csrf_field() ?><input type="hidden" name="action" value="share">
             <div class="field w-full"><div class="choices">
-                <label class="choice"><input type="radio" name="kind" value="link" checked> Geheimer Link (z. B. für Ermittlungsakte)</label>
+                <?php if ($shareFactions): ?><label class="choice"><input type="radio" name="kind" value="faction" checked> An eine Behörde im System (alle Berechtigten dort)</label><?php endif; ?>
+                <label class="choice"><input type="radio" name="kind" value="link"<?= $shareFactions ? '' : ' checked' ?>> Geheimer Link (z. B. für Ermittlungsakte)</label>
                 <label class="choice"><input type="radio" name="kind" value="user"<?= $shareAccounts ? '' : ' disabled' ?>> An ein Behördenkonto<?= $shareAccounts ? '' : ' (keine Konten mit dem Recht „Freigegebene Dokumente ansehen“)' ?></label>
             </div></div>
-            <div class="field w-half"><label>Stelle</label><select name="agency"><?php foreach (SHARE_AGENCIES as $k => $l): ?><option value="<?= e($k) ?>"><?= e($l) ?></option><?php endforeach; ?></select></div>
+            <?php if ($shareFactions): ?><div class="field w-half"><label>Behörde (bei „An eine Behörde“)</label><select name="target_faction_id"><?php foreach ($shareFactions as $sf): ?><option value="<?= (int) $sf['id'] ?>"><?= e($sf['name']) ?></option><?php endforeach; ?></select></div><?php endif; ?>
+            <div class="field w-half"><label>Stelle (bei Link/Konto)</label><select name="agency"><?php foreach (SHARE_AGENCIES as $k => $l): ?><option value="<?= e($k) ?>"><?= e($l) ?></option><?php endforeach; ?></select></div>
             <div class="field w-half"><label>Gültigkeit</label><select name="hours"><?php foreach (SHARE_DURATIONS as $k => $l): ?><option value="<?= e($k) ?>"<?= selected($k, '168') ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
             <?php if ($shareAccounts): ?><div class="field w-half"><label>Konto (nur bei „An ein Behördenkonto“)</label><select name="user_id"><option value="">–</option><?php foreach ($shareAccounts as $u): ?><option value="<?= (int) $u['id'] ?>"><?= e(user_display($u)) ?></option><?php endforeach; ?></select></div><?php endif; ?>
             <div class="field w-half"><label>Empfänger/in</label><input name="recipient" maxlength="190" placeholder="z. B. Detective J. Ramirez, Badge 4521"></div>

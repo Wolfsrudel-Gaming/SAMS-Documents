@@ -23,6 +23,8 @@
  *   duty_status    {token}                                         → im Dienst? seit wann?
  *   rx_check       {tokens: [sams_token, …]}                       → Rezepte mit Positionen und Einlösbarkeit
  *   rx_redeem      {token, license, player}                        → Rezept einlösen, Items für ox_inventory
+ *   wanted_check   {plate? | citizen_id?}                          → offene Fahndungen/Haftbefehle (Kennzeichen-/Personenabfrage)
+ *   person_check   {citizen_id}                                    → Fahndung, Führerschein-/Waffenschein-Status, gültige Erlaubnisse
  */
 declare(strict_types=1);
 define('SAMS_IGNORE_MAINTENANCE', true);
@@ -246,6 +248,42 @@ switch ($action) {
         }
         respond(['ok' => true, 'number' => $doc['number'], 'notes' => $notes,
             'items' => array_map(fn($g) => ['item' => $g['item'], 'count' => $g['count'], 'name' => $g['name']], $given)]);
+        // no break
+
+    // ------------------------------------------------- Polizei-Abfragen
+    case 'wanted_check':
+        // Aus dem Spiel (mit Tablet-Anmeldung) nur für Berechtigte; Server-Skripte ohne Token vertraut der API-Schlüssel
+        if ($in('token') !== '') {
+            $tu = $tokenUser();
+            if (!$tu || !in_array('wanted.view', user_permissions($tu[1]), true)) {
+                respond(['ok' => false, 'error' => 'Keine Berechtigung für Fahndungsabfragen.'], 403);
+            }
+        }
+        $hits = wanted_lookup($in('citizen_id'), $in('plate'));
+        respond(['ok' => true, 'wanted' => $hits !== [], 'entries' => array_map(fn($w) => [
+            'kind' => $w['kind'], 'name' => $w['name'], 'citizen_id' => $w['citizen_id'], 'plate' => $w['plate'], 'vehicle' => $w['vehicle'],
+            'reason' => mb_strimwidth((string) $w['reason'], 0, 240, '…'), 'danger' => (int) $w['danger'], 'danger_label' => WANTED_DANGER[(int) $w['danger']],
+            'warrant' => $w['source'] === 'warrant', 'agency' => faction_by_id((int) $w['faction_id'])['short'] ?? '', 'since' => fmt_date($w['created_at']),
+        ], $hits)]);
+        // no break
+    case 'person_check':
+        $cid = $in('citizen_id');
+        if ($cid === '') {
+            respond(['ok' => false, 'error' => 'citizen_id fehlt'], 400);
+        }
+        $licenses = ['driver' => '', 'weapon' => ''];
+        foreach (all("SELECT extra FROM patients WHERE citizen_id = ? AND merged_into IS NULL AND faction_id IN (" . implode(',', faction_ids_of_kind('police')) . ')', [$cid]) as $r) {
+            $x = json_decode((string) $r['extra'], true) ?: [];
+            $licenses['driver'] = $licenses['driver'] ?: (string) ($x['license_driver'] ?? '');
+            $licenses['weapon'] = $licenses['weapon'] ?: (string) ($x['license_weapon'] ?? '');
+        }
+        $permits = all("SELECT d.type, d.number, d.valid_until, d.faction_id FROM documents d JOIN patients p ON p.id = d.patient_id
+            WHERE p.citizen_id = ? AND d.status = 'valid' AND d.type IN ('pd_waffenschein', 'gov_genehmigung') AND (d.valid_until = '' OR d.valid_until >= ?)", [$cid, date('Y-m-d')]);
+        $hits = wanted_lookup($cid);
+        respond(['ok' => true, 'wanted' => $hits !== [], 'warrant' => (bool) array_filter($hits, fn($w) => $w['source'] === 'warrant'),
+            'danger' => $hits ? max(array_map(fn($w) => (int) $w['danger'], $hits)) : 0,
+            'license_driver' => LICENSE_STATES[$licenses['driver']] ?? 'unbekannt', 'license_weapon' => LICENSE_STATES[$licenses['weapon']] ?? 'unbekannt',
+            'permits' => array_map(fn($d) => ['title' => doc_type($d['type'])['title'] ?? $d['type'], 'number' => $d['number'], 'valid_until' => fmt_date($d['valid_until'])], $permits)]);
         // no break
 
     default:

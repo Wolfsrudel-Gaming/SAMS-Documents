@@ -295,3 +295,32 @@ RegisterNetEvent('sams:document:show', function(target, token, variant, label)
         })
     end
 end)
+
+-- ------------------------------------------------------------- Fahndung --
+
+--- Kennzeichen oder Bürger-ID abfragen (nur angemeldete Berechtigte, z. B. Polizei im Dienst).
+lib.callback.register('sams:wanted:check', function(src, query)
+    if type(query) ~= 'table' then return { error = 'Ungültige Abfrage.' } end
+    local s = getSession(src)
+    if not s then return { error = Config.Text.dutyLogin } end
+    if Config.WantedRequiresDuty and not onDuty[src] then
+        return { error = Config.Text.wantedDuty }
+    end
+    local data, status = Api.post('wanted_check', {
+        token = s.token,
+        plate = type(query.plate) == 'string' and query.plate:sub(1, 16) or nil,
+        citizen_id = type(query.citizen_id) == 'string' and query.citizen_id:sub(1, 64) or nil,
+    })
+    if not data then return { error = Config.Text.offline } end
+    if not data.ok then return { error = data.error or Config.Text.offline } end
+    return data
+end)
+
+--- Für andere Resourcen (z. B. eigenes MDT): offene Fahndungen zu Kennzeichen/Bürger-ID.
+exports('CheckWanted', function(plate, citizenId)
+    return Api.post('wanted_check', { plate = plate, citizen_id = citizenId })
+end)
+
+exports('CheckPerson', function(citizenId)
+    return Api.post('person_check', { citizen_id = citizenId })
+end)

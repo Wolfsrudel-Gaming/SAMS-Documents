@@ -16,6 +16,8 @@ const NOTIFY_KINDS = [
     'personnel' => 'Personalakte',
     'roster'    => 'Dienstplan',
     'stock'     => 'Medikamentenbestand',
+    'wanted'    => 'Fahndung',
+    'request'   => 'Behördenanfragen',
 ];
 
 /** Benachrichtigung an ein Konto (nicht an sich selbst). */

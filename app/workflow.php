@@ -184,6 +184,9 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
         $person ? ['name' => 'Für', 'value' => initials_name($person), 'inline' => true] : null,
         $cosigner ? ['name' => 'Freigegeben von', 'value' => user_display($cosigner), 'inline' => true] : null,
     ]))));
+    if ($type['key'] === 'doj_haftbefehl') {
+        wanted_from_warrant($id); // Fahndung bei allen Polizeibehörden
+    }
     notify_patient_dm($patient['id'] ?? null, 'Der ' . org('org_short') . ' hat für dich ein neues Dokument ausgestellt: ' . $type['title'] . ' (' . $number . '). Du findest es im Bürgerportal: ' . base_url() . '/portal.php?page=documents');
     return $id;
 }

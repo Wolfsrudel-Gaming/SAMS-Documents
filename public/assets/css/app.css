@@ -654,3 +654,11 @@ ul.plain li:last-child { border-bottom: 0; }
 .faction-switch option { color: #000; }
 .dot-color { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; }
 form.inline { display: inline; }
+
+/* Fahndung */
+.wanted-card { border-left: 4px solid #98a6b4; }
+.wanted-card.danger-2 { border-left-color: #d9822b; }
+.wanted-card.danger-3 { border-left-color: var(--danger); }
+.wanted-card.expired { opacity: .65; }
+.wanted-card h2 small { margin-left: .4rem; font-weight: normal; }
+.wanted-alert a { margin-left: .4rem; }

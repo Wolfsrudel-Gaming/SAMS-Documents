@@ -34,6 +34,10 @@ function tablet_login(string $username, string $password, string $code, string $
     if (!(int) $u['active']) {
         return ['status' => 'inactive', 'message' => 'Dieses Konto ist gesperrt.'];
     }
+    if (empty($u['is_superadmin']) && empty(faction_by_id((int) ($u['faction_id'] ?? 1))['active'])) {
+        return ['status' => 'inactive', 'message' => 'Deine Fraktion ist derzeit deaktiviert.'];
+    }
+    set_faction_context((int) ($u['faction_id'] ?? 1));
     if (!empty($u['totp_enabled'])) {
         if ($code === '') {
             return ['status' => '2fa', 'message' => 'Bitte den Code aus deiner Authenticator-App eingeben.'];
@@ -93,6 +97,9 @@ function tablet_user_info(array $u): array
         'can_manage_printers' => in_array('printers.manage', $perms, true),
         'can_duty' => in_array('duty.clock', $perms, true),
         'on_duty' => in_array('duty.clock', $perms, true) && duty_open_session((int) $u['id']) !== null,
+        'faction' => (string) (faction_by_id((int) ($u['faction_id'] ?? 1))['short'] ?? ''),
+        'faction_kind' => faction_kind((int) ($u['faction_id'] ?? 1)),
+        'can_wanted' => in_array('wanted.view', $perms, true),
     ];
 }
 
