@@ -107,10 +107,10 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - Neue Rechte: `patients.archive`, `cases.manage`, `entries.all_departments`
 - *Offen für später:* Verknüpfung mit dem Bürgerportal (Etappe 6)
 
-### Etappe 3 – Dokumente *(Workflow v1.6.0, Abrechnung v1.7.0, Behördenfreigabe v1.8.0)*
-- Neue Dokumentarten: psychologisches Gutachten, Unterbringungsantrag, Impfnachweis, OP-Bericht,
+### Etappe 3 – Dokumente *(Workflow v1.6.0, Abrechnung v1.7.0, Behördenfreigabe v1.8.0, neue Dokumentarten v1.9.0)*
+- ✅ Neue Dokumentarten *(v1.9.0)*: psychologisches Gutachten, Unterbringungsantrag (5150), Impfnachweis, OP-Bericht,
   OP-Aufklärung/Einwilligung, Dienstausweis, Ausbildungsnachweis, Beförderungsurkunde, Abmahnung,
-  Kündigung, Arbeitsvertrag, weitere nach Bedarf
+  Kündigung, Arbeitsvertrag; Personaldokumente beziehen sich auf ein Personalkonto
 - ✅ **Entwürfe:** speichern (auch unvollständig), später fertigstellen, an Kollegen übergeben (mit Hinweis)
 - ✅ **Freigaben:** pro Dokumentart einstellbar unter *Verwaltung → Dokumentarten* („Freigabe nötig unterhalb Rang X, freigeben ab Rang Y“); Gegenzeichnung erscheint auf dem Dokument und in der Echtheitsprüfung, Zurückweisen mit Begründung
 - ✅ **Nachträge** statt Änderungen: eigenes Blatt am Dokument, in der Echtheitsprüfung mit Datum und Verfasser (ohne Inhalt)

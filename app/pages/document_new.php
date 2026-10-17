@@ -62,6 +62,11 @@ if (!can('documents.issue.' . $type['key'])) {
     forbidden('Dein Rang darf „' . $type['title'] . '“ nicht ausstellen.');
 }
 $cfg = doc_type_config($type['key']);
+$isEmployee = ($type['subject'] ?? '') === 'employee';
+if ($isEmployee) {
+    $patient = null;
+    $case = null;
+}
 $approval = needs_approval($type['key'], $me);
 
 // Vorbelegung: Entwurf, Vorlage (?from=ID) oder Standardwerte
@@ -88,6 +93,10 @@ if ($patient && $type['key'] === 'au' && empty($data['employer'])) {
     $data['employer'] = $patient['employer'];
 }
 
+// Personaldokumente: betroffenes Konto
+$employees = $isEmployee ? all('SELECT * FROM users WHERE active = 1 ORDER BY name') : [];
+$employeeId = (int) ($data['_employee']['id'] ?? ($_GET['employee'] ?? 0));
+
 // Kolleg/innen, an die ein Entwurf übergeben werden kann (dürfen diese Dokumentart ausstellen)
 $colleagues = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 AND id <> ? ORDER BY name', [$me['id']]),
     fn($u) => in_array('documents.issue.' . $type['key'], user_permissions($u), true)));
@@ -108,7 +117,13 @@ if (is_post()) {
     if ($case && (int) post('patient_id') !== (int) $case['patient_id']) {
         $case = null; // anderer Patient gewählt: Fallzuordnung entfällt
     }
-    if (!$case) {
+    if ($isEmployee) {
+        $employeeId = (int) post('employee_id');
+        $emp = $employeeId ? one('SELECT * FROM users WHERE id = ? AND active = 1', [$employeeId]) : null;
+        if ($emp) {
+            $data['_employee'] = employee_snapshot($emp);
+        }
+    } elseif (!$case) {
         $patient = post('patient_id') ? one('SELECT * FROM patients WHERE id = ?', [(int) post('patient_id')]) : null;
         require_active_patient($patient);
     }
@@ -136,6 +151,9 @@ if (is_post()) {
         if ($type['patient'] === 'required' && !$patient) {
             $errors[] = 'Bitte eine Patientenakte auswählen.';
         }
+        if ($isEmployee && empty($data['_employee'])) {
+            $errors[] = 'Bitte die betroffene Person aus dem Personal auswählen.';
+        }
         if (!empty($data['au_since']) && !empty($data['au_until']) && $data['au_until'] < $data['au_since']) {
             $errors[] = 'Das Ende der Arbeitsunfähigkeit liegt vor dem Beginn.';
         }
@@ -154,7 +172,7 @@ if (is_post()) {
         }
         $preview = render_document([
             'id' => 0, 'type' => $type['key'], 'number' => 'ENTWURF', 'data' => $data,
-            'patient_snapshot' => patient_snapshot($patient) ?? [], 'issuer_snapshot' => $issuerSnap,
+            'patient_snapshot' => document_person_snapshot($patient, $data) ?? [], 'issuer_snapshot' => $issuerSnap,
             'verify_code' => 'ENTWURF0', 'status' => 'valid', 'issued_at' => now(),
         ], ['draft' => true]);
     } elseif ($action === 'save') {
@@ -219,6 +237,15 @@ ob_start(); ?>
     <?php if ($draft): ?><input type="hidden" name="draft_id" value="<?= (int) $draft['id'] ?>"><?php endif; ?>
     <?php if ($case): ?><input type="hidden" name="case_id" value="<?= (int) $case['id'] ?>">
         <div class="field w-full keep"><div class="flash success">Aus Fall <strong><?= e($case['number']) ?></strong> · <?= e($case['title']) ?><?= $draft ? '' : ' – Diagnose, Ort und Hergang wurden übernommen.' ?></div></div><?php endif; ?>
+    <?php if ($isEmployee): ?>
+    <h3 class="form-heading keep">Mitarbeiter/in <span class="req">*</span></h3>
+    <div class="field w-full keep">
+        <select name="employee_id" required>
+            <option value="">– bitte wählen –</option>
+            <?php foreach ($employees as $u): ?><option value="<?= (int) $u['id'] ?>"<?= selected($u['id'], $employeeId) ?>><?= e(user_display($u)) ?> · <?= e(user_rank_name($u)) ?><?= $u['badge_number'] ? ' · ' . e($u['badge_number']) : '' ?></option><?php endforeach; ?>
+        </select>
+    </div>
+    <?php else: ?>
     <h3 class="form-heading keep">Patient/in<?= $type['patient'] === 'required' ? ' <span class="req">*</span>' : ' (optional)' ?></h3>
     <div class="field w-full keep">
         <select name="patient_id" class="patient-select"<?= $type['patient'] === 'required' ? ' required' : '' ?>>
@@ -229,6 +256,7 @@ ob_start(); ?>
         </select>
         <div class="hint">Nicht dabei? <a href="<?= e(url('patient_edit')) ?>" target="_blank">Neue Akte anlegen</a> und Seite neu laden.</div>
     </div>
+    <?php endif; ?>
     <?php foreach ($type['fields'] as $f): ?>
         <?= render_field($f, isset($f['name']) ? ($data[$f['name']] ?? '') : null) ?>
     <?php endforeach; ?>

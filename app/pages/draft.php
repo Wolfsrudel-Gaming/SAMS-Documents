@@ -57,7 +57,7 @@ if ($draft['signature']) {
 }
 $preview = render_document([
     'id' => 0, 'type' => $draft['type'], 'number' => 'ENTWURF', 'data' => $data,
-    'patient_snapshot' => patient_snapshot($patient) ?? [], 'issuer_snapshot' => $issuerSnap,
+    'patient_snapshot' => document_person_snapshot($patient, $data) ?? [], 'issuer_snapshot' => $issuerSnap,
     'verify_code' => 'ENTWURF0', 'status' => 'valid', 'issued_at' => now(),
 ], ['draft' => true]);
 

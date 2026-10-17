@@ -436,6 +436,7 @@ function document_types(): array
         ],
     ];
 
+    $types = array_merge($types, document_types_extra());
     return $types;
 }
 
@@ -483,12 +484,30 @@ function datalists(): array
             'Anästhesie / Intensivmedizin', 'Notaufnahme', 'Radiologie', 'Psychiatrie / Psychotherapie', 'Psychologie', 'Gynäkologie',
             'Pädiatrie', 'HNO', 'Augenheilkunde', 'Dermatologie', 'Urologie', 'Rechtsmedizin', 'Physiotherapie', 'Zahnmedizin',
         ],
+        'vaccines' => [
+            'Boostrix (Tetanus, Diphtherie, Pertussis)', 'Td-pur (Tetanus, Diphtherie)', 'Tetanol pur (Tetanus)', 'Engerix-B (Hepatitis B)',
+            'Havrix (Hepatitis A)', 'Twinrix (Hepatitis A + B)', 'Influvac Tetra (Influenza)', 'Comirnaty (COVID-19)', 'Priorix (Masern, Mumps, Röteln)',
+            'Rabipur (Tollwut)', 'Typhim Vi (Typhus)', 'Stamaril (Gelbfieber)', 'Pneumovax 23 (Pneumokokken)',
+        ],
+        'ranks' => db_column_list('SELECT name FROM ranks ORDER BY level DESC'),
+        'qualifications' => db_column_list('SELECT name FROM qualifications ORDER BY name'),
+        'staff_departments' => db_column_list('SELECT name FROM departments WHERE active = 1 ORDER BY sort, name'),
         'services' => price_list() ? array_map('price_label', price_list()) : [
             'Notfalleinsatz Rettungswagen', 'Notarzteinsatz', 'Luftrettung (Helikopter)', 'Ambulante Erstversorgung', 'Ärztliche Untersuchung',
             'Wundversorgung / Naht', 'Gipsverband / Schienung', 'Röntgen', 'CT', 'Stationäre Behandlung (pro Tag)', 'Operation',
             'Ausstellung Attest', 'Tauglichkeitsuntersuchung', 'Blutentnahme auf behördliche Anordnung', 'Psychologisches Gutachten',
         ],
     ];
+}
+
+/** Einspaltige Liste aus der Datenbank (leer, falls die Tabelle noch fehlt). */
+function db_column_list(string $sql): array
+{
+    try {
+        return array_map(fn($row) => (string) reset($row), all($sql));
+    } catch (PDOException $e) {
+        return [];
+    }
 }
 
 function datalist_html(): string

@@ -83,6 +83,33 @@ function draft_inbox_count(): int
     return $n;
 }
 
+/** Angaben eines Personalkontos für Personaldokumente (Dienstausweis, Urkunde …). */
+function employee_snapshot(array $u): array
+{
+    $deps = all('SELECT d.name FROM departments d JOIN user_departments ud ON ud.department_id = d.id WHERE ud.user_id = ? ORDER BY d.sort, d.name', [$u['id']]);
+    $quals = all('SELECT q.name FROM qualifications q JOIN user_qualifications uq ON uq.qualification_id = q.id WHERE uq.user_id = ? ORDER BY q.name', [$u['id']]);
+    return [
+        'id' => (int) $u['id'], 'name' => $u['name'], 'title' => $u['title'], 'badge_number' => $u['badge_number'],
+        'doctor_number' => $u['doctor_number'], 'rank_name' => user_rank_name($u),
+        'departments' => implode(', ', array_column($deps, 'name')), 'qualifications' => implode(', ', array_column($quals, 'name')),
+        'since' => substr((string) $u['created_at'], 0, 10),
+    ];
+}
+
+/** Personendaten für Listen, Item-Namen und Echtheitsprüfung (Patient oder Mitarbeiter/in). */
+function document_person_snapshot(?array $patient, array $data): ?array
+{
+    if ($patient) {
+        return patient_snapshot($patient);
+    }
+    if (!empty($data['_employee']['name'])) {
+        $parts = preg_split('/\s+/', trim((string) $data['_employee']['name']));
+        $last = count($parts) > 1 ? array_pop($parts) : '';
+        return ['first_name' => implode(' ', $parts), 'last_name' => $last, 'employee' => true];
+    }
+    return null;
+}
+
 /** Live-Unterschrift aus dem Formular prüfen (PNG als Data-URL). */
 function clean_signature($raw): string
 {
@@ -115,7 +142,7 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
             'patient_id' => $patient['id'] ?? null,
             'case_id' => $case['id'] ?? null,
             'data' => json_encode($data, JSON_UNESCAPED_UNICODE),
-            'patient_snapshot' => json_encode(patient_snapshot($patient), JSON_UNESCAPED_UNICODE),
+            'patient_snapshot' => json_encode(document_person_snapshot($patient, $data), JSON_UNESCAPED_UNICODE),
             'issuer_snapshot' => json_encode($issuerSnap, JSON_UNESCAPED_UNICODE),
             'verify_code' => $code,
             'view_token' => bin2hex(random_bytes(20)),

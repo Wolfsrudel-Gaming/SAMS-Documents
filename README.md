@@ -27,12 +27,24 @@ mit Tinteneffekt, handschriftliche Unterschrift, Barcode und QR-Code zur Echthei
 | TB | Todesbescheinigung | A4-Formular, vertraulicher/nichtvertraulicher Teil | Arzt |
 | RE | Rechnung | A4-Brief mit Positionen, Summen, „BEZAHLT“-Stempel | Rettungsdienst |
 | SC | Allgemeines Schreiben | A4-Brief, optional mit Dienstsiegel | Rettungsdienst |
+| PG | Psychologisches Gutachten (Auftraggeber DOJ, Behörde …) | A4-Brief mit Fragestellung, Befund, Beurteilung, Ergebnis | Arzt |
+| UB | Antrag auf Unterbringung (5150-/5250-Hold) | A4-Formular mit Gründen, Tatsachen, Belehrung | Arzt |
+| IM | Impfbescheinigung | A5 gelb, zweisprachig, Charge als Etikett, Stempel je Impfung | Arzt |
+| OB | Operationsbericht | A4-Formular mit OP-Team, Zeiten, OPS, Verlauf | Arzt |
+| EW | Aufklärung und Einwilligung | A4 mit Risiken, Alternativen, Unterschrift Patient/in und Zeuge | Arzt |
+| DA | Dienstausweis | Scheckkarte (Vorder-/Rückseite) mit Foto/Initialen, Barcode, Hologramm | Personal |
+| BU | Beförderungs-/Ernennungs-/Ehrenurkunde | A4-Urkunde mit Goldrahmen und Siegel | Personal |
+| AN | Ausbildungs-/Qualifikationsnachweis | A4-Zertifikat | Personal |
+| AM | Abmahnung / Ermahnung | A4-Brief mit Empfangsbestätigung | Personal |
+| KD | Kündigung | A4-Brief mit Rückgabeliste und Empfangsbestätigung | Personal |
+| AV | Arbeitsvertrag | A4 mit Paragraphen, Unterschrift beider Seiten | Personal |
 
 \* Wer welches Dokument ausstellen darf, ist pro Rang frei einstellbar (*Verwaltung → Ränge & Rechte*). Die Spalte zeigt die Vorbelegung.
 
 Jedes Dokument erhält eine fortlaufende Nummer (z. B. `SAMS-AU-2026-00042`) und einen Prüfcode.
 Ausgestellte Dokumente sind **unveränderlich** (Patienten- und Ausstellerdaten werden eingefroren) und können nur
-**storniert** werden. Fehler korrigieren: stornieren → „Als Vorlage verwenden“ → neu ausstellen.
+**storniert** oder per **Nachtrag** ergänzt werden. Fehler korrigieren: Nachtrag schreiben oder stornieren → „Als Vorlage verwenden“ → neu ausstellen.
+Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt auf eine Patientenakte.
 
 **Ausgabe:** Drucken bzw. „Als PDF speichern“ im Browser (A4/A5/A6 werden in der richtigen Papiergröße erzeugt) oder
 **„Als Bild speichern“** (PNG, z. B. zum Weitergeben in Discord oder per In-Game-Handy).
