@@ -17,8 +17,8 @@ const CASE_KINDS = [
 
 function next_case_number(): string
 {
-    $base = setting('doc_prefix', 'SAMS') . '-F-' . date('Y') . '-';
-    $last = scalar('SELECT number FROM cases WHERE number LIKE ? ORDER BY id DESC LIMIT 1', [$base . '%']);
+    $base = doc_prefix() . '-F-' . date('Y') . '-';
+    $last = scalar('SELECT number FROM cases WHERE number LIKE ? AND ' . fw() . ' ORDER BY id DESC LIMIT 1', [$base . '%']);
     $n = $last ? ((int) substr((string) $last, strlen($base))) + 1 : 1;
     return $base . str_pad((string) $n, 5, '0', STR_PAD_LEFT);
 }

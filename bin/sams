@@ -168,7 +168,7 @@ switch ($cmd) {
         }
         // 3. Jede Dokumentart einmal mit Standardwerten rendern
         $u = ['id' => 0, 'name' => 'Selbsttest', 'title' => '', 'rank_name' => '', 'department' => '', 'badge_number' => '', 'doctor_number' => '', 'signature' => ''];
-        foreach (document_types() as $key => $t) {
+        foreach (document_types_all() as $key => $t) {
             $data = [];
             foreach ($t['fields'] as $f) {
                 if (isset($f['name'])) {
@@ -193,31 +193,35 @@ switch ($cmd) {
 
     case 'cron':
         duty_autoclose();
-        // Wochenbericht montags ab 8 Uhr für die Vorwoche, Monatsbericht am 1. ab 8 Uhr
-        if ((int) date('G') >= 8) {
-            if (setting('report_weekly', '0') === '1' && date('N') === '1' && setting('report_last_weekly') !== date('o-W')) {
-                [$f, $t, $label] = stats_period('lastweek');
-                notify_webhook('reports', stats_discord_embed(stats_collect($f, $t), $label));
-                save_setting('report_last_weekly', date('o-W'));
-                $out('Wochenbericht ' . $label . ' eingereiht.');
+        // Je Fraktion: Berichte (eigene Webhooks), Rollen-Sync (eigene Zuordnung), Dienstplan-Erinnerungen
+        each_faction(function (array $f) use ($out) {
+            $tag = count(factions()) > 1 ? '[' . ($f['short'] ?: $f['name']) . '] ' : '';
+            // Wochenbericht montags ab 8 Uhr für die Vorwoche, Monatsbericht am 1. ab 8 Uhr
+            if ((int) date('G') >= 8) {
+                if (setting('report_weekly', '0') === '1' && date('N') === '1' && setting('report_last_weekly') !== date('o-W')) {
+                    [$from, $to, $label] = stats_period('lastweek');
+                    notify_webhook('reports', stats_discord_embed(stats_collect($from, $to), $label));
+                    save_setting('report_last_weekly', date('o-W'));
+                    $out($tag . 'Wochenbericht ' . $label . ' eingereiht.');
+                }
+                if (setting('report_monthly', '0') === '1' && date('j') === '1' && setting('report_last_monthly') !== date('Y-m')) {
+                    [$from, $to, $label] = stats_period('lastmonth');
+                    notify_webhook('reports', stats_discord_embed(stats_collect($from, $to), $label));
+                    save_setting('report_last_monthly', date('Y-m'));
+                    $out($tag . 'Monatsbericht ' . $label . ' eingereiht.');
+                }
             }
-            if (setting('report_monthly', '0') === '1' && date('j') === '1' && setting('report_last_monthly') !== date('Y-m')) {
-                [$f, $t, $label] = stats_period('lastmonth');
-                notify_webhook('reports', stats_discord_embed(stats_collect($f, $t), $label));
-                save_setting('report_last_monthly', date('Y-m'));
-                $out('Monatsbericht ' . $label . ' eingereiht.');
+            // Rollen-Sync stündlich
+            if (discord_role_map() && time() - (int) setting('discord_last_sync_f' . $f['id'], '0') >= 3600) {
+                save_setting('discord_last_sync_f' . $f['id'], (string) time());
+                foreach (discord_sync_all() as $c) {
+                    $out($tag . 'Rollen-Sync: ' . $c);
+                }
             }
-        }
-        // Rollen-Sync stündlich
-        if (discord_role_map() && time() - (int) setting('discord_last_sync', '0') >= 3600) {
-            save_setting('discord_last_sync', (string) time());
-            foreach (discord_sync_all() as $c) {
-                $out('Rollen-Sync: ' . $c);
+            if ($r = roster_cron()) {
+                $out($tag . "Dienstplan: $r Erinnerung(en)/Warnung(en).");
             }
-        }
-        if ($r = roster_cron()) {
-            $out("Dienstplan: $r Erinnerung(en)/Warnung(en).");
-        }
+        });
         $n = discord_flush(100);
         if ($n) {
             $out("$n Discord-Nachricht(en) gesendet.");

@@ -3,7 +3,7 @@ defined('SAMS_ROOT') || exit;
 /** Rechnungsübersicht mit Status, Fälligkeit und Summen. */
 $status = in_array($_GET['status'] ?? '', ['open', 'paid', 'dunned', 'overdue', 'all'], true) ? $_GET['status'] : 'unpaid';
 $q = trim((string) ($_GET['q'] ?? ''));
-$where = "d.type = 'rechnung' AND d.status <> 'revoked'";
+$where = "d.type = 'rechnung' AND d.status <> 'revoked' AND " . fw('d');
 $params = [];
 if ($status === 'unpaid' || $status === 'overdue') {
     $where .= " AND d.pay_status IN ('open', 'dunned')";
@@ -24,7 +24,7 @@ foreach ($rows as $i => $r) {
 if ($status === 'overdue') {
     $rows = array_values(array_filter($rows, fn($r) => $r['due'] < date('Y-m-d')));
 }
-$sum = fn(string $st) => (int) scalar("SELECT COALESCE(SUM(amount_cents), 0) FROM documents WHERE type = 'rechnung' AND status <> 'revoked' AND pay_status = ?", [$st]) / 100;
+$sum = fn(string $st) => (int) scalar("SELECT COALESCE(SUM(amount_cents), 0) FROM documents WHERE type = 'rechnung' AND status <> 'revoked' AND pay_status = ? AND " . fw(), [$st]) / 100;
 $filters = ['unpaid' => 'Unbezahlt', 'overdue' => 'Überfällig', 'open' => 'Offen', 'dunned' => 'Gemahnt', 'paid' => 'Bezahlt', 'all' => 'Alle'];
 
 ob_start(); ?>

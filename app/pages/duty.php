@@ -17,12 +17,12 @@ if (is_post()) {
     }
     require_perm('duty.manage');
     $parse = fn(string $k) => preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', (string) post($k)) ? str_replace('T', ' ', (string) post($k)) . ':00' : null;
-    $target = one('SELECT * FROM users WHERE id = ?', [(int) post('user_id')]);
-    if ($action === 'end' && ($s = one('SELECT * FROM duty_sessions WHERE id = ? AND ended_at IS NULL', [(int) post('session_id')]))) {
+    $target = fone('users', (int) post('user_id'));
+    if ($action === 'end' && ($s = one('SELECT * FROM duty_sessions WHERE id = ? AND ended_at IS NULL AND ' . fw(), [(int) post('session_id')]))) {
         update('duty_sessions', (int) $s['id'], ['ended_at' => now(), 'end_source' => 'manual', 'edited_by' => $me['id']]);
         audit('duty.correct', 'user', (int) $s['user_id'], 'Schicht #' . $s['id'] . ' beendet');
         flash('success', 'Schicht beendet.');
-    } elseif ($action === 'delete' && ($s = one('SELECT * FROM duty_sessions WHERE id = ?', [(int) post('session_id')]))) {
+    } elseif ($action === 'delete' && ($s = one('SELECT * FROM duty_sessions WHERE id = ? AND ' . fw(), [(int) post('session_id')]))) {
         q('DELETE FROM duty_sessions WHERE id = ?', [$s['id']]);
         audit('duty.correct', 'user', (int) $s['user_id'], 'Schicht #' . $s['id'] . ' gelöscht (' . fmt_datetime($s['started_at']) . ')');
         flash('success', 'Schicht gelöscht.');
@@ -36,7 +36,7 @@ if (is_post()) {
             insert('duty_sessions', ['user_id' => $target['id'], 'started_at' => $start, 'ended_at' => $end, 'source' => 'manual', 'end_source' => 'manual', 'note' => $note, 'edited_by' => $me['id'], 'created_at' => now()]);
             audit('duty.correct', 'user', (int) $target['id'], 'Schicht nachgetragen ' . fmt_datetime($start) . ' – ' . fmt_datetime($end) . ($note !== '' ? ' (' . $note . ')' : ''));
             flash('success', 'Schicht nachgetragen.');
-        } elseif ($action === 'edit' && ($s = one('SELECT * FROM duty_sessions WHERE id = ?', [(int) post('session_id')]))) {
+        } elseif ($action === 'edit' && ($s = one('SELECT * FROM duty_sessions WHERE id = ? AND ' . fw(), [(int) post('session_id')]))) {
             update('duty_sessions', (int) $s['id'], ['started_at' => $start, 'ended_at' => $end, 'note' => $note, 'edited_by' => $me['id']]);
             audit('duty.correct', 'user', (int) $s['user_id'], 'Schicht #' . $s['id'] . ' geändert: ' . fmt_datetime($start) . ' – ' . fmt_datetime($end));
             flash('success', 'Schicht geändert.');
@@ -49,7 +49,7 @@ $week = week_start(preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($_GET['week'] ?
 $weekEnd = date('Y-m-d H:i:s', strtotime($week . ' +7 days'));
 $weekParam = substr($week, 0, 10);
 $userId = $manage ? (int) ($_GET['user'] ?? 0) : 0;
-$focus = $userId ? one('SELECT * FROM users WHERE id = ?', [$userId]) : $me;
+$focus = ($userId ? fone('users', $userId) : null) ?? $me;
 $open = duty_open_session((int) $me['id']);
 $myWeek = duty_totals($week, $weekEnd, (int) $focus['id'])[(int) $focus['id']] ?? 0;
 $weeks = [];
@@ -63,7 +63,7 @@ $onNow = can('duty.view') || $manage ? duty_on_now() : [];
 $team = [];
 if ($manage) {
     $totals = duty_totals($week, $weekEnd);
-    foreach (all('SELECT * FROM users WHERE active = 1 ORDER BY name') as $u) {
+    foreach (all('SELECT * FROM users WHERE active = 1 AND ' . fw() . ' ORDER BY name') as $u) {
         // Nur Personal, das stempeln darf (keine Behördenkonten)
         if (($totals[(int) $u['id']] ?? 0) > 0 || in_array('duty.clock', user_permissions($u), true)) {
             $team[] = $u + ['seconds' => $totals[(int) $u['id']] ?? 0];

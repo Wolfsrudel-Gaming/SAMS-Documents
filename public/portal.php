@@ -75,7 +75,7 @@ if ($c && is_post()) {
             insert('appointments', ['citizen_id' => $c['id'], 'patient_id' => $c['patient_id'], 'kind' => $kind,
                 'preferred' => mb_substr(trim((string) post('preferred')), 0, 190), 'note' => mb_substr(trim((string) post('note')), 0, 2000), 'created_at' => now()]);
             notify_webhook('portal', log_embed('📅 Terminanfrage: ' . $kind, ($c['ic_name'] ?: $c['discord_name']) . ($c['patient_id'] ? '' : ' (nicht verknüpft)') . ' · Wunsch: ' . (trim((string) post('preferred')) ?: '–'), 0x0b4f9c));
-            flash('success', 'Terminanfrage gesendet. Du siehst hier, sobald ' . setting('org_short', 'SAMS') . ' den Termin bestätigt.');
+            flash('success', 'Terminanfrage gesendet. Du siehst hier, sobald ' . org('org_short') . ' den Termin bestätigt.');
         }
         redirect($purl(['page' => 'appointments']));
     }
@@ -129,13 +129,13 @@ if (!isset($tabs[$page])) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bürgerportal · <?= e(org('org_short')) ?></title>
-<link rel="icon" href="<?= e(setting('logo', 'assets/img/logo.svg')) ?>">
+<link rel="icon" href="<?= e(faction_logo()) ?>">
 <link rel="stylesheet" href="assets/css/app.css?v=<?= e(SAMS_VERSION) ?>">
 <?= theme_style() ?>
 </head>
 <body class="no-nav portal">
 <header class="portal-head">
-    <div class="portal-brand"><img src="<?= e(setting('logo', 'assets/img/logo.svg')) ?>" alt=""><div><strong><?= e(org('org_name')) ?></strong><span>Bürgerportal</span></div></div>
+    <div class="portal-brand"><img src="<?= e(faction_logo()) ?>" alt=""><div><strong><?= e(org('org_name')) ?></strong><span>Bürgerportal</span></div></div>
     <?php if ($c): ?>
         <form method="post" action="<?= e($purl(['action' => 'logout'])) ?>" class="portal-user">
             <?php if ($c['avatar']): ?><img src="<?= e($c['avatar']) ?>" alt="" referrerpolicy="no-referrer"><?php endif; ?>

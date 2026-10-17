@@ -178,6 +178,7 @@ function document_types_extra(): array
             'patient'  => 'none',
             'subject'  => 'employee',
             'template' => 'dienstausweis',
+            'kinds'    => '*',
             'valid'    => 'valid_until',
             'fields'   => [
                 ['name' => 'function', 'label' => 'Funktion auf dem Ausweis', 'type' => 'text', 'placeholder' => 'leer = Rang des Mitarbeiters', 'width' => 'half'],
@@ -199,6 +200,7 @@ function document_types_extra(): array
             'patient'  => 'none',
             'subject'  => 'employee',
             'template' => 'befoerderung',
+            'kinds'    => '*',
             'fields'   => [
                 ['name' => 'new_rank', 'label' => 'Neuer Rang / neue Funktion', 'type' => 'text', 'required' => true, 'list' => 'ranks'],
                 ['name' => 'effective', 'label' => 'Mit Wirkung vom', 'type' => 'date', 'default' => 'today', 'required' => true, 'width' => 'half'],
@@ -218,6 +220,7 @@ function document_types_extra(): array
             'patient'  => 'none',
             'subject'  => 'employee',
             'template' => 'ausbildungsnachweis',
+            'kinds'    => '*',
             'valid'    => 'valid_until',
             'fields'   => [
                 ['name' => 'course', 'label' => 'Lehrgang / Qualifikation', 'type' => 'text', 'required' => true, 'list' => 'qualifications'],
@@ -242,6 +245,7 @@ function document_types_extra(): array
             'patient'  => 'none',
             'subject'  => 'employee',
             'template' => 'personalbrief',
+            'kinds'    => '*',
             'fields'   => [
                 ['name' => 'incident_date', 'label' => 'Vorfall am', 'type' => 'date', 'required' => true, 'width' => 'half'],
                 ['name' => 'level', 'label' => 'Art', 'type' => 'select', 'width' => 'half', 'default' => 'abmahnung', 'options' => [
@@ -263,6 +267,7 @@ function document_types_extra(): array
             'patient'  => 'none',
             'subject'  => 'employee',
             'template' => 'personalbrief',
+            'kinds'    => '*',
             'fields'   => [
                 ['name' => 'kind', 'label' => 'Art', 'type' => 'radio', 'required' => true, 'default' => 'ordentlich', 'options' => [
                     'ordentlich' => 'Ordentliche Kündigung', 'fristlos' => 'Außerordentliche (fristlose) Kündigung', 'aufhebung' => 'Bestätigung Aufhebung / Eigenkündigung']],
@@ -284,6 +289,7 @@ function document_types_extra(): array
             'patient'  => 'none',
             'subject'  => 'employee',
             'template' => 'arbeitsvertrag',
+            'kinds'    => '*',
             'fields'   => [
                 ['name' => 'position', 'label' => 'Tätigkeit / Rang', 'type' => 'text', 'required' => true, 'list' => 'ranks', 'width' => 'half'],
                 ['name' => 'department', 'label' => 'Abteilung', 'type' => 'text', 'list' => 'staff_departments', 'width' => 'half'],

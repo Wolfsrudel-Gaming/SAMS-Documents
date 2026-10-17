@@ -13,7 +13,7 @@ function visible_announcements(array $user, bool $includeArchived = false): arra
     $rows = all('SELECT a.*, u.name AS author, d.name AS department, r.read_at, r.acknowledged_at FROM announcements a
         LEFT JOIN users u ON u.id = a.created_by LEFT JOIN departments d ON d.id = a.department_id
         LEFT JOIN announcement_reads r ON r.announcement_id = a.id AND r.user_id = ?
-        WHERE ' . ($includeArchived ? '1=1' : 'a.archived = 0 AND (a.expires_at IS NULL OR a.expires_at > ?)') . '
+        WHERE ' . fw('a') . ' AND ' . ($includeArchived ? '1=1' : 'a.archived = 0 AND (a.expires_at IS NULL OR a.expires_at > ?)') . '
         ORDER BY a.pinned DESC, a.created_at DESC', $includeArchived ? [$user['id']] : [$user['id'], now()]);
     $deps = user_department_ids((int) $user['id']);
     $level = user_level($user);
@@ -50,7 +50,7 @@ function mark_announcement_read(int $annId, int $userId, bool $ack = false): voi
 /** Personen der Zielgruppe eines Aushangs (für die Übersicht der Bestätigungen). */
 function announcement_audience(array $a): array
 {
-    $users = all('SELECT * FROM users WHERE active = 1 ORDER BY name');
+    $users = all('SELECT * FROM users WHERE active = 1 AND ' . fw() . ' ORDER BY name');
     return array_values(array_filter($users, fn($u) => in_array('board.view', user_permissions($u), true)
         && announcement_for($a, user_department_ids((int) $u['id']), user_level($u))));
 }

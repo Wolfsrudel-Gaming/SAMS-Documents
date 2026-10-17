@@ -20,7 +20,7 @@ function roster_lock_hours(): int
 function roster_shifts(string $from, string $to): array
 {
     $shifts = all('SELECT s.*, d.name AS department FROM roster_shifts s LEFT JOIN departments d ON d.id = s.department_id
-        WHERE s.starts_at < ? AND s.ends_at > ? ORDER BY s.starts_at, s.title', [$to, $from]);
+        WHERE s.starts_at < ? AND s.ends_at > ? AND ' . fw('s') . ' ORDER BY s.starts_at, s.title', [$to, $from]);
     if (!$shifts) {
         return [];
     }
@@ -38,7 +38,7 @@ function roster_shifts(string $from, string $to): array
 
 function roster_shift(int $id): ?array
 {
-    $s = one('SELECT * FROM roster_shifts WHERE id = ?', [$id]);
+    $s = fone('roster_shifts', $id);
     if ($s) {
         $s['slots'] = all('SELECT * FROM roster_slots WHERE shift_id = ?', [$id]);
     }
@@ -103,7 +103,7 @@ function roster_cron(): int
     $n = 0;
     $soon = date('Y-m-d H:i:s', time() + 3600);
     foreach (all("SELECT r.user_id, s.* FROM roster_slots r JOIN roster_shifts s ON s.id = r.shift_id
-        WHERE r.reminded = 0 AND s.starts_at > ? AND s.starts_at <= ?", [now(), $soon]) as $r) {
+        WHERE r.reminded = 0 AND s.starts_at > ? AND s.starts_at <= ? AND " . fw('s'), [now(), $soon]) as $r) {
         q('UPDATE roster_slots SET reminded = 1 WHERE shift_id = ? AND user_id = ?', [$r['id'], $r['user_id']]);
         notify_user((int) $r['user_id'], 'roster', 'Deine Schicht beginnt um ' . fmt_date($r['starts_at'], 'H:i') . ' Uhr', url('roster', ['week' => substr(week_start($r['starts_at']), 0, 10)]), roster_label($r));
         $n++;
@@ -111,7 +111,7 @@ function roster_cron(): int
     // 24 Stunden vorher: Leitung über Unterbesetzung informieren (einmal pro Schicht)
     $day = date('Y-m-d H:i:s', time() + 86400);
     foreach (all('SELECT s.*, (SELECT COUNT(*) FROM roster_slots r WHERE r.shift_id = s.id) AS staff FROM roster_shifts s
-        WHERE s.staff_warned = 0 AND s.starts_at > ? AND s.starts_at <= ?', [now(), $day]) as $s) {
+        WHERE s.staff_warned = 0 AND s.starts_at > ? AND s.starts_at <= ? AND ' . fw('s'), [now(), $day]) as $s) {
         q('UPDATE roster_shifts SET staff_warned = 1 WHERE id = ?', [$s['id']]);
         if ((int) $s['staff'] < (int) $s['min_staff']) {
             notify_users_with('roster.manage', 'roster', 'Unterbesetzt: ' . roster_label($s) . ' (' . $s['staff'] . '/' . $s['min_staff'] . ')',

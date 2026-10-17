@@ -2,7 +2,7 @@
 defined('SAMS_ROOT') || exit;
 $ranks = all('SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.rank_id = r.id AND u.active = 1) AS members,
     (SELECT COUNT(*) FROM rank_permissions p WHERE p.rank_id = r.id) AS perm_count
-    FROM ranks r ORDER BY r.level DESC, r.name');
+    FROM ranks r WHERE ' . fw('r') . ' ORDER BY r.level DESC, r.name');
 $myLevel = user_level(current_user());
 $total = count(all_permissions());
 

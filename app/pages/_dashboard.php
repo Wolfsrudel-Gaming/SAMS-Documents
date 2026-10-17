@@ -2,7 +2,7 @@
 <div class="page-head">
     <div>
         <h1>Guten <?= (int) date('G') < 11 ? 'Morgen' : ((int) date('G') < 18 ? 'Tag' : 'Abend') ?>, <?= e(user_display($me)) ?></h1>
-        <p class="muted"><?= e(setting('org_name', 'San Andreas Medical Services')) ?> · <?= e(fmt_date(date('Y-m-d'), 'l, d.m.Y')) ?></p>
+        <p class="muted"><?= e(org('org_name')) ?> · <?= e(fmt_date(date('Y-m-d'), 'l, d.m.Y')) ?></p>
     </div>
     <div class="btn-row">
         <?php if (can('patients.edit')): ?><a class="btn" href="<?= e(url('patient_edit')) ?>"><?= icon('plus') ?>Neue Patientenakte</a><?php endif; ?>

@@ -3,17 +3,17 @@ defined('SAMS_ROOT') || exit;
 /** Fallakte anlegen oder bearbeiten (Einsatz, Behandlung, Aufenthalt …). */
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
-$case = $id ? one('SELECT * FROM cases WHERE id = ?', [$id]) : null;
+$case = $id ? fone('cases', $id) : null;
 if ($id && !$case) {
     not_found('Fall nicht gefunden.');
 }
 $patientId = $case ? (int) $case['patient_id'] : (int) ($_GET['patient'] ?? 0);
-$patient = one('SELECT * FROM patients WHERE id = ?', [$patientId]);
+$patient = fone('patients', (int) $patientId);
 if (!$patient) {
     not_found('Patientenakte nicht gefunden.');
 }
 require_active_patient($patient);
-$departments = all('SELECT * FROM departments WHERE active = 1 ORDER BY sort, name');
+$departments = all('SELECT * FROM departments WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name');
 
 $data = $case ?? ['title' => '', 'kind' => 'notfall', 'department_id' => null, 'incident_at' => now(), 'location' => '', 'incident' => '', 'diagnosis' => '', 'summary' => ''];
 $errors = [];

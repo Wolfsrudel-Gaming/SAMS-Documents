@@ -27,17 +27,23 @@ function render_document(array $doc, array $opts = []): string
 
     // Briefkopf des Standorts: eingefroren im Dokument, bei Vorschauen aus der Auswahl im Formular
     $loc = empty($doc['id']) && !empty($d['_location']) ? location_snapshot($d['_location']) : ($u['location'] ?? null);
-    $html = with_location($loc, function () use ($type, $doc, $d, $p, $u, $draft, $copy, $uid, $opts) {
-        ob_start();
-        require SAMS_ROOT . '/app/templates/' . $type['template'] . '.php';
-        return ob_get_clean();
-    });
-
-    // Nachträge werden als eigenes Blatt angehängt (Original bleibt unverändert)
-    if (empty($opts['no_addenda'])) {
-        foreach (document_addenda((int) ($doc['id'] ?? 0)) as $i => $addendum) {
-            $html .= addendum_sheet($doc, $addendum, $i + 1);
+    // Briefkopf, Logo und Siegel der ausstellenden Fraktion (auch wenn eine andere Behörde das Dokument ansieht)
+    $prevFaction = fid();
+    set_faction_context((int) ($doc['faction_id'] ?? $prevFaction));
+    try {
+        $html = with_location($loc, function () use ($type, $doc, $d, $p, $u, $draft, $copy, $uid, $opts) {
+            ob_start();
+            require SAMS_ROOT . '/app/templates/' . $type['template'] . '.php';
+            return ob_get_clean();
+        });
+        // Nachträge werden als eigenes Blatt angehängt (Original bleibt unverändert)
+        if (empty($opts['no_addenda'])) {
+            foreach (document_addenda((int) ($doc['id'] ?? 0)) as $i => $addendum) {
+                $html .= addendum_sheet($doc, $addendum, $i + 1);
+            }
         }
+    } finally {
+        set_faction_context($prevFaction);
     }
 
     $classes = 'doc-wrap' . ($draft ? ' is-draft' : '') . (($doc['status'] ?? '') === 'revoked' ? ' is-revoked' : '');
@@ -105,6 +111,11 @@ function org(string $key): string
         'seal_text'   => 'SAN ANDREAS MEDICAL SERVICES',
         'currency'    => '$',
     ];
+    // Weitere Fraktionen: kein Rückgriff auf die Musterdaten des Rettungsdienstes
+    if (fid() !== 1) {
+        $f = current_faction();
+        $defaults = ['org_name' => $f['name'], 'org_short' => $f['short'] ?: $f['name'], 'seal_text' => mb_strtoupper($f['name']), 'currency' => '$', 'city' => 'Los Santos'];
+    }
     $loc = $GLOBALS['sams_location'] ?? null;
     if ($loc && isset(LOCATION_FIELDS[$key]) && trim((string) ($loc[$key] ?? '')) !== '') {
         return (string) $loc[$key];

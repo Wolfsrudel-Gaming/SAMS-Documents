@@ -1,0 +1,381 @@
+<?php
+declare(strict_types=1);
+defined('SAMS_ROOT') || exit;
+
+/**
+ * Mehrere Fraktionen in einer Installation: Rettungsdienst, Polizei, Justiz,
+ * Feuerwehr und Verwaltung. Jede Fraktion hat eigene Ränge, Abteilungen,
+ * Akten, Dokumente, Einstellungen (Briefkopf, Logo, Farben, Discord) und
+ * nutzt nur die Module, die zu ihr passen. Fraktion 1 ist die ursprüngliche.
+ *
+ * Der Fraktionskontext steht in $GLOBALS['sams_fid'] (gesetzt beim Laden des
+ * Benutzers, in API/Portal/Cron ausdrücklich). Der Hauptadministrator kann die
+ * Ansicht wechseln.
+ */
+
+/** Zusatzmodule; Grundfunktionen (Personal, Dienst, Wiki, Kommunikation …) haben alle. */
+const FACTION_MODULES = [
+    'records'  => 'Akten zu Personen mit Einträgen, Vorgängen und Anhängen',
+    'billing'  => 'Rechnungen bzw. Bußgelder mit Katalog',
+    'stock'    => 'Medikamentenbestand, BtM-Buch und Rezepte',
+    'wanted'   => 'Fahndung und Haftbefehle',
+    'portal'   => 'Bürgerportal (Termine, Anträge, Bewerbungen)',
+    'requests' => 'Behördenanfragen zwischen Fraktionen',
+];
+
+const FACTION_KINDS = [
+    'medical' => [
+        'label' => 'Rettungsdienst / Klinik', 'logo' => 'assets/img/logo.svg', 'color' => '#0b4f9c',
+        'modules' => ['records', 'billing', 'stock', 'portal', 'requests'],
+        'terms' => ['record' => 'Patientenakte', 'records' => 'Patientenakten', 'person' => 'Patient/in', 'persons' => 'Patienten',
+            'case' => 'Fall', 'cases' => 'Fälle', 'billing' => 'Rechnungen', 'catalog' => 'Gebührenordnung', 'staff' => 'Personal'],
+    ],
+    'police' => [
+        'label' => 'Polizei', 'logo' => 'assets/img/kinds/police.svg', 'color' => '#1d3a6e',
+        'modules' => ['records', 'billing', 'wanted', 'requests'],
+        'terms' => ['record' => 'Personenakte', 'records' => 'Personenakten', 'person' => 'Person', 'persons' => 'Personen',
+            'case' => 'Vorgang', 'cases' => 'Vorgänge', 'billing' => 'Bußgelder', 'catalog' => 'Bußgeld- und Strafkatalog', 'staff' => 'Personal'],
+    ],
+    'justice' => [
+        'label' => 'Justiz', 'logo' => 'assets/img/kinds/justice.svg', 'color' => '#5b3a1e',
+        'modules' => ['records', 'billing', 'wanted', 'requests'],
+        'terms' => ['record' => 'Personenakte', 'records' => 'Personenakten', 'person' => 'Beteiligte/r', 'persons' => 'Beteiligte',
+            'case' => 'Verfahren', 'cases' => 'Verfahren', 'billing' => 'Kostenrechnungen', 'catalog' => 'Kostenverzeichnis', 'staff' => 'Personal'],
+    ],
+    'fire' => [
+        'label' => 'Feuerwehr', 'logo' => 'assets/img/kinds/fire.svg', 'color' => '#a3161a',
+        'modules' => ['billing', 'requests'],
+        'terms' => ['record' => 'Akte', 'records' => 'Akten', 'person' => 'Betroffene/r', 'persons' => 'Betroffene',
+            'case' => 'Einsatz', 'cases' => 'Einsätze', 'billing' => 'Gebührenbescheide', 'catalog' => 'Gebührenordnung', 'staff' => 'Personal'],
+    ],
+    'government' => [
+        'label' => 'Verwaltung / Sonstige', 'logo' => 'assets/img/kinds/government.svg', 'color' => '#2f5d50',
+        'modules' => ['records', 'billing', 'requests'],
+        'terms' => ['record' => 'Bürgerakte', 'records' => 'Bürgerakten', 'person' => 'Bürger/in', 'persons' => 'Bürger',
+            'case' => 'Vorgang', 'cases' => 'Vorgänge', 'billing' => 'Gebührenbescheide', 'catalog' => 'Gebührenverzeichnis', 'staff' => 'Personal'],
+    ],
+];
+
+/**
+ * Rang-Vorlagen beim Anlegen einer Fraktion: [Name, Kürzel, Stufe, Farbe, Stufe der Rechte, Rollen für Dokumentarten].
+ * Stufen der Rechte: trainee < staff < senior < lead < chief.
+ */
+const FACTION_RANK_TEMPLATES = [
+    'medical' => [
+        ['Ärztliche Direktion / Chief', 'CHF', 90, '#7a1f2b', 'chief', ['medic', 'doctor', 'staff']],
+        ['Oberarzt / Oberärztin', 'OA', 70, '#0b4f9c', 'lead', ['medic', 'doctor', 'staff']],
+        ['Arzt / Ärztin', 'A', 50, '#1f6fb2', 'senior', ['medic', 'doctor']],
+        ['Notfallsanitäter/in', 'NFS', 30, '#c8102e', 'staff', ['medic']],
+        ['Rettungssanitäter/in', 'RS', 20, '#d9822b', 'staff', ['medic']],
+        ['Auszubildende/r', 'AZB', 10, '#64717f', 'trainee', []],
+    ],
+    'police' => [
+        ['Chief of Police', 'COP', 95, '#0d1f3c', 'chief', ['officer', 'lead', 'staff']],
+        ['Assistant Chief', 'AC', 90, '#1d3a6e', 'chief', ['officer', 'lead', 'staff']],
+        ['Captain', 'CPT', 80, '#28508f', 'lead', ['officer', 'lead', 'staff']],
+        ['Lieutenant', 'LT', 70, '#2f63ad', 'lead', ['officer', 'lead']],
+        ['Sergeant', 'SGT', 60, '#3a74c4', 'senior', ['officer', 'lead']],
+        ['Detective', 'DET', 55, '#4a6b8a', 'senior', ['officer']],
+        ['Senior Officer', 'SO', 40, '#5b84c8', 'staff', ['officer']],
+        ['Officer', 'OFC', 30, '#7096d1', 'staff', ['officer']],
+        ['Cadet', 'CDT', 10, '#64717f', 'trainee', []],
+    ],
+    'justice' => [
+        ['Präsident/in des Gerichts', 'PRÄS', 95, '#3d250f', 'chief', ['judge', 'prosecutor', 'clerk', 'staff']],
+        ['Richter/in', 'RI', 80, '#5b3a1e', 'lead', ['judge', 'clerk']],
+        ['Oberstaatsanwalt / -anwältin', 'OStA', 75, '#7a1f2b', 'lead', ['prosecutor', 'clerk']],
+        ['Staatsanwalt / -anwältin', 'StA', 60, '#9b2c3a', 'senior', ['prosecutor', 'clerk']],
+        ['Rechtsanwalt / -anwältin', 'RA', 40, '#2f5d50', 'staff', ['lawyer']],
+        ['Justizangestellte/r', 'JA', 30, '#64717f', 'staff', ['clerk']],
+        ['Referendar/in', 'REF', 10, '#8a96a3', 'trainee', []],
+    ],
+    'fire' => [
+        ['Fire Chief', 'FC', 95, '#5c0b0e', 'chief', ['fire', 'lead', 'staff']],
+        ['Battalion Chief', 'BC', 85, '#7d0f13', 'lead', ['fire', 'lead', 'staff']],
+        ['Captain', 'CPT', 70, '#a3161a', 'lead', ['fire', 'lead']],
+        ['Lieutenant', 'LT', 60, '#c0392b', 'senior', ['fire', 'lead']],
+        ['Engineer', 'ENG', 45, '#d35400', 'staff', ['fire']],
+        ['Firefighter', 'FF', 30, '#e67e22', 'staff', ['fire']],
+        ['Probationary Firefighter', 'PFF', 10, '#64717f', 'trainee', []],
+    ],
+    'government' => [
+        ['Bürgermeister/in', 'BGM', 95, '#1f3d34', 'chief', ['gov', 'lead', 'staff']],
+        ['Amtsleitung', 'AL', 75, '#2f5d50', 'lead', ['gov', 'lead', 'staff']],
+        ['Sachbearbeiter/in', 'SB', 40, '#3f7d6a', 'staff', ['gov']],
+        ['Auszubildende/r', 'AZB', 10, '#64717f', 'trainee', []],
+    ],
+];
+
+const FACTION_DEPARTMENT_TEMPLATES = [
+    'medical'    => [['Rettungsdienst', 'RD', '#c8102e'], ['Klinik', 'KLI', '#0b4f9c']],
+    'police'     => [['Streifendienst', 'PAT', '#1d3a6e'], ['Kriminalpolizei', 'CID', '#4a6b8a'], ['Verkehrspolizei', 'TRF', '#2f8f6f'], ['Spezialeinheit', 'SWAT', '#14202c'], ['Ausbildung', 'ACA', '#8a6d1d']],
+    'justice'    => [['Gericht', 'CRT', '#5b3a1e'], ['Staatsanwaltschaft', 'DA', '#7a1f2b'], ['Anwaltschaft', 'BAR', '#2f5d50'], ['Justizverwaltung', 'ADM', '#64717f']],
+    'fire'       => [['Brandbekämpfung', 'FIRE', '#a3161a'], ['Technische Hilfe', 'RES', '#d35400'], ['Vorbeugender Brandschutz', 'PREV', '#8a6d1d']],
+    'government' => [['Bürgeramt', 'BA', '#2f5d50'], ['Ordnungsamt', 'OA', '#5b6b2e']],
+];
+
+/** Rechte je Stufe (Dokumentrechte kommen aus den Rollen). Rechte nicht aktiver Module werden ausgefiltert. */
+function faction_tier_permissions(string $tier): array
+{
+    $trainee = ['patients.view', 'documents.view', 'duty.clock', 'duty.view', 'roster.view', 'roster.signup', 'training.view', 'wiki.view',
+        'board.view', 'messages.use', 'stock.view', 'wanted.view', 'requests.view'];
+    $staff = array_merge($trainee, ['patients.edit', 'entries.create', 'attachments.upload', 'cases.manage', 'documents.revoke.own', 'documents.print',
+        'documents.share', 'stock.dispense', 'wanted.manage', 'requests.manage']);
+    $senior = array_merge($staff, ['entries.confidential', 'documents.approve', 'documents.addendum', 'users.view', 'personnel.view', 'patients.archive']);
+    $lead = array_merge($senior, ['entries.edit_all', 'entries.all_departments', 'documents.revoke.all', 'documents.drafts_all', 'patients.merge',
+        'users.create', 'users.edit', 'users.password_reset', 'users.deactivate', 'users.sessions', 'personnel.edit', 'duty.manage', 'roster.manage',
+        'training.manage', 'wiki.edit', 'lists.manage', 'board.manage', 'invoices.manage', 'stock.manage', 'btm.manage', 'stats.view', 'audit.view',
+        'portal.manage', 'portal.applications', 'security.2fa_required']);
+    $chief = array_merge($lead, ['patients.delete', 'users.2fa_reset', 'personnel.confidential', 'ranks.manage', 'departments.manage',
+        'qualifications.manage', 'printers.manage', 'settings.manage', 'templates.manage', 'prices.manage', 'discord.manage', 'portal.link']);
+    return array_values(array_unique(['trainee' => $trainee, 'staff' => $staff, 'senior' => $senior, 'lead' => $lead, 'chief' => $chief][$tier] ?? $trainee));
+}
+
+// ------------------------------------------------------------------ Kontext
+
+/** Aktuelle Fraktion (Standard 1). */
+function fid(): int
+{
+    return (int) ($GLOBALS['sams_fid'] ?? 1);
+}
+
+function set_faction_context(int $id): void
+{
+    $GLOBALS['sams_fid'] = max(1, $id);
+}
+
+/** Fraktion nach dem Laden des Benutzers setzen (Hauptadministrator: gewählte Ansicht). */
+function faction_context_for_user(?array $u): void
+{
+    if (!$u) {
+        return;
+    }
+    $id = (int) ($u['faction_id'] ?? 1);
+    if (!empty($u['is_superadmin']) && !empty($_SESSION['faction_view']) && faction_by_id((int) $_SESSION['faction_view'])) {
+        $id = (int) $_SESSION['faction_view'];
+    }
+    set_faction_context($id);
+}
+
+function factions(bool $activeOnly = true, bool $reload = false): array
+{
+    static $cache = null;
+    if ($cache === null || $reload) {
+        try {
+            $cache = all('SELECT * FROM factions ORDER BY sort, id');
+        } catch (PDOException $e) {
+            $cache = [['id' => 1, 'code' => 'sams', 'name' => 'San Andreas Medical Services', 'kind' => 'medical', 'short' => 'SAMS', 'active' => 1, 'modules' => null, 'color' => '#0b4f9c']];
+        }
+    }
+    return $activeOnly ? array_values(array_filter($cache, fn($f) => (int) $f['active'] === 1)) : $cache;
+}
+
+function faction_by_id(int $id): ?array
+{
+    foreach (factions(false) as $f) {
+        if ((int) $f['id'] === $id) {
+            return $f + ['kind' => 'medical', 'short' => '', 'modules' => null];
+        }
+    }
+    return null;
+}
+
+function current_faction(): array
+{
+    return faction_by_id(fid()) ?? ['id' => 1, 'name' => 'San Andreas Medical Services', 'kind' => 'medical', 'short' => 'SAMS', 'modules' => null, 'code' => 'sams', 'active' => 1];
+}
+
+function faction_kind(?int $id = null): string
+{
+    $k = (string) (($id ? faction_by_id($id) : current_faction())['kind'] ?? 'medical');
+    return isset(FACTION_KINDS[$k]) ? $k : 'medical';
+}
+
+/** Aktive Zusatzmodule einer Fraktion (eigene Auswahl oder Vorgabe der Art). */
+function faction_modules(?int $id = null): array
+{
+    $f = $id ? faction_by_id($id) : current_faction();
+    $own = json_decode((string) ($f['modules'] ?? ''), true);
+    return is_array($own) ? array_values(array_intersect($own, array_keys(FACTION_MODULES))) : FACTION_KINDS[faction_kind($id)]['modules'];
+}
+
+function module_enabled(string $module, ?int $factionId = null): bool
+{
+    return in_array($module, faction_modules($factionId), true);
+}
+
+/** Begriff passend zur Fraktion (z. B. „Patientenakte“ / „Personenakte“). */
+function term(string $key, ?int $factionId = null): string
+{
+    return FACTION_KINDS[faction_kind($factionId)]['terms'][$key] ?? FACTION_KINDS['medical']['terms'][$key] ?? $key;
+}
+
+/** Modul, zu dem ein Recht gehört (null = Grundfunktion). */
+function permission_module(string $perm): ?string
+{
+    static $map = [
+        'patients.' => 'records', 'entries.' => 'records', 'cases.' => 'records', 'attachments.' => 'records',
+        'invoices.' => 'billing', 'prices.' => 'billing', 'stock.' => 'stock', 'btm.' => 'stock',
+        'wanted.' => 'wanted', 'portal.' => 'portal', 'requests.' => 'requests',
+    ];
+    foreach ($map as $prefix => $module) {
+        if (str_starts_with($perm, $prefix)) {
+            return $module;
+        }
+    }
+    return null;
+}
+
+/** Rechte auf die Module und Dokumentarten der aktuellen Fraktion beschränken. */
+function faction_filter_permissions(array $perms, ?int $factionId = null): array
+{
+    $modules = faction_modules($factionId);
+    $types = null;
+    return array_values(array_filter($perms, function ($p) use ($modules, &$types, $factionId) {
+        $m = permission_module($p);
+        if ($m !== null && !in_array($m, $modules, true)) {
+            return false;
+        }
+        if (str_starts_with($p, 'documents.issue.')) {
+            $types ??= document_types($factionId);
+            return isset($types[substr($p, 16)]);
+        }
+        return true;
+    }));
+}
+
+// ----------------------------------------------------------- Einstellungen
+
+/** Einstellungen, die jede Fraktion selbst hat (ohne Rückgriff auf Fraktion 1). */
+function faction_setting_scoped(string $key): bool
+{
+    static $keys = ['city', 'phone', 'fax', 'email', 'web', 'ik_number', 'bsnr', 'director', 'admin_head', 'bank', 'iban', 'bic', 'register',
+        'tax_id', 'seal_text', 'currency', 'doc_prefix', 'logo', 'discord_role_map', 'discord_duty_log', 'language', 'doc_type_config', 'roster_lock_hours'];
+    return in_array($key, $keys, true) || (bool) preg_match('/^(org_|theme_|webhook_|report_)/', $key);
+}
+
+/** Schlüssel in der Tabelle settings für die aktuelle Fraktion. */
+function faction_setting_key(string $key): string
+{
+    return fid() !== 1 && faction_setting_scoped($key) ? 'f' . fid() . ':' . $key : $key;
+}
+
+// --------------------------------------------------------------- Anlegen
+
+/** Neue Fraktion mit Rängen, Abteilungen, Briefkopf und Handbuch anlegen. Gibt die ID zurück. */
+function create_faction(string $name, string $short, string $kind, string $color = ''): int
+{
+    $kind = isset(FACTION_KINDS[$kind]) ? $kind : 'government';
+    $code = substr(custom_slug($short ?: $name), 0, 24) ?: 'fraktion';
+    while (scalar('SELECT id FROM factions WHERE code = ?', [$code])) {
+        $code .= '_' . random_int(2, 99);
+    }
+    $now = now();
+    db()->beginTransaction();
+    try {
+        $id = (int) insert('factions', ['code' => $code, 'name' => $name, 'short' => $short, 'kind' => $kind, 'color' => $color ?: FACTION_KINDS[$kind]['color'],
+            'active' => 1, 'sort' => (int) scalar('SELECT COALESCE(MAX(sort), 0) + 1 FROM factions'), 'created_at' => $now]);
+        factions(true, true); // neue Fraktion bekannt machen (Art, Module)
+        $prev = fid();
+        set_faction_context($id);
+        foreach (FACTION_RANK_TEMPLATES[$kind] as [$rname, $rshort, $level, $rcolor, $tier, $roles]) {
+            $rankId = insert('ranks', ['faction_id' => $id, 'name' => $rname, 'short' => $rshort, 'level' => $level, 'color' => $rcolor, 'description' => '', 'created_at' => $now, 'updated_at' => $now]);
+            $perms = faction_tier_permissions($tier);
+            foreach (document_types($id) as $key => $t) {
+                $role = $t['role'] ?? '';
+                // Für alle Fraktionen gültige Arten: Personaldokumente für die Leitung, Schreiben für alle außer Auszubildenden
+                $generic = ($t['kinds'] ?? null) === '*' && ($role === 'admin' ? in_array('staff', $roles, true) : $tier !== 'trainee');
+                if ($generic || in_array($role, $roles, true)) {
+                    $perms[] = 'documents.issue.' . $key;
+                }
+            }
+            foreach (array_unique(faction_filter_permissions($perms, $id)) as $p) {
+                insert('rank_permissions', ['rank_id' => $rankId, 'permission' => $p]);
+            }
+        }
+        foreach (FACTION_DEPARTMENT_TEMPLATES[$kind] as $i => [$dname, $dshort, $dcolor]) {
+            insert('departments', ['faction_id' => $id, 'name' => $dname, 'short' => $dshort, 'color' => $dcolor, 'description' => '', 'sort' => $i, 'active' => 1, 'created_at' => $now, 'updated_at' => $now]);
+        }
+        $identity = ['org_name' => $name, 'org_short' => $short ?: $name, 'doc_prefix' => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $short ?: $name), 0, 6)) ?: 'DOK',
+            'seal_text' => mb_strtoupper($name), 'logo' => FACTION_KINDS[$kind]['logo'], 'theme_primary' => $color ?: FACTION_KINDS[$kind]['color'], 'city' => 'Los Santos', 'currency' => '$'];
+        foreach ($identity as $k => $v) {
+            save_setting(faction_setting_key($k), (string) $v);
+        }
+        faction_seed_content($id, $kind);
+        set_faction_context($prev);
+        db()->commit();
+    } catch (Throwable $e) {
+        db()->rollBack();
+        throw $e;
+    }
+    setting('__reset');
+    return $id;
+}
+
+/** Wiki-Startseiten (Handbuch) für eine neue Fraktion. */
+function faction_seed_content(int $id, string $kind): void
+{
+    $now = now();
+    $pages = require SAMS_ROOT . '/database/content/handbuch_generic.php';
+    $first = true;
+    foreach ($pages[$kind] ?? ($kind === 'medical' ? require SAMS_ROOT . '/database/content/handbuch.php' : $pages['_all']) as $title => $content) {
+        if (!scalar('SELECT id FROM wiki_pages WHERE faction_id = ? AND slug = ?', [$id, wiki_slug($title)])) {
+            insert('wiki_pages', ['faction_id' => $id, 'slug' => wiki_slug($title), 'title' => $title, 'category' => 'Handbuch', 'content' => $content,
+                'pinned' => $first ? 1 : 0, 'created_at' => $now, 'updated_at' => $now]);
+        }
+        $first = false;
+    }
+}
+
+// ------------------------------------------------------------ Datentrennung
+
+/** SQL-Bedingung „gehört zur aktuellen Fraktion“ (Ganzzahl, daher sicher eingebettet). */
+function fw(string $alias = ''): string
+{
+    return ($alias !== '' ? $alias . '.' : '') . 'faction_id = ' . fid();
+}
+
+/** Datensatz der aktuellen Fraktion per ID (null, wenn er einer anderen gehört). */
+function fone(string $table, int $id): ?array
+{
+    return one("SELECT * FROM $table WHERE id = ? AND " . fw(), [$id]);
+}
+
+/** Aufgabe für jede aktive Fraktion im jeweiligen Kontext ausführen (Cron). */
+function each_faction(callable $fn): void
+{
+    $prev = fid();
+    foreach (factions() as $f) {
+        set_faction_context((int) $f['id']);
+        try {
+            $fn($f);
+        } finally {
+            set_faction_context($prev);
+        }
+    }
+}
+
+/** IDs aller Fraktionen einer Art (z. B. alle Rettungsdienste). */
+function faction_ids_of_kind(string $kind): array
+{
+    $ids = array_map(fn($f) => (int) $f['id'], array_filter(factions(false), fn($f) => ($f['kind'] ?? 'medical') === $kind));
+    return $ids ?: [0];
+}
+
+function medical_faction_ids(): array
+{
+    return faction_ids_of_kind('medical');
+}
+
+/** Logo der aktuellen Fraktion (eigenes oder das Symbol ihrer Art). */
+function faction_logo(): string
+{
+    return (string) setting('logo', FACTION_KINDS[faction_kind()]['logo']);
+}
+
+/** Präfix für Dokument- und Fallnummern. */
+function doc_prefix(): string
+{
+    $short = preg_replace('/[^A-Za-z0-9]/', '', (string) (current_faction()['short'] ?? ''));
+    return (string) setting('doc_prefix', fid() === 1 ? 'SAMS' : (strtoupper($short) ?: 'DOK'));
+}

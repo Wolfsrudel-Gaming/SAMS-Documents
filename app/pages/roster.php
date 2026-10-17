@@ -111,7 +111,7 @@ if (is_post()) {
         q('DELETE FROM roster_shifts WHERE id = ?', [$s['id']]);
         audit('roster.delete', 'roster', (int) $s['id'], roster_label($s));
         flash('success', 'Schicht gelöscht.');
-    } elseif ($action === 'assign' && $s && ($u = one('SELECT * FROM users WHERE id = ? AND active = 1', [(int) post('user_id')]))) {
+    } elseif ($action === 'assign' && $s && ($u = one('SELECT * FROM users WHERE id = ? AND active = 1 AND ' . fw(), [(int) post('user_id')]))) {
         $err = roster_assign($s, (int) $u['id'], true);
         if ($err) {
             flash('error', user_display($u) . ': ' . $err);
@@ -129,10 +129,10 @@ if (is_post()) {
         // Schichten der Vorwoche ohne Einteilung übernehmen (bereits vorhandene gleiche Zeiten werden übersprungen)
         $prev = date('Y-m-d H:i:s', strtotime($week . ' -7 days'));
         $n = 0;
-        foreach (all('SELECT * FROM roster_shifts WHERE starts_at >= ? AND starts_at < ?', [$prev, $week]) as $old) {
+        foreach (all('SELECT * FROM roster_shifts WHERE starts_at >= ? AND starts_at < ? AND ' . fw(), [$prev, $week]) as $old) {
             $start = date('Y-m-d H:i:s', strtotime($old['starts_at'] . ' +7 days'));
             $end = date('Y-m-d H:i:s', strtotime($old['ends_at'] . ' +7 days'));
-            if (!scalar('SELECT COUNT(*) FROM roster_shifts WHERE starts_at = ? AND ends_at = ? AND title = ?', [$start, $end, $old['title']])) {
+            if (!scalar('SELECT COUNT(*) FROM roster_shifts WHERE starts_at = ? AND ends_at = ? AND title = ? AND ' . fw(), [$start, $end, $old['title']])) {
                 insert('roster_shifts', ['title' => $old['title'], 'department_id' => $old['department_id'], 'starts_at' => $start, 'ends_at' => $end,
                     'min_staff' => $old['min_staff'], 'max_staff' => $old['max_staff'], 'note' => $old['note'], 'created_by' => $myId, 'created_at' => now()]);
                 $n++;
@@ -149,8 +149,8 @@ $byDay = [];
 foreach ($shifts as $s) {
     $byDay[date('Y-m-d', strtotime($s['starts_at']))][] = $s;
 }
-$departments = all('SELECT * FROM departments WHERE active = 1 ORDER BY sort, name');
-$staff = $manage ? array_values(array_filter(all('SELECT * FROM users WHERE active = 1 ORDER BY name'), fn($u) => in_array('roster.signup', user_permissions($u), true) || in_array('duty.clock', user_permissions($u), true))) : [];
+$departments = all('SELECT * FROM departments WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name');
+$staff = $manage ? array_values(array_filter(all('SELECT * FROM users WHERE active = 1 AND ' . fw() . ' ORDER BY name'), fn($u) => in_array('roster.signup', user_permissions($u), true) || in_array('duty.clock', user_permissions($u), true))) : [];
 $edit = $manage && isset($_GET['edit']) ? roster_shift((int) $_GET['edit']) : null;
 $myHours = 0;
 foreach ($shifts as $s) {

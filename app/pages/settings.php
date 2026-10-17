@@ -56,6 +56,10 @@ $keys = [
         'roster_lock_hours' => ['Dienstplan: Austragen bis … Stunden vor Schichtbeginn (danach nur Tausch)', '12'],
     ],
 ];
+// Weitere Fraktionen pflegen nur ihre eigenen Angaben; systemweite Einstellungen bleiben der Hauptfraktion vorbehalten
+if (fid() !== 1) {
+    unset($keys['Sicherheit'], $keys['Bürgerportal'], $keys['Apotheke'], $keys['Dienstzeiten']['duty_max_hours'], $keys['Dienstzeiten']['duty_command']);
+}
 if (is_post()) {
     csrf_check();
     foreach ($keys as $group) {
@@ -122,7 +126,7 @@ ob_start(); ?>
     <?php endforeach; ?>
     <h3 class="form-heading">Logo</h3>
     <div class="field w-half"><label>Eigenes Logo (PNG/JPG/WEBP, quadratisch empfohlen)</label><input type="file" name="logo" accept="image/png,image/jpeg,image/webp"></div>
-    <div class="field w-half"><span class="label">Aktuell</span><img src="<?= e(setting('logo', 'assets/img/logo.svg')) ?>" alt="" style="height:64px">
+    <div class="field w-half"><span class="label">Aktuell</span><img src="<?= e(faction_logo()) ?>" alt="" style="height:64px">
         <?php if (setting('logo', '') !== ''): ?><label class="choice single"><input type="checkbox" name="remove_logo" value="1"> Standardlogo verwenden</label><?php endif; ?></div>
     <p class="hint w-full">Leere Felder verwenden den grau angezeigten Standardwert.</p>
     <div class="form-actions"><button class="btn primary">Speichern</button></div>

@@ -13,7 +13,10 @@ if (is_post()) {
     csrf_check();
     $action = post('action', 'save');
     $id = (int) post('id');
-    if ($action === 'pickup_rule') {
+    if ($id && !fone('printers', $id)) {
+        not_found();
+    }
+    if ($action === 'pickup_rule' && fid() === 1) {
         $rule = (string) post('print_pickup');
         if (isset($pickupRules[$rule])) {
             save_setting('print_pickup', $rule);
@@ -62,15 +65,15 @@ if (is_post()) {
 }
 
 $printers = all("SELECT p.*, (SELECT COUNT(*) FROM print_jobs j WHERE j.printer_id = p.id AND j.status = 'queued') AS queued,
-    (SELECT COUNT(*) FROM print_jobs j WHERE j.printer_id = p.id AND j.status = 'printed') AS printed FROM printers p ORDER BY p.name");
-$edit = $editId ? one('SELECT * FROM printers WHERE id = ?', [$editId]) : null;
+    (SELECT COUNT(*) FROM print_jobs j WHERE j.printer_id = p.id AND j.status = 'printed') AS printed FROM printers p WHERE " . fw('p') . " ORDER BY p.name");
+$edit = $editId ? fone('printers', $editId) : null;
 $form = $edit ?? ['id' => 0, 'name' => '', 'location' => '', 'x' => '', 'y' => '', 'z' => '', 'heading' => '', 'prop_model' => 'prop_printer_01', 'show_blip' => 0, 'active' => 1];
 if ($errors) {
     $form = array_merge($form, array_intersect_key($_POST, $form));
 }
 $recent = all('SELECT j.*, p.name AS printer, d.number, d.type, d.id AS doc_id, u.name AS requester FROM print_jobs j
     JOIN printers p ON p.id = j.printer_id JOIN documents d ON d.id = j.document_id LEFT JOIN users u ON u.id = j.requested_by
-    ORDER BY j.id DESC LIMIT 25');
+    WHERE ' . fw('p') . ' ORDER BY j.id DESC LIMIT 25');
 $statusLabels = ['queued' => ['orange', 'wartet'], 'printed' => ['green', 'abgeholt'], 'cancelled' => ['grey', 'abgebrochen']];
 
 ob_start(); ?>
@@ -146,6 +149,7 @@ ob_start(); ?>
                 <?php endif; ?>
             </div>
         </form>
+        <?php if (fid() === 1): ?>
         <form method="post" class="card form-grid">
             <h2>Abholung</h2>
             <?= csrf_field() ?><input type="hidden" name="action" value="pickup_rule">
@@ -155,6 +159,7 @@ ob_start(); ?>
                 </div></div>
             <div class="form-actions"><button class="btn">Speichern</button></div>
         </form>
+        <?php endif; ?>
     </div>
 </div>
 <script>

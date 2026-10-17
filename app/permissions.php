@@ -11,16 +11,16 @@ defined('SAMS_ROOT') || exit;
  */
 function permission_catalog(): array
 {
-    static $catalog = null;
-    if ($catalog !== null) {
-        return $catalog;
+    static $cache = [];
+    if (isset($cache[fid()])) {
+        return $cache[fid()];
     }
     $docs = [];
     foreach (document_types() as $key => $t) {
         $docs['documents.issue.' . $key] = $t['title'];
     }
     $catalog = [
-        'Patientenakten' => [
+        term('records') => [
             'patients.view'        => 'Akten ansehen',
             'patients.edit'        => 'Akten anlegen und bearbeiten',
             'patients.delete'      => 'Archivierte Akten endgültig löschen',
@@ -109,11 +109,30 @@ function permission_catalog(): array
             'audit.view'      => 'Zugriffsprotokoll ansehen',
             'system.manage'   => 'System, Updates und Backups',
         ],
+        'Fahndung' => [
+            'wanted.view'   => 'Fahndungen und Haftbefehle einsehen',
+            'wanted.manage' => 'Personen und Fahrzeuge zur Fahndung ausschreiben und Fahndungen erledigen',
+        ],
+        'Behördenanfragen' => [
+            'requests.view'   => 'Anfragen der eigenen Behörde einsehen',
+            'requests.manage' => 'Anfragen an andere Behörden stellen und eingehende beantworten',
+        ],
         'Sicherheit' => [
             'security.2fa_required' => 'Zwei-Faktor-Anmeldung ist Pflicht',
         ],
     ];
-    return $catalog;
+    // Nur Rechte der Module dieser Fraktion; Systemverwaltung nur in der Hauptfraktion
+    foreach ($catalog as $group => $perms) {
+        $keep = array_flip(faction_filter_permissions(array_keys($perms)));
+        if (fid() !== 1) {
+            unset($keep['system.manage']);
+        }
+        $catalog[$group] = array_intersect_key($perms, $keep);
+        if (!$catalog[$group]) {
+            unset($catalog[$group]);
+        }
+    }
+    return $cache[fid()] = $catalog;
 }
 
 function all_permissions(): array
@@ -136,18 +155,29 @@ function rank_permissions(?int $rankId): array
 
 function user_permissions(?array $u): array
 {
+    static $memo = [];
     if (!$u) {
         return [];
     }
+    $k = ($u['id'] ?? 0) . ':' . fid() . ':' . ($u['rank_id'] ?? 0) . ':' . ($u['is_superadmin'] ?? 0) . ':' . ($u['faction_id'] ?? 1);
+    return $memo[$k] ??= user_permissions_uncached($u);
+}
+
+function user_permissions_uncached(array $u): array
+{
     if (!empty($u['is_superadmin'])) {
         // Hauptadministrator: alle Fähigkeiten, aber keine Einschränkungen. Die 2FA-Pflicht richtet sich nach seinem Rang.
         $perms = array_diff(all_permissions(), ['users.scope_department', 'security.2fa_required']);
         if (in_array('security.2fa_required', rank_permissions(isset($u['rank_id']) ? (int) $u['rank_id'] : null), true)) {
             $perms[] = 'security.2fa_required';
         }
-        return array_values($perms);
+        return faction_filter_permissions(array_values($perms));
     }
-    return rank_permissions(isset($u['rank_id']) ? (int) $u['rank_id'] : null);
+    // Rechte gelten nur in der eigenen Fraktion
+    if ((int) ($u['faction_id'] ?? 1) !== fid()) {
+        return [];
+    }
+    return faction_filter_permissions(rank_permissions(isset($u['rank_id']) ? (int) $u['rank_id'] : null));
 }
 
 /** Hat der angemeldete Benutzer das Recht? Mehrere Rechte mit | = eines davon genügt. */
@@ -245,13 +275,13 @@ function can_manage_user(array $target, string $permission = 'users.edit'): bool
 function assignable_ranks(): array
 {
     $level = user_level(current_user());
-    return array_values(array_filter(all('SELECT * FROM ranks ORDER BY level DESC, name'), fn($r) => (int) $r['level'] < $level));
+    return array_values(array_filter(all('SELECT * FROM ranks WHERE ' . fw() . ' ORDER BY level DESC, name'), fn($r) => (int) $r['level'] < $level));
 }
 
 /** Abteilungen, die ich zuweisen darf. */
 function assignable_departments(): array
 {
-    $deps = all('SELECT * FROM departments WHERE active = 1 ORDER BY sort, name');
+    $deps = all('SELECT * FROM departments WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name');
     if (!scoped_to_departments()) {
         return $deps;
     }

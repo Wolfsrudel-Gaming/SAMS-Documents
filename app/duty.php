@@ -40,7 +40,8 @@ function duty_set(int $userId, bool $on, string $source, ?int $actingUserId = nu
 {
     $open = duty_open_session($userId);
     if ($on && !$open) {
-        insert('duty_sessions', ['user_id' => $userId, 'started_at' => now(), 'source' => $source, 'created_at' => now()]);
+        insert('duty_sessions', ['user_id' => $userId, 'faction_id' => (int) (scalar('SELECT faction_id FROM users WHERE id = ?', [$userId]) ?: 1),
+            'started_at' => now(), 'source' => $source, 'created_at' => now()]);
         if (setting('discord_duty_log', '0') === '1') {
             notify_webhook('personnel', '🟢 **' . user_display(one('SELECT name, title FROM users WHERE id = ?', [$userId])) . '** ist im Dienst.');
         }
@@ -77,7 +78,7 @@ function duty_format(int $seconds): string
 function duty_totals(string $from, string $to, ?int $userId = null): array
 {
     duty_autoclose();
-    $sql = 'SELECT * FROM duty_sessions WHERE started_at < ? AND (ended_at IS NULL OR ended_at > ?)';
+    $sql = 'SELECT * FROM duty_sessions WHERE started_at < ? AND (ended_at IS NULL OR ended_at > ?) AND ' . fw();
     $params = [$to, $from];
     if ($userId) {
         $sql .= ' AND user_id = ?';
@@ -95,7 +96,7 @@ function duty_on_now(): array
 {
     duty_autoclose();
     return all('SELECT s.*, u.name, u.title, u.badge_number, u.rank_id FROM duty_sessions s JOIN users u ON u.id = s.user_id
-        WHERE s.ended_at IS NULL ORDER BY s.started_at');
+        WHERE s.ended_at IS NULL AND ' . fw('s') . ' ORDER BY s.started_at');
 }
 
 /** Montag 00:00 der Woche, in der $date liegt. */

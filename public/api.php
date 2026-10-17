@@ -63,7 +63,11 @@ $action = (string) ($_GET['action'] ?? ($body['action'] ?? ''));
 /** Benutzer zum Tablet-Token (oder null). */
 $tokenUser = function () use ($in): ?array {
     $t = $in('token');
-    return $t !== '' ? tablet_token_user($t) : null;
+    $tu = $t !== '' ? tablet_token_user($t) : null;
+    if ($tu) {
+        set_faction_context((int) ($tu[1]['faction_id'] ?? 1)); // alles Weitere im Kontext der Fraktion des Spielers
+    }
+    return $tu;
 };
 
 switch ($action) {
@@ -86,7 +90,8 @@ switch ($action) {
         ]);
         // no break
     case 'patient':
-        $p = one("SELECT * FROM patients WHERE citizen_id = ? AND citizen_id <> ''", [$in('citizen_id')]);
+        // Notfalldaten nur aus den Akten des Rettungsdienstes
+        $p = one("SELECT * FROM patients WHERE citizen_id = ? AND citizen_id <> '' AND merged_into IS NULL AND faction_id IN (" . implode(',', medical_faction_ids()) . ')', [$in('citizen_id')]);
         if (!$p) {
             respond(['found' => false]);
         }
@@ -98,7 +103,7 @@ switch ($action) {
         ]);
         // no break
     case 'documents':
-        $p = one("SELECT id FROM patients WHERE citizen_id = ? AND citizen_id <> ''", [$in('citizen_id')]);
+        $p = one("SELECT id FROM patients WHERE citizen_id = ? AND citizen_id <> '' AND merged_into IS NULL AND faction_id IN (" . implode(',', medical_faction_ids()) . ')', [$in('citizen_id')]);
         if (!$p) {
             respond(['found' => false]);
         }
@@ -135,7 +140,7 @@ switch ($action) {
 
     // ------------------------------------------------------------ Drucker
     case 'printers':
-        respond(['printers' => array_map('printer_payload', active_printers()), 'pickup' => pickup_rule()]);
+        respond(['printers' => array_map('printer_payload', active_printers(true)), 'pickup' => pickup_rule()]);
         // no break
     case 'printer_jobs':
         $tu = $tokenUser();

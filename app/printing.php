@@ -106,9 +106,10 @@ function tablet_launch_url(array $tokenRow): string
 
 // ---------------------------------------------------------------- Drucker
 
-function active_printers(): array
+/** Aktive Drucker; $allFactions für die Spielwelt (alle Drucker stehen dort), sonst nur die der eigenen Fraktion. */
+function active_printers(bool $allFactions = false): array
 {
-    return all('SELECT * FROM printers WHERE active = 1 ORDER BY name');
+    return all('SELECT * FROM printers WHERE active = 1' . ($allFactions ? '' : ' AND ' . fw()) . ' ORDER BY name');
 }
 
 function printer_payload(array $p): array
@@ -175,7 +176,7 @@ function document_item_metadata(array $doc, string $variant = ''): array
     }
     return [
         'label' => $label,
-        'description' => $doc['number'] . ' · ' . fmt_date($doc['issued_at']) . ' · ' . setting('org_short', 'SAMS'),
+        'description' => $doc['number'] . ' · ' . fmt_date($doc['issued_at']) . ' · ' . org('org_short'),
         'sams_token' => $doc['view_token'],
         'sams_variant' => $variant,
         'sams_number' => $doc['number'],
@@ -193,6 +194,7 @@ function audit_as(?int $userId, string $action, string $objectType = '', ?int $o
 {
     try {
         insert('audit_log', [
+            'faction_id' => (int) ($GLOBALS['sams_fid'] ?? 1),
             'user_id' => $userId, 'action' => $action, 'object_type' => $objectType, 'object_id' => $objectId,
             'details' => mb_substr($details, 0, 1000), 'ip' => 'fivem', 'created_at' => now(),
         ]);

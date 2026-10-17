@@ -52,8 +52,8 @@ ob_start(); ?>
 <div class="login-wrap">
     <form method="post" class="card login">
         <div class="login-head">
-            <img src="<?= e(setting('logo', 'assets/img/logo.svg')) ?>" alt="">
-            <div><strong><?= e(setting('org_name', 'San Andreas Medical Services')) ?></strong><small><?= e(t('Klinisches Informationssystem · Dienstzugang')) ?></small></div>
+            <img src="<?= e(faction_logo()) ?>" alt="">
+            <div><strong><?= e(org('org_name')) ?></strong><small><?= e(t('Klinisches Informationssystem · Dienstzugang')) ?></small></div>
         </div>
         <div class="login-body">
             <?php if ($error): ?><div class="flash error"><?= e($error) ?></div><?php endif; ?>

@@ -3,13 +3,13 @@ defined('SAMS_ROOT') || exit;
 /** Wiki-Übersicht mit Suche. */
 $q = trim((string) ($_GET['q'] ?? ''));
 $pages = $q !== ''
-    ? all('SELECT * FROM wiki_pages WHERE title LIKE ? OR content LIKE ? ORDER BY title', [like($q), like($q)])
-    : all('SELECT * FROM wiki_pages ORDER BY pinned DESC, category, title');
+    ? all('SELECT * FROM wiki_pages WHERE (title LIKE ? OR content LIKE ?) AND ' . fw() . ' ORDER BY title', [like($q), like($q)])
+    : all('SELECT * FROM wiki_pages WHERE ' . fw() . ' ORDER BY pinned DESC, category, title');
 $byCat = [];
 foreach ($pages as $pg) {
     $byCat[$pg['pinned'] && $q === '' ? 'Angeheftet' : $pg['category']][] = $pg;
 }
-$recent = $q === '' ? all('SELECT p.*, u.name AS editor FROM wiki_pages p LEFT JOIN users u ON u.id = p.updated_by ORDER BY p.updated_at DESC LIMIT 6') : [];
+$recent = $q === '' ? all('SELECT p.*, u.name AS editor FROM wiki_pages p LEFT JOIN users u ON u.id = p.updated_by WHERE ' . fw('p') . ' ORDER BY p.updated_at DESC LIMIT 6') : [];
 
 ob_start(); ?>
 <div class="page-head">

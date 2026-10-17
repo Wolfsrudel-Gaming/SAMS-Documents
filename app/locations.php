@@ -22,10 +22,10 @@ const LOCATION_FIELDS = [
 function locations(bool $activeOnly = true): array
 {
     static $cache = [];
-    $k = (int) $activeOnly;
+    $k = (int) $activeOnly . ':' . fid();
     if (!isset($cache[$k])) {
         try {
-            $cache[$k] = all('SELECT * FROM locations' . ($activeOnly ? ' WHERE active = 1' : '') . ' ORDER BY sort, name');
+            $cache[$k] = all('SELECT * FROM locations WHERE ' . fw() . ($activeOnly ? ' AND active = 1' : '') . ' ORDER BY sort, name');
         } catch (PDOException $e) {
             $cache[$k] = [];
         }

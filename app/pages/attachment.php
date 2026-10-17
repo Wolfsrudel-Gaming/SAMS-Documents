@@ -1,7 +1,7 @@
 <?php
 defined('SAMS_ROOT') || exit;
 /** Anhang ausliefern (nur mit Rechteprüfung, Dateien liegen außerhalb des Webroots). */
-$a = one('SELECT * FROM attachments WHERE id = ?', [(int) ($_GET['id'] ?? 0)]);
+$a = one('SELECT a.* FROM attachments a JOIN patients p ON p.id = a.patient_id WHERE a.id = ? AND ' . fw('p'), [(int) ($_GET['id'] ?? 0)]);
 if (!$a || !attachment_visible($a)) {
     not_found('Anhang nicht gefunden.');
 }

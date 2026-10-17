@@ -647,3 +647,10 @@ ul.plain li:last-child { border-bottom: 0; }
     body.has-nav .main { margin: 0; padding: 0; }
     .card { border: 0; box-shadow: none; }
 }
+
+/* Fraktionen */
+.faction-switch { margin-left: .5rem; }
+.faction-switch select { height: 26px; font-size: .82rem; background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: var(--radius); padding: 0 .4rem; }
+.faction-switch option { color: #000; }
+.dot-color { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: middle; }
+form.inline { display: inline; }

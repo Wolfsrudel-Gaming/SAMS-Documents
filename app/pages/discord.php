@@ -2,7 +2,7 @@
 defined('SAMS_ROOT') || exit;
 /** Discord: Webhooks, Berichte, Direktnachrichten, Rollen-Sync. */
 $me = current_user();
-$ranks = all('SELECT * FROM ranks ORDER BY level DESC');
+$ranks = all('SELECT * FROM ranks WHERE ' . fw() . ' ORDER BY level DESC');
 
 if (is_post()) {
     csrf_check();

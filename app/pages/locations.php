@@ -3,7 +3,7 @@ defined('SAMS_ROOT') || exit;
 /** Standorte mit eigenem Briefkopf verwalten. */
 if (is_post()) {
     csrf_check();
-    $old = one('SELECT * FROM locations WHERE id = ?', [(int) post('id')]);
+    $old = fone('locations', (int) post('id'));
     $row = [
         'name' => mb_substr(trim((string) post('name')), 0, 190),
         'short' => mb_substr(trim((string) post('short')), 0, 32),
@@ -30,7 +30,7 @@ if (is_post()) {
 }
 
 $rows = locations(false);
-$edit = isset($_GET['edit']) ? (one('SELECT * FROM locations WHERE id = ?', [(int) $_GET['edit']]) ?: []) : null;
+$edit = isset($_GET['edit']) ? (fone('locations', (int) $_GET['edit']) ?: []) : null;
 $counts = [];
 foreach (all('SELECT location_id, COUNT(*) AS n FROM users WHERE location_id IS NOT NULL GROUP BY location_id') as $r) {
     $counts[(int) $r['location_id']] = (int) $r['n'];

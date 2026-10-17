@@ -23,6 +23,7 @@ mb_internal_encoding('UTF-8');
 
 require __DIR__ . '/helpers.php';
 require __DIR__ . '/db.php';
+require __DIR__ . '/factions.php';
 require __DIR__ . '/migrations.php';
 require __DIR__ . '/system.php';
 require __DIR__ . '/auth.php';

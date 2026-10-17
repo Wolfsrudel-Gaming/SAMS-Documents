@@ -32,7 +32,7 @@ function stats_period(string $preset, string $from = '', string $to = ''): array
 
 function stats_collect(string $from, string $to): array
 {
-    $docs = all('SELECT type, status, issued_by, amount_cents, pay_status FROM documents WHERE issued_at >= ? AND issued_at < ?', [$from, $to]);
+    $docs = all('SELECT type, status, issued_by, amount_cents, pay_status FROM documents WHERE ' . fw() . ' AND issued_at >= ? AND issued_at < ?', [$from, $to]);
     $byType = [];
     foreach ($docs as $d) {
         $byType[$d['type']] = ($byType[$d['type']] ?? 0) + 1;
@@ -49,16 +49,16 @@ function stats_collect(string $from, string $to): array
     foreach ($docs as $d) {
         $add((int) $d['issued_by'], 'docs', 1);
     }
-    foreach (all('SELECT created_by FROM entries WHERE created_at >= ? AND created_at < ?', [$from, $to]) as $e) {
+    foreach (all('SELECT created_by FROM entries WHERE ' . fw() . ' AND created_at >= ? AND created_at < ?', [$from, $to]) as $e) {
         $add((int) $e['created_by'], 'entries', 1);
     }
-    foreach (all('SELECT created_by FROM cases WHERE created_at >= ? AND created_at < ?', [$from, $to]) as $c) {
+    foreach (all('SELECT created_by FROM cases WHERE ' . fw() . ' AND created_at >= ? AND created_at < ?', [$from, $to]) as $c) {
         $add((int) $c['created_by'], 'cases', 1);
     }
     foreach (duty_totals($from, $to) as $uid => $sec) {
         $add((int) $uid, 'duty', $sec);
     }
-    $names = array_column(all('SELECT id, name, title, rank_id FROM users'), null, 'id');
+    $names = array_column(all('SELECT id, name, title, rank_id FROM users WHERE ' . fw()), null, 'id');
     $rows = [];
     foreach ($staff as $uid => $s) {
         if (!isset($names[$uid])) {
@@ -76,26 +76,26 @@ function stats_collect(string $from, string $to): array
     return [
         'from' => $from, 'to' => $to,
         'documents' => count($docs), 'by_type' => $byType,
-        'patients_new' => (int) scalar('SELECT COUNT(*) FROM patients WHERE created_at >= ? AND created_at < ?', [$from, $to]),
-        'cases_new' => (int) scalar('SELECT COUNT(*) FROM cases WHERE created_at >= ? AND created_at < ?', [$from, $to]),
-        'cases_closed' => (int) scalar('SELECT COUNT(*) FROM cases WHERE closed_at >= ? AND closed_at < ?', [$from, $to]),
-        'entries' => (int) scalar('SELECT COUNT(*) FROM entries WHERE created_at >= ? AND created_at < ?', [$from, $to]),
+        'patients_new' => (int) scalar('SELECT COUNT(*) FROM patients WHERE ' . fw() . ' AND created_at >= ? AND created_at < ?', [$from, $to]),
+        'cases_new' => (int) scalar('SELECT COUNT(*) FROM cases WHERE ' . fw() . ' AND created_at >= ? AND created_at < ?', [$from, $to]),
+        'cases_closed' => (int) scalar('SELECT COUNT(*) FROM cases WHERE ' . fw() . ' AND closed_at >= ? AND closed_at < ?', [$from, $to]),
+        'entries' => (int) scalar('SELECT COUNT(*) FROM entries WHERE ' . fw() . ' AND created_at >= ? AND created_at < ?', [$from, $to]),
         'duty_total' => array_sum(array_column($rows, 'duty')),
         'staff' => $rows,
         'finance' => [
             'invoiced' => $sum($invoices), 'count' => count($invoices),
             'paid' => $sum(array_filter($invoices, fn($d) => $d['pay_status'] === 'paid')),
-            'open_total' => (int) scalar("SELECT COALESCE(SUM(amount_cents), 0) FROM documents WHERE type = 'rechnung' AND status <> 'revoked' AND pay_status IN ('open', 'dunned')") / 100,
-            'paid_in_period' => (int) scalar("SELECT COALESCE(SUM(amount_cents), 0) FROM documents WHERE type = 'rechnung' AND status <> 'revoked' AND pay_status = 'paid' AND paid_at >= ? AND paid_at < ?", [$from, $to]) / 100,
+            'open_total' => (int) scalar("SELECT COALESCE(SUM(amount_cents), 0) FROM documents WHERE " . fw() . " AND type = 'rechnung' AND status <> 'revoked' AND pay_status IN ('open', 'dunned')") / 100,
+            'paid_in_period' => (int) scalar("SELECT COALESCE(SUM(amount_cents), 0) FROM documents WHERE " . fw() . " AND type = 'rechnung' AND status <> 'revoked' AND pay_status = 'paid' AND paid_at >= ? AND paid_at < ?", [$from, $to]) / 100,
         ],
         'quality' => [
             'revoked' => $revoked,
             'revoked_rate' => $docs ? round($revoked / count($docs) * 100, 1) : 0,
-            'addenda' => (int) scalar('SELECT COUNT(*) FROM document_addenda WHERE created_at >= ? AND created_at < ?', [$from, $to]),
-            'rejected' => (int) scalar("SELECT COUNT(*) FROM audit_log WHERE action = 'draft.reject' AND created_at >= ? AND created_at < ?", [$from, $to]),
-            'approved' => (int) scalar("SELECT COUNT(*) FROM audit_log WHERE action = 'draft.approve' AND created_at >= ? AND created_at < ?", [$from, $to]),
-            'exams' => (int) scalar('SELECT COUNT(*) FROM training_attempts WHERE finished_at >= ? AND finished_at < ?', [$from, $to]),
-            'exams_passed' => (int) scalar('SELECT COUNT(*) FROM training_attempts WHERE passed = 1 AND finished_at >= ? AND finished_at < ?', [$from, $to]),
+            'addenda' => (int) scalar('SELECT COUNT(*) FROM document_addenda a JOIN documents d ON d.id = a.document_id WHERE ' . fw('d') . ' AND a.created_at >= ? AND a.created_at < ?', [$from, $to]),
+            'rejected' => (int) scalar("SELECT COUNT(*) FROM audit_log WHERE " . fw() . " AND action = 'draft.reject' AND created_at >= ? AND created_at < ?", [$from, $to]),
+            'approved' => (int) scalar("SELECT COUNT(*) FROM audit_log WHERE " . fw() . " AND action = 'draft.approve' AND created_at >= ? AND created_at < ?", [$from, $to]),
+            'exams' => (int) scalar('SELECT COUNT(*) FROM training_attempts t JOIN training_courses c ON c.id = t.course_id WHERE ' . fw('c') . ' AND finished_at >= ? AND finished_at < ?', [$from, $to]),
+            'exams_passed' => (int) scalar('SELECT COUNT(*) FROM training_attempts t JOIN training_courses c ON c.id = t.course_id WHERE ' . fw('c') . ' AND passed = 1 AND finished_at >= ? AND finished_at < ?', [$from, $to]),
         ],
         // Verlauf pro Tag (Dokumente) für das Balkendiagramm
         'daily' => (function () use ($from, $to) {
@@ -103,7 +103,7 @@ function stats_collect(string $from, string $to): array
             for ($t = strtotime($from); $t < strtotime($to) && count($days) < 62; $t += 86400) {
                 $days[date('Y-m-d', $t)] = 0;
             }
-            foreach (all('SELECT issued_at FROM documents WHERE issued_at >= ? AND issued_at < ?', [$from, $to]) as $d) {
+            foreach (all('SELECT issued_at FROM documents WHERE ' . fw() . ' AND issued_at >= ? AND issued_at < ?', [$from, $to]) as $d) {
                 $k = substr($d['issued_at'], 0, 10);
                 if (isset($days[$k])) {
                     $days[$k]++;

@@ -41,6 +41,7 @@ $routes = [
     'roster'          => 'roster.view|roster.manage',
     'stock'           => 'stock.view|stock.manage',
     'locations'       => 'settings.manage',
+    'factions'        => '',
     'btm'             => 'stock.view|btm.manage',
     'personnel'       => '',
     'training'        => 'training.view|training.manage',

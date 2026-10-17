@@ -10,7 +10,7 @@ if (is_post()) {
     csrf_check();
     $action = post('action');
     if (in_array($action, ['read', 'ack'], true)) {
-        $ann = one('SELECT * FROM announcements WHERE id = ?', [(int) post('id')]);
+        $ann = fone('announcements', (int) post('id'));
         if ($ann) {
             mark_announcement_read((int) $ann['id'], (int) $me['id'], $action === 'ack');
             if ($action === 'ack') {
@@ -22,7 +22,7 @@ if (is_post()) {
     }
     require_perm('board.manage');
     if ($action === 'archive') {
-        q('UPDATE announcements SET archived = 1 - archived WHERE id = ?', [(int) post('id')]);
+        q('UPDATE announcements SET archived = 1 - archived WHERE id = ? AND ' . fw(), [(int) post('id')]);
         redirect(url('board'));
     }
     $row = [
@@ -57,7 +57,7 @@ if (is_post()) {
 
 // Einzelansicht mit Bestätigungen (Leitung)
 if ($id && $manage) {
-    $ann = one('SELECT * FROM announcements WHERE id = ?', [$id]);
+    $ann = fone('announcements', $id);
     if (!$ann) {
         not_found();
     }
@@ -92,11 +92,11 @@ foreach ($list as $a) {
         mark_announcement_read((int) $a['id'], (int) $me['id']);
     }
 }
-$edit = $editId ? one('SELECT * FROM announcements WHERE id = ?', [$editId]) : null;
+$edit = $editId ? fone('announcements', $editId) : null;
 $showForm = $manage && ($edit || ($_GET['edit'] ?? '') === 'new');
 $form = $edit ?? ['id' => 0, 'title' => '', 'content' => '', 'priority' => 'normal', 'department_id' => null, 'min_level' => 0, 'require_ack' => 0, 'pinned' => 0, 'expires_at' => null];
-$departments = all('SELECT * FROM departments WHERE active = 1 ORDER BY sort, name');
-$ranks = all('SELECT * FROM ranks ORDER BY level');
+$departments = all('SELECT * FROM departments WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name');
+$ranks = all('SELECT * FROM ranks WHERE ' . fw() . ' ORDER BY level');
 
 ob_start(); ?>
 <div class="page-head">

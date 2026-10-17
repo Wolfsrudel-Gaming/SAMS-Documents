@@ -12,6 +12,7 @@ if (!$doc) {
     http_response_code(404);
     exit('<!doctype html><meta charset="utf-8"><body style="font-family:system-ui;padding:2rem;color:#fff;background:#222">Dokument nicht gefunden.</body>');
 }
+set_faction_context((int) $doc['faction_id']);
 $doc['data'] = json_decode((string) $doc['data'], true) ?: [];
 $doc['patient_snapshot'] = json_decode((string) $doc['patient_snapshot'], true) ?: [];
 $doc['issuer_snapshot'] = json_decode((string) $doc['issuer_snapshot'], true) ?: [];

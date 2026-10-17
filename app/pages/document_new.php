@@ -4,7 +4,7 @@ $me = current_user();
 
 // Bestehenden Entwurf weiterbearbeiten (?draft=ID)
 $draftId = (int) ($_GET['draft'] ?? post('draft_id', 0));
-$draft = $draftId ? one('SELECT * FROM document_drafts WHERE id = ?', [$draftId]) : null;
+$draft = $draftId ? fone('document_drafts', $draftId) : null;
 if ($draftId && !$draft) {
     not_found('Entwurf nicht gefunden.');
 }
@@ -15,12 +15,12 @@ if ($draft && !draft_editable($draft)) {
 $typeKey = $draft ? $draft['type'] : (string) ($_GET['type'] ?? post('type', ''));
 $type = $typeKey !== '' ? doc_type($typeKey) : null;
 $patientId = $draft ? (int) $draft['patient_id'] : (int) ($_GET['patient'] ?? post('patient_id', 0));
-$patient = $patientId ? one('SELECT * FROM patients WHERE id = ?', [$patientId]) : null;
+$patient = $patientId ? fone('patients', (int) $patientId) : null;
 // Dokument aus einer Fallakte heraus (Patient und Felder werden übernommen)
 $caseId = $draft ? (int) $draft['case_id'] : (int) ($_GET['case'] ?? post('case_id', 0));
-$case = $caseId ? one("SELECT * FROM cases WHERE id = ? AND status = 'open'", [$caseId]) : null;
+$case = $caseId ? one("SELECT * FROM cases WHERE id = ? AND status = 'open' AND " . fw(), [$caseId]) : null;
 if ($case) {
-    $patient = one('SELECT * FROM patients WHERE id = ?', [$case['patient_id']]);
+    $patient = fone('patients', (int) $case['patient_id']);
     $patientId = (int) $patient['id'];
 }
 require_active_patient($patient);
@@ -83,10 +83,10 @@ $approval = needs_approval($type['key'], $me);
 $data = $draft ? (json_decode((string) $draft['data'], true) ?: []) : [];
 $liveSignature = $draft ? (string) $draft['signature'] : '';
 $fromId = (int) ($_GET['from'] ?? 0);
-if (!$draft && $fromId && ($src = one('SELECT * FROM documents WHERE id = ? AND type = ?', [$fromId, $type['key']]))) {
+if (!$draft && $fromId && ($src = one('SELECT * FROM documents WHERE id = ? AND type = ? AND ' . fw(), [$fromId, $type['key']]))) {
     $data = json_decode((string) $src['data'], true) ?: [];
     if (!$patient && $src['patient_id']) {
-        $patient = one('SELECT * FROM patients WHERE id = ?', [$src['patient_id']]);
+        $patient = $src['patient_id'] ? fone('patients', (int) $src['patient_id']) : null;
         require_active_patient($patient);
     }
 }
@@ -104,11 +104,11 @@ if ($patient && $type['key'] === 'au' && empty($data['employer'])) {
 }
 
 // Personaldokumente: betroffenes Konto
-$employees = $isEmployee ? all('SELECT * FROM users WHERE active = 1 ORDER BY name') : [];
+$employees = $isEmployee ? all('SELECT * FROM users WHERE active = 1 AND ' . fw() . ' ORDER BY name') : [];
 $employeeId = (int) ($data['_employee']['id'] ?? ($_GET['employee'] ?? 0));
 
 // Kolleg/innen, an die ein Entwurf übergeben werden kann (dürfen diese Dokumentart ausstellen)
-$colleagues = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 AND id <> ? ORDER BY name', [$me['id']]),
+$colleagues = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 AND id <> ? AND ' . fw() . ' ORDER BY name', [$me['id']]),
     fn($u) => in_array('documents.issue.' . $type['key'], user_permissions($u), true)));
 
 $errors = [];
@@ -129,12 +129,12 @@ if (is_post()) {
     }
     if ($isEmployee) {
         $employeeId = (int) post('employee_id');
-        $emp = $employeeId ? one('SELECT * FROM users WHERE id = ? AND active = 1', [$employeeId]) : null;
+        $emp = $employeeId ? one('SELECT * FROM users WHERE id = ? AND active = 1 AND ' . fw(), [$employeeId]) : null;
         if ($emp) {
             $data['_employee'] = employee_snapshot($emp);
         }
     } elseif (!$case) {
-        $patient = post('patient_id') ? one('SELECT * FROM patients WHERE id = ?', [(int) post('patient_id')]) : null;
+        $patient = post('patient_id') ? fone('patients', (int) post('patient_id')) : null;
         require_active_patient($patient);
     }
     if (locations()) {
@@ -227,7 +227,7 @@ if (is_post()) {
     }
 }
 
-$patients = all('SELECT id, first_name, last_name, dob, citizen_id FROM patients WHERE archived_at IS NULL ORDER BY last_name, first_name');
+$patients = all('SELECT id, first_name, last_name, dob, citizen_id FROM patients WHERE archived_at IS NULL AND merged_into IS NULL AND ' . fw() . ' ORDER BY last_name, first_name');
 $hasStored = !empty($me['signature']);
 $sigMode = is_post() ? (post('sig_mode') === 'live' ? 'live' : 'stored') : ($liveSignature !== '' || !$hasStored ? 'live' : 'stored');
 

@@ -3,7 +3,7 @@ defined('SAMS_ROOT') || exit;
 /** Lehrgang: Lernmodule durcharbeiten und Prüfung starten. */
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
-$course = one('SELECT c.*, q.name AS qualification FROM training_courses c LEFT JOIN qualifications q ON q.id = c.qualification_id WHERE c.id = ?', [$id]);
+$course = one('SELECT c.*, q.name AS qualification FROM training_courses c LEFT JOIN qualifications q ON q.id = c.qualification_id WHERE c.id = ? AND ' . fw('c'), [$id]);
 if (!$course || (!$course['active'] && !can('training.manage'))) {
     not_found('Lehrgang nicht gefunden.');
 }

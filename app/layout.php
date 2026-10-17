@@ -3,17 +3,19 @@ defined('SAMS_ROOT') || exit;
 /** @var string $content */
 $user = current_user();
 $current = $_GET['p'] ?? 'dashboard';
-$orgShort = setting('org_short', 'SAMS');
+$orgShort = org('org_short');
 $navGroups = [
     'Klinik' => [
         'dashboard'    => ['Übersicht', '', 'home'],
         'board'        => ['Schwarzes Brett', 'board.view|board.manage', 'docs'],
         'messages'     => ['Nachrichten', 'messages.use', 'external'],
-        'patients'     => ['Patientenakten', 'patients.view', 'patients'],
+        'patients'     => [term('records'), 'patients.view', 'patients'],
+        'wanted'       => ['Fahndung', 'wanted.view|wanted.manage', 'search'],
+        'requests'     => ['Behördenanfragen', 'requests.view|requests.manage', 'external'],
         'documents'    => ['Dokumente', 'documents.view', 'docs'],
         'document_new' => ['Neues Dokument', 'documents.issue.*', 'doc-plus'],
         'drafts'       => ['Entwürfe & Freigaben', 'documents.issue.*|documents.approve|documents.drafts_all', 'edit'],
-        'invoices'     => ['Rechnungen', 'invoices.manage', 'docs'],
+        'invoices'     => [term('billing'), 'invoices.manage', 'docs'],
         'duty'         => ['Dienstzeiten', 'duty.clock|duty.view|duty.manage', 'clock'],
         'roster'       => ['Dienstplan', 'roster.view|roster.manage', 'clock'],
         'stock'        => ['Medikamente & BtM', 'stock.view|stock.manage', 'shield'],
@@ -30,12 +32,13 @@ $navGroups = [
         'locations' => ['Standorte', 'settings.manage', 'folder'],
         'doc_types' => ['Dokumentarten', 'settings.manage', 'docs'],
         'templates' => ['Vorlagen-Editor', 'templates.manage', 'edit'],
-        'prices'   => ['Gebührenordnung', 'prices.manage', 'settings'],
+        'prices'   => [term('catalog'), 'prices.manage', 'settings'],
         'printers' => ['Drucker', 'printers.manage', 'print'],
         'stats'    => ['Statistik', 'stats.view', 'log'],
         'discord'  => ['Discord', 'discord.manage', 'external'],
         'audit'    => ['Zugriffsprotokoll', 'audit.view', 'log'],
         'system'   => ['System & Updates', 'system.manage', 'server'],
+        'factions' => ['Fraktionen', !empty($user['is_superadmin']) ? '' : 'factions.none', 'users'],
     ],
 ];
 // Unterseiten der passenden Navigation zuordnen
@@ -48,7 +51,7 @@ $active = $activeMap[$current] ?? $current;
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(($title ?? 'Übersicht') . ' · ' . $orgShort) ?></title>
-<link rel="icon" href="<?= e(setting('logo', 'assets/img/logo.svg')) ?>">
+<link rel="icon" href="<?= e(faction_logo()) ?>">
 <link rel="stylesheet" href="assets/css/app.css?v=<?= e(SAMS_VERSION) ?>">
 <?php if (!empty($withDocumentCss)): ?>
 <link rel="stylesheet" href="assets/css/document.css?v=<?= e(SAMS_VERSION) ?>">
@@ -60,9 +63,9 @@ $active = $activeMap[$current] ?? $current;
 <header class="topbar">
     <button class="nav-toggle" type="button" aria-label="<?= e(t('Menü')) ?>"><?= icon('menu') ?></button>
     <a class="brand" href="<?= e(url('dashboard')) ?>">
-        <img src="<?= e(setting('logo', 'assets/img/logo.svg')) ?>" alt="">
+        <img src="<?= e(faction_logo()) ?>" alt="">
         <span class="brand-name"><?= e($orgShort) ?></span>
-        <span class="brand-sub"><?= e(setting('org_sub', 'Pillbox Hill Medical Center')) ?></span>
+        <span class="brand-sub"><?= e(org('org_sub') ?: org('org_name')) ?></span>
     </a>
     <form class="quicksearch" action="index.php" role="search">
         <input type="hidden" name="p" value="search">
@@ -70,6 +73,12 @@ $active = $activeMap[$current] ?? $current;
         <input name="q" id="quicksearch" placeholder="<?= e(t('Suchen: Patient, Diagnose, Dokument-Nr., Wiki, Personal …')) ?>" autocomplete="off">
         <kbd>F2</kbd>
     </form>
+    <?php if (!empty($user['is_superadmin']) && count(factions()) > 1): ?>
+        <form method="post" action="<?= e(url('factions')) ?>" class="faction-switch" title="Ansicht wechseln">
+            <?= csrf_field() ?><input type="hidden" name="action" value="switch"><input type="hidden" name="return" value="<?= e($current) ?>">
+            <select name="faction_id" onchange="this.form.submit()"><?php foreach (factions() as $fx): ?><option value="<?= (int) $fx['id'] ?>"<?= selected($fx['id'], fid()) ?>><?= e($fx['short'] ?: $fx['name']) ?></option><?php endforeach; ?></select>
+        </form>
+    <?php endif; ?>
     <div class="topbar-right">
         <?php $unread = notifications_unread(); ?>
         <details class="bell">
@@ -118,7 +127,7 @@ $active = $activeMap[$current] ?? $current;
 <footer class="statusbar">
     <span class="sb-item"><span class="dot ok"></span><?= e(t('Verbunden')) ?></span>
     <span class="sb-item"><?= icon('user') ?><?= e($user['username']) ?> · <?= e(user_rank_name($user)) ?></span>
-    <span class="sb-item hide-sm"><?= e(setting('org_name', 'San Andreas Medical Services')) ?></span>
+    <span class="sb-item hide-sm"><?= e(org('org_name')) ?></span>
     <span class="sb-spacer"></span>
     <span class="sb-item hide-sm"><?= e(version_label()) ?></span>
     <span class="sb-item"><?= icon('clock') ?><span data-clock><?= e(date('d.m.Y H:i')) ?></span></span>

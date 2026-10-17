@@ -2,7 +2,7 @@
 defined('SAMS_ROOT') || exit;
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
-$doc = one('SELECT d.*, u.name AS revoker FROM documents d LEFT JOIN users u ON u.id = d.revoked_by WHERE d.id = ?', [$id]);
+$doc = one('SELECT d.*, u.name AS revoker FROM documents d LEFT JOIN users u ON u.id = d.revoked_by WHERE d.id = ? AND ' . fw('d'), [$id]);
 if (!$doc) {
     not_found('Dokument nicht gefunden.');
 }
@@ -138,7 +138,7 @@ if (is_post() && in_array(post('action'), ['print', 'cancel_job'], true)) {
         flash('error', 'Stornierte Dokumente können nicht gedruckt werden.');
         redirect(url('document', ['id' => $id]));
     }
-    $printer = one('SELECT * FROM printers WHERE id = ? AND active = 1', [(int) post('printer_id')]);
+    $printer = one('SELECT * FROM printers WHERE id = ? AND active = 1 AND ' . fw(), [(int) post('printer_id')]);
     if (!$printer) {
         flash('error', 'Bitte einen aktiven Drucker wählen.');
         redirect(url('document', ['id' => $id]) . '#print');

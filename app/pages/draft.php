@@ -4,7 +4,7 @@ defined('SAMS_ROOT') || exit;
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
 $draft = one('SELECT d.*, s.name AS submitter_name, o.name AS owner_name FROM document_drafts d
-    LEFT JOIN users s ON s.id = d.submitted_by LEFT JOIN users o ON o.id = d.owner_id WHERE d.id = ?', [$id]);
+    LEFT JOIN users s ON s.id = d.submitted_by LEFT JOIN users o ON o.id = d.owner_id WHERE d.id = ? AND ' . fw('d'), [$id]);
 if (!$draft || !draft_visible($draft)) {
     not_found('Entwurf nicht gefunden.');
 }

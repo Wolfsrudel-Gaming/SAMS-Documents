@@ -23,7 +23,7 @@ const MERGE_TABLES = ['entries', 'documents', 'cases', 'attachments', 'document_
 /** Mögliche Doppelungen: gleiche Bürger-ID, gleicher Name + Geburtsdatum oder gleicher Name. */
 function find_duplicate_patients(): array
 {
-    $rows = all('SELECT id, first_name, last_name, dob, citizen_id, phone, created_at FROM patients WHERE merged_into IS NULL ORDER BY id');
+    $rows = all('SELECT id, first_name, last_name, dob, citizen_id, phone, created_at FROM patients WHERE merged_into IS NULL AND ' . fw() . ' ORDER BY id');
     $groups = [];
     $norm = fn(string $s) => mb_strtolower(trim(preg_replace('/\s+/', ' ', $s)));
     foreach ($rows as $r) {
@@ -65,8 +65,8 @@ function find_duplicate_patients(): array
  */
 function merge_patients(int $targetId, int $sourceId, array $choices, int $userId): array
 {
-    $target = one('SELECT * FROM patients WHERE id = ?', [$targetId]);
-    $source = one('SELECT * FROM patients WHERE id = ?', [$sourceId]);
+    $target = fone('patients', $targetId);
+    $source = fone('patients', $sourceId);
     if (!$target || !$source || $targetId === $sourceId || $source['merged_into'] || $target['merged_into']) {
         throw new RuntimeException('Diese Akten können nicht zusammengeführt werden.');
     }

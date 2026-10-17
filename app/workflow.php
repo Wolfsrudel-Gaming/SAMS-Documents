@@ -74,9 +74,9 @@ function draft_inbox_count(): int
     if (!$me) {
         return 0;
     }
-    $n = (int) scalar("SELECT COUNT(*) FROM document_drafts WHERE owner_id = ? AND status IN ('draft', 'rejected')", [$me['id']]);
+    $n = (int) scalar("SELECT COUNT(*) FROM document_drafts WHERE owner_id = ? AND status IN ('draft', 'rejected') AND " . fw(), [$me['id']]);
     if (can('documents.approve')) {
-        foreach (all("SELECT * FROM document_drafts WHERE status = 'pending' AND submitted_by <> ?", [$me['id']]) as $d) {
+        foreach (all("SELECT * FROM document_drafts WHERE status = 'pending' AND submitted_by <> ? AND " . fw(), [$me['id']]) as $d) {
             $n += can_approve($d) ? 1 : 0;
         }
     }

@@ -3,10 +3,12 @@ defined('SAMS_ROOT') || exit;
 /** Interne Nachrichten: Posteingang, neue Nachricht, Unterhaltung. */
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
+// Kolleg/innen der eigenen Fraktion mit Nachrichtenrecht und Angehörige anderer (aktiver) Behörden
+$activeFactions = array_map(fn($f) => (int) $f['id'], factions());
 $staff = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 AND id <> ? ORDER BY name', [$me['id']]),
-    fn($u) => in_array('messages.use', user_permissions($u), true)));
+    fn($u) => (int) $u['faction_id'] === fid() ? in_array('messages.use', user_permissions($u), true) : in_array((int) $u['faction_id'], $activeFactions, true)));
 $staffIds = array_map('intval', array_column($staff, 'id'));
-$departments = all('SELECT * FROM departments WHERE active = 1 ORDER BY sort, name');
+$departments = all('SELECT * FROM departments WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name');
 
 if (is_post()) {
     csrf_check();
@@ -107,7 +109,7 @@ ob_start(); ?>
 <form method="post" class="card form-grid">
     <h2>Neue Nachricht</h2>
     <?= csrf_field() ?><input type="hidden" name="action" value="send">
-    <div class="field w-half"><label>An (Personen)</label><select name="to[]" multiple size="6"><?php foreach ($staff as $u): ?><option value="<?= (int) $u['id'] ?>"<?= $preTo === (int) $u['id'] ? ' selected' : '' ?>><?= e(user_display($u)) ?> · <?= e(user_rank_name($u)) ?></option><?php endforeach; ?></select><div class="hint">Mehrfachauswahl mit Strg / ⌘</div></div>
+    <div class="field w-half"><label>An (Personen)</label><select name="to[]" multiple size="6"><?php foreach ($staff as $u): ?><option value="<?= (int) $u['id'] ?>"<?= $preTo === (int) $u['id'] ? ' selected' : '' ?>><?= e(user_display($u)) ?> · <?= e(user_rank_name($u)) ?><?= (int) $u['faction_id'] !== fid() ? ' · ' . e(faction_by_id((int) $u['faction_id'])['short'] ?? '') : '' ?></option><?php endforeach; ?></select><div class="hint">Mehrfachauswahl mit Strg / ⌘</div></div>
     <div class="field w-half"><span class="label">… oder ganze Abteilungen</span><div class="choices vertical"><?php foreach ($departments as $d): ?><label class="choice"><input type="checkbox" name="to_dep[]" value="<?= (int) $d['id'] ?>"> <?= e($d['name']) ?></label><?php endforeach; ?></div></div>
     <div class="field w-full"><label>Betreff</label><input name="subject" required maxlength="190"></div>
     <div class="field w-full"><label>Nachricht</label><textarea name="body" rows="6" required></textarea></div>

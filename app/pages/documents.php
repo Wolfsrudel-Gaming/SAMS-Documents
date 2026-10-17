@@ -5,7 +5,7 @@ $typeFilter = (string) ($_GET['type'] ?? '');
 $status = (string) ($_GET['status'] ?? '');
 $mine = !empty($_GET['mine']);
 
-$where = ['1=1'];
+$where = [fw('d')];
 $params = [];
 if ($q !== '') {
     $esc = db_driver() === 'mysql' ? '' : " ESCAPE '\\'";

@@ -4,12 +4,12 @@ const ENTRY_TYPES = ['Behandlung', 'Notfalleinsatz', 'Untersuchung', 'Verlaufsno
 
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
-$entry = $id ? one('SELECT * FROM entries WHERE id = ?', [$id]) : null;
+$entry = $id ? fone('entries', $id) : null;
 if ($id && !$entry) {
     not_found('Eintrag nicht gefunden.');
 }
 $patientId = $entry ? (int) $entry['patient_id'] : (int) ($_GET['patient'] ?? 0);
-$patient = one('SELECT * FROM patients WHERE id = ?', [$patientId]);
+$patient = fone('patients', (int) $patientId);
 if (!$patient) {
     not_found('Patientenakte nicht gefunden.');
 }
@@ -23,8 +23,8 @@ if ($entry && (int) $entry['created_by'] !== (int) $me['id'] && (!can('entries.e
 $cases = all('SELECT id, number, title, status FROM cases WHERE patient_id = ? ORDER BY id DESC', [$patientId]);
 $caseIds = array_map('intval', array_column($cases, 'id'));
 $departments = can('entries.all_departments')
-    ? all('SELECT id, name FROM departments WHERE active = 1 ORDER BY sort, name')
-    : array_values(array_filter(all('SELECT id, name FROM departments WHERE active = 1 ORDER BY sort, name'),
+    ? all('SELECT id, name FROM departments WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name')
+    : array_values(array_filter(all('SELECT id, name FROM departments WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name'),
         fn($d) => in_array((int) $d['id'], user_department_ids((int) $me['id']), true)));
 $depIds = array_map('intval', array_column($departments, 'id'));
 

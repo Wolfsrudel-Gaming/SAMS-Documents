@@ -12,6 +12,9 @@ if (!rate_limit('share', 60)) {
 }
 $share = strlen($token) >= 32 ? one("SELECT * FROM document_shares WHERE token_hash = ? AND kind = 'link'", [hash('sha256', $token)]) : null;
 $doc = $share ? one('SELECT * FROM documents WHERE id = ?', [$share['document_id']]) : null;
+if ($doc) {
+    set_faction_context((int) $doc['faction_id']);
+}
 $error = !$share || !$doc ? 'Diese Freigabe existiert nicht.' : (!share_active($share) ? ($share['revoked'] ? 'Diese Freigabe wurde widerrufen.' : 'Diese Freigabe ist abgelaufen.') : '');
 header('Cache-Control: no-store');
 header('X-Robots-Tag: noindex, nofollow');
@@ -36,7 +39,7 @@ if ($error === '') {
 <body class="no-nav verify-page">
 <main class="main">
     <div class="card share-banner no-print">
-        <img src="<?= e(setting('logo', 'assets/img/logo.svg')) ?>" alt="">
+        <img src="<?= e(faction_logo()) ?>" alt="">
         <?php if ($error !== ''): ?>
             <div><h1>Freigegebenes Dokument</h1><p class="text-danger"><?= e($error) ?></p><p class="muted small">Bitte wenden Sie sich an <?= e(org('org_name')) ?>, <?= e(org('phone')) ?>.</p></div>
         <?php else: ?>

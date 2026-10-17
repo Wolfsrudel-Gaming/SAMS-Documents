@@ -3,8 +3,8 @@ defined('SAMS_ROOT') || exit;
 /** Ausbildung: Lehrgänge und eigener Stand. */
 $me = current_user();
 $manage = can('training.manage');
-$courses = all('SELECT c.*, q.name AS qualification FROM training_courses c LEFT JOIN qualifications q ON q.id = c.qualification_id'
-    . ($manage ? '' : ' WHERE c.active = 1') . ' ORDER BY c.sort, c.title');
+$courses = all('SELECT c.*, q.name AS qualification FROM training_courses c LEFT JOIN qualifications q ON q.id = c.qualification_id WHERE ' . fw('c')
+    . ($manage ? '' : ' AND c.active = 1') . ' ORDER BY c.sort, c.title');
 
 ob_start(); ?>
 <div class="page-head">

@@ -7,7 +7,10 @@ $attempt = one('SELECT * FROM training_attempts WHERE id = ?', [$id]);
 if (!$attempt || ((int) $attempt['user_id'] !== (int) $me['id'] && !can('training.manage'))) {
     not_found('Prüfung nicht gefunden.');
 }
-$course = one('SELECT * FROM training_courses WHERE id = ?', [$attempt['course_id']]);
+$course = fone('training_courses', (int) $attempt['course_id']);
+if (!$course) {
+    not_found('Prüfung nicht gefunden.');
+}
 $own = (int) $attempt['user_id'] === (int) $me['id'];
 $all = array_column(course_questions((int) $course['id']), null, 'id');
 $plan = array_values(array_filter(json_decode((string) $attempt['questions'], true) ?: [], fn($p) => isset($all[$p['id']])));

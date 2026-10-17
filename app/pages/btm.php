@@ -2,7 +2,7 @@
 defined('SAMS_ROOT') || exit;
 /** BtM-Buch: Karteikarte je Betäubungsmittel mit laufendem Bestand, Prüfung durch die verantwortliche Person, Druckansicht. */
 $me = current_user();
-$btmMeds = all('SELECT * FROM medications WHERE is_btm = 1 ORDER BY active DESC, name');
+$btmMeds = all('SELECT * FROM medications WHERE is_btm = 1 AND ' . fw() . ' ORDER BY active DESC, name');
 $med = null;
 foreach ($btmMeds as $m) {
     if ((int) $m['id'] === (int) ($_GET['med'] ?? $_POST['medication_id'] ?? 0) || !$med) {
@@ -52,7 +52,7 @@ ob_start(); ?>
 <section class="card btm-card">
     <div class="btm-head">
         <div><small class="muted">Betäubungsmittel</small><h2><?= e($med['name']) ?></h2></div>
-        <div><small class="muted">Einrichtung</small><strong><?= e(setting('org_name', 'San Andreas Medical Services')) ?></strong></div>
+        <div><small class="muted">Einrichtung</small><strong><?= e(org('org_name')) ?></strong></div>
         <div><small class="muted">Zeitraum</small><strong><?= e(fmt_date($from, 'F Y')) ?></strong></div>
         <div><small class="muted">Bestand aktuell</small><strong><?= (int) $med['stock'] ?> <?= e($med['unit']) ?></strong></div>
     </div>

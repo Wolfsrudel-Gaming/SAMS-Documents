@@ -4,11 +4,11 @@ defined('SAMS_ROOT') || exit;
 $me = current_user();
 $id = (int) ($_GET['id'] ?? post('id', 0));
 $isNew = isset($_GET['new']) || (is_post() && !$id);
-$row = $id ? one('SELECT * FROM custom_doc_types WHERE id = ?', [$id]) : null;
+$row = $id ? fone('custom_doc_types', $id) : null;
 if ($id && !$row) {
     not_found('Vorlage nicht gefunden.');
 }
-$ranks = all('SELECT * FROM ranks ORDER BY level DESC');
+$ranks = all('SELECT * FROM ranks WHERE ' . fw() . ' ORDER BY level DESC');
 $errors = [];
 $preview = '';
 $form = $row ?? ['title' => '', 'short' => '', 'code' => '', 'category' => 'Eigene Vorlagen', 'layout' => 'letter', 'subject' => 'patient',
@@ -100,7 +100,7 @@ if (is_post()) {
 
 // Übersicht
 if (!$id && !$isNew) {
-    $list = custom_doc_types();
+    $list = array_values(array_filter(custom_doc_types(), fn($r) => (int) $r['faction_id'] === fid()));
     ob_start(); ?>
     <div class="page-head">
         <div><h1>Vorlagen-Editor</h1><p class="muted">Eigene Dokumentarten ohne Programmierung: Felder festlegen, Layout wählen, Text mit Platzhaltern schreiben.</p></div>

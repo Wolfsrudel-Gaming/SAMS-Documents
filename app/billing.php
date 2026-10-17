@@ -20,7 +20,7 @@ function price_list(bool $activeOnly = true): array
     $key = $activeOnly ? 'a' : 'all';
     if (!isset($cache[$key])) {
         try {
-            $cache[$key] = all('SELECT * FROM price_list' . ($activeOnly ? ' WHERE active = 1' : '') . ' ORDER BY sort, code, name');
+            $cache[$key] = all('SELECT * FROM price_list WHERE ' . fw() . ($activeOnly ? ' AND active = 1' : '') . ' ORDER BY sort, code, name');
         } catch (PDOException $e) {
             $cache[$key] = []; // vor der Migration
         }

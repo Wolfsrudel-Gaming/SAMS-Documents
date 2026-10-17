@@ -19,7 +19,7 @@ const MED_MOVE_KINDS = [
 
 function medications(bool $activeOnly = true): array
 {
-    return all('SELECT * FROM medications' . ($activeOnly ? ' WHERE active = 1' : '') . ' ORDER BY name');
+    return all('SELECT * FROM medications WHERE ' . fw() . ($activeOnly ? ' AND active = 1' : '') . ' ORDER BY name');
 }
 
 /**

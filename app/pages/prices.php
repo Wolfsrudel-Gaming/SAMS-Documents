@@ -5,6 +5,9 @@ $errors = [];
 if (is_post()) {
     csrf_check();
     $id = (int) post('id');
+    if ($id && !fone('price_list', $id)) {
+        not_found();
+    }
     if (post('action') === 'delete' && $id) {
         // Bestehende Rechnungen behalten ihren Text, daher nur deaktivieren statt löschen
         update('price_list', $id, ['active' => 0, 'updated_at' => now()]);
@@ -27,7 +30,7 @@ if (is_post()) {
     if ($row['price_cents'] < 0) {
         $errors[] = 'Der Preis darf nicht negativ sein.';
     }
-    if ($row['code'] !== '' && scalar('SELECT id FROM price_list WHERE code = ? AND id <> ?', [$row['code'], $id])) {
+    if ($row['code'] !== '' && scalar('SELECT id FROM price_list WHERE code = ? AND id <> ? AND ' . fw(), [$row['code'], $id])) {
         $errors[] = 'Das Kürzel ' . $row['code'] . ' ist bereits vergeben.';
     }
     if (!$errors) {
@@ -44,7 +47,7 @@ if (is_post()) {
 }
 $editId = (int) ($_GET['edit'] ?? post('id', 0));
 $rows = price_list(false);
-$edit = $editId ? one('SELECT * FROM price_list WHERE id = ?', [$editId]) : null;
+$edit = $editId ? fone('price_list', $editId) : null;
 $form = $edit ?? ['id' => 0, 'code' => '', 'name' => '', 'category' => '', 'price_cents' => 0, 'sort' => (count($rows) + 1) * 10, 'active' => 1];
 if ($errors) {
     $form = array_merge($form, ['code' => post('code'), 'name' => post('name'), 'category' => post('category'), 'price_cents' => (int) round(to_float(post('price')) * 100)]);

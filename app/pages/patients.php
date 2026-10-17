@@ -16,6 +16,7 @@ if ($q !== '') {
 }
 // Archivierte Akten nur auf Wunsch
 $view = in_array($_GET['view'] ?? '', ['archive', 'all'], true) ? $_GET['view'] : 'active';
+$where = '(' . $where . ') AND ' . fw();
 $where .= ['active' => ' AND archived_at IS NULL', 'archive' => ' AND archived_at IS NOT NULL', 'all' => ''][$view];
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $per = 25;

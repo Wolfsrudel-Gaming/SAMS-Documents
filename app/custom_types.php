@@ -45,6 +45,7 @@ function custom_type_definition(array $row): array
         'patient'  => $employee ? 'none' : (in_array($row['patient_mode'], ['required', 'optional', 'none'], true) ? $row['patient_mode'] : 'optional'),
         'subject'  => $employee ? 'employee' : 'patient',
         'template' => 'custom',
+        'faction_id' => (int) ($row['faction_id'] ?? 1),
         'hidden'   => !(int) $row['active'],
         'fields'   => json_decode((string) $row['fields'], true) ?: [],
         'custom'   => ['layout' => $row['layout'], 'body' => (string) $row['body'], 'seal' => $row['seal'], 'title' => $row['title']],

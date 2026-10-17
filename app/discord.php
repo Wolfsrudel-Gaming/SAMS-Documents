@@ -131,7 +131,7 @@ function discord_sync_rank(array $u, ?array $roles = null): string
 function discord_sync_all(): array
 {
     $changes = [];
-    foreach (all("SELECT * FROM users WHERE active = 1 AND discord_id <> '' AND is_superadmin = 0") as $u) {
+    foreach (all("SELECT * FROM users WHERE active = 1 AND discord_id <> '' AND is_superadmin = 0 AND " . fw()) as $u) {
         if (($c = discord_sync_rank($u)) !== '') {
             $changes[] = $c;
         }

@@ -5,7 +5,7 @@ $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
 $case = one('SELECT c.*, d.name AS department, u.name AS author, cu.name AS closer FROM cases c
     LEFT JOIN departments d ON d.id = c.department_id LEFT JOIN users u ON u.id = c.created_by LEFT JOIN users cu ON cu.id = c.closed_by
-    WHERE c.id = ?', [$id]);
+    WHERE c.id = ? AND ' . fw('c'), [$id]);
 if (!$case) {
     not_found('Fall nicht gefunden.');
 }

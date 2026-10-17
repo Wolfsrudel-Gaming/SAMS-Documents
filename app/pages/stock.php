@@ -11,9 +11,9 @@ $findPatient = function (string $v): ?array {
         return null;
     }
     if (preg_match('/^#(\d+)$/', $v, $m)) {
-        return one('SELECT * FROM patients WHERE id = ? AND merged_into IS NULL', [(int) $m[1]]);
+        return one('SELECT * FROM patients WHERE id = ? AND merged_into IS NULL AND ' . fw(), [(int) $m[1]]);
     }
-    return one('SELECT * FROM patients WHERE citizen_id = ? AND merged_into IS NULL', [$v]);
+    return one('SELECT * FROM patients WHERE citizen_id = ? AND merged_into IS NULL AND ' . fw(), [$v]);
 };
 
 if (is_post()) {
@@ -32,7 +32,7 @@ if (is_post()) {
             'active' => post('active', '1') ? 1 : 0,
             'updated_at' => now(),
         ];
-        $old = one('SELECT * FROM medications WHERE id = ?', [(int) post('id')]);
+        $old = fone('medications', (int) post('id'));
         if ($data['name'] === '') {
             flash('error', 'Bitte eine Bezeichnung angeben.');
         } elseif ($old && $old['is_btm'] != $data['is_btm'] && !can('btm.manage')) {
@@ -49,11 +49,11 @@ if (is_post()) {
         redirect(url('stock'));
     }
     if ($action === 'move') {
-        $med = one('SELECT * FROM medications WHERE id = ?', [(int) post('medication_id')]);
+        $med = fone('medications', (int) post('medication_id'));
         $kind = (string) post('kind');
         $qty = abs((int) post('quantity'));
         $patient = $findPatient((string) post('patient'));
-        $witness = (int) post('witness_id') ? one('SELECT * FROM users WHERE id = ? AND active = 1', [(int) post('witness_id')]) : null;
+        $witness = (int) post('witness_id') ? one('SELECT * FROM users WHERE id = ? AND active = 1 AND ' . fw(), [(int) post('witness_id')]) : null;
         $note = trim((string) post('note'));
         $err = null;
         $needs = ['in' => 'stock.manage', 'out' => 'stock.dispense', 'loss' => 'stock.dispense', 'correct' => 'stock.manage'][$kind] ?? null;
@@ -103,14 +103,14 @@ $q = trim((string) ($_GET['q'] ?? ''));
 $filter = (string) ($_GET['f'] ?? '');
 $meds = array_values(array_filter(medications(!isset($_GET['all'])), fn($m) => ($q === '' || mb_stripos($m['name'] . ' ' . $m['keywords'], $q) !== false)
     && ($filter !== 'low' || (int) $m['stock'] <= (int) $m['min_stock']) && ($filter !== 'btm' || $m['is_btm'])));
-$focus = isset($_GET['med']) ? one('SELECT * FROM medications WHERE id = ?', [(int) $_GET['med']]) : null;
-$edit = $manage && isset($_GET['edit']) ? (one('SELECT * FROM medications WHERE id = ?', [(int) $_GET['edit']]) ?: []) : null;
+$focus = isset($_GET['med']) ? fone('medications', (int) $_GET['med']) : null;
+$edit = $manage && isset($_GET['edit']) ? (fone('medications', (int) $_GET['edit']) ?: []) : null;
 $moves = all('SELECT m.*, x.name AS med_name, x.unit, u.name AS user_name, w.name AS witness_name, p.first_name, p.last_name FROM medication_moves m
-    JOIN medications x ON x.id = m.medication_id LEFT JOIN users u ON u.id = m.user_id LEFT JOIN users w ON w.id = m.witness_id LEFT JOIN patients p ON p.id = m.patient_id'
-    . ($focus ? ' WHERE m.medication_id = ' . (int) $focus['id'] : '') . ' ORDER BY m.id DESC LIMIT 40');
-$low = (int) scalar('SELECT COUNT(*) FROM medications WHERE active = 1 AND min_stock > 0 AND stock <= min_stock');
-$witnesses = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 AND id <> ? ORDER BY name', [$me['id']]), fn($u) => in_array('stock.dispense', user_permissions($u), true)));
-$patients = can('patients.view') ? all('SELECT id, first_name, last_name, citizen_id FROM patients WHERE archived_at IS NULL AND merged_into IS NULL ORDER BY updated_at DESC LIMIT 300') : [];
+    JOIN medications x ON x.id = m.medication_id LEFT JOIN users u ON u.id = m.user_id LEFT JOIN users w ON w.id = m.witness_id LEFT JOIN patients p ON p.id = m.patient_id WHERE ' . fw('x')
+    . ($focus ? ' AND m.medication_id = ' . (int) $focus['id'] : '') . ' ORDER BY m.id DESC LIMIT 40');
+$low = (int) scalar('SELECT COUNT(*) FROM medications WHERE active = 1 AND min_stock > 0 AND stock <= min_stock AND ' . fw());
+$witnesses = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 AND id <> ? AND ' . fw() . ' ORDER BY name', [$me['id']]), fn($u) => in_array('stock.dispense', user_permissions($u), true)));
+$patients = can('patients.view') ? all('SELECT id, first_name, last_name, citizen_id FROM patients WHERE archived_at IS NULL AND merged_into IS NULL AND ' . fw() . ' ORDER BY updated_at DESC LIMIT 300') : [];
 $kinds = array_filter(['out' => can('stock.dispense'), 'in' => $manage, 'loss' => can('stock.dispense'), 'correct' => $manage]);
 
 ob_start(); ?>

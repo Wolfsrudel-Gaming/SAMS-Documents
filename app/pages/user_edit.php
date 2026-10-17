@@ -3,7 +3,7 @@ defined('SAMS_ROOT') || exit;
 /** Konto anlegen, bearbeiten und verwalten (Passwort, Sitzungen, 2FA, Sperre). */
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
-$user = $id ? one('SELECT * FROM users WHERE id = ?', [$id]) : null;
+$user = $id ? fone('users', $id) : null;
 if ($id && !$user) {
     not_found('Konto nicht gefunden.');
 }
@@ -20,9 +20,9 @@ $canEdit = !$user || can_manage_user($user, 'users.edit');
 $isSelf = $user && (int) $user['id'] === (int) $me['id'];
 $ranks = assignable_ranks();
 $rankIds = array_map(fn($r) => (int) $r['id'], $ranks);
-$departments = all('SELECT * FROM departments ORDER BY sort, name');
+$departments = all('SELECT * FROM departments WHERE ' . fw() . ' ORDER BY sort, name');
 $assignableDeps = array_map(fn($d) => (int) $d['id'], assignable_departments());
-$qualifications = all('SELECT * FROM qualifications WHERE active = 1 ORDER BY sort, name');
+$qualifications = all('SELECT * FROM qualifications WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name');
 
 $fields = ['username', 'name', 'title', 'badge_number', 'department', 'doctor_number', 'phone', 'discord_id'];
 $data = $user ?? array_fill_keys($fields, '') + ['rank_id' => $ranks ? end($ranks)['id'] : null, 'active' => 1];
@@ -133,7 +133,7 @@ if (is_post()) {
     if ($new['name'] === '') {
         $errors[] = 'Bitte einen Namen angeben.';
     }
-    if ($new['badge_number'] !== '' && scalar('SELECT id FROM users WHERE badge_number = ? AND id <> ?', [$new['badge_number'], $id])) {
+    if ($new['badge_number'] !== '' && scalar('SELECT id FROM users WHERE badge_number = ? AND id <> ? AND ' . fw(), [$new['badge_number'], $id])) {
         $errors[] = 'Diese Dienstnummer ist bereits vergeben.';
     }
     if ($new['discord_id'] !== '' && !preg_match('/^\d{15,21}$/', $new['discord_id'])) {
@@ -217,7 +217,7 @@ ob_start(); ?>
     </div>
 </div>
 
-<?php if ($onetime): $loginText = "Zugang zum " . setting('org_short', 'SAMS') . "-System\nAdresse: " . base_url() . "\nBenutzername: " . $onetime['username'] . "\n" . ($onetime['kind'] === 'create' ? 'Startpasswort' : 'Neues Einmalpasswort') . ": " . $onetime['password'] . "\nBeim ersten Login legst du ein eigenes Passwort fest."; ?>
+<?php if ($onetime): $loginText = "Zugang zum " . org('org_short') . "-System\nAdresse: " . base_url() . "\nBenutzername: " . $onetime['username'] . "\n" . ($onetime['kind'] === 'create' ? 'Startpasswort' : 'Neues Einmalpasswort') . ": " . $onetime['password'] . "\nBeim ersten Login legst du ein eigenes Passwort fest."; ?>
 <section class="card onetime">
     <h2><?= $onetime['kind'] === 'create' ? 'Konto angelegt – Zugangsdaten' : 'Passwort zurückgesetzt – neues Einmalpasswort' ?></h2>
     <p>Gib diese Daten an <strong><?= e($user['name']) ?></strong> weiter (z. B. per Discord-Direktnachricht). Das Passwort wird <strong>nur jetzt</strong> angezeigt und muss beim ersten Login geändert werden.</p>
@@ -244,7 +244,7 @@ ob_start(); ?>
     <input type="hidden" name="action" value="save">
     <h3 class="form-heading">Zugang &amp; Dienst</h3>
     <div class="field w-third"><label>Benutzername <span class="req">*</span></label><input name="username" value="<?= e($data['username']) ?>" required autocomplete="off"<?= $ro ? ' disabled' : '' ?>></div>
-    <div class="field w-third"><label>Dienstnummer</label><input name="badge_number" value="<?= e($data['badge_number']) ?>" placeholder="z. B. <?= e(setting('org_short', 'SAMS')) ?>-104"<?= $ro ? ' disabled' : '' ?>></div>
+    <div class="field w-third"><label>Dienstnummer</label><input name="badge_number" value="<?= e($data['badge_number']) ?>" placeholder="z. B. <?= e(org('org_short')) ?>-104"<?= $ro ? ' disabled' : '' ?>></div>
     <div class="field w-third"><label>Rang <span class="req">*</span></label>
         <select name="rank_id"<?= $ro ? ' disabled' : '' ?>>
             <?php if ($user && $currentRank && !in_array((int) $currentRank['id'], $rankIds, true)): ?>

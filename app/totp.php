@@ -73,7 +73,7 @@ function totp_verify(string $secret, string $code, int $lastStep = 0): ?int
 
 function totp_uri(string $secret, string $account): string
 {
-    $issuer = setting('org_short', 'SAMS');
+    $issuer = org('org_short');
     return 'otpauth://totp/' . rawurlencode($issuer . ':' . $account) . '?secret=' . $secret
         . '&issuer=' . rawurlencode($issuer) . '&digits=6&period=30';
 }

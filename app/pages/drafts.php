@@ -5,13 +5,13 @@ $me = current_user();
 $base = 'SELECT d.*, p.first_name, p.last_name, o.name AS owner_name, c.name AS creator_name, s.name AS submitter_name
     FROM document_drafts d LEFT JOIN patients p ON p.id = d.patient_id LEFT JOIN users o ON o.id = d.owner_id
     LEFT JOIN users c ON c.id = d.created_by LEFT JOIN users s ON s.id = d.submitted_by';
-$mine = all("$base WHERE d.owner_id = ? AND d.status IN ('draft', 'rejected') ORDER BY d.updated_at DESC", [$me['id']]);
-$submitted = all("$base WHERE d.submitted_by = ? AND d.status = 'pending' ORDER BY d.submitted_at DESC", [$me['id']]);
+$mine = all("$base WHERE " . fw('d') . " AND d.owner_id = ? AND d.status IN ('draft', 'rejected') ORDER BY d.updated_at DESC", [$me['id']]);
+$submitted = all("$base WHERE " . fw('d') . " AND d.submitted_by = ? AND d.status = 'pending' ORDER BY d.submitted_at DESC", [$me['id']]);
 $toApprove = can('documents.approve')
-    ? array_values(array_filter(all("$base WHERE d.status = 'pending' ORDER BY d.submitted_at", []), 'can_approve'))
+    ? array_values(array_filter(all("$base WHERE " . fw('d') . " AND d.status = 'pending' ORDER BY d.submitted_at", []), 'can_approve'))
     : [];
 $others = can('documents.drafts_all')
-    ? all("$base WHERE d.owner_id <> ? AND (d.submitted_by IS NULL OR d.submitted_by <> ?) ORDER BY d.updated_at DESC LIMIT 100", [$me['id'], $me['id']])
+    ? all("$base WHERE " . fw('d') . " AND d.owner_id <> ? AND (d.submitted_by IS NULL OR d.submitted_by <> ?) ORDER BY d.updated_at DESC LIMIT 100", [$me['id'], $me['id']])
     : [];
 
 $table = function (array $rows, string $empty, string $who = 'owner') {

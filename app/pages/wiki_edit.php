@@ -3,7 +3,7 @@ defined('SAMS_ROOT') || exit;
 /** Wiki-Seite anlegen/bearbeiten. Jede Änderung legt eine Version an. */
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
-$pg = $id ? one('SELECT * FROM wiki_pages WHERE id = ?', [$id]) : null;
+$pg = $id ? fone('wiki_pages', $id) : null;
 if ($id && !$pg) {
     not_found('Wiki-Seite nicht gefunden.');
 }
@@ -27,7 +27,7 @@ if (is_post()) {
     $slug = wiki_slug($form['title']);
     if ($form['title'] === '') {
         $errors[] = 'Bitte einen Titel angeben.';
-    } elseif (scalar('SELECT id FROM wiki_pages WHERE slug = ? AND id <> ?', [$slug, $id])) {
+    } elseif (scalar('SELECT id FROM wiki_pages WHERE slug = ? AND id <> ? AND ' . fw(), [$slug, $id])) {
         $errors[] = 'Es gibt bereits eine Seite mit diesem Titel.';
     }
     if (!$errors) {
@@ -44,7 +44,7 @@ if (is_post()) {
         redirect(url('wiki_page', ['slug' => $slug]));
     }
 }
-$cats = array_column(all('SELECT DISTINCT category FROM wiki_pages ORDER BY category'), 'category');
+$cats = array_column(all('SELECT DISTINCT category FROM wiki_pages WHERE ' . fw() . ' ORDER BY category'), 'category');
 
 ob_start(); ?>
 <div class="page-head"><h1><?= $pg ? 'Seite bearbeiten' : 'Neue Wiki-Seite' ?></h1><a class="btn" href="<?= e($pg ? url('wiki_page', ['slug' => $pg['slug']]) : url('wiki')) ?>">Abbrechen</a></div>

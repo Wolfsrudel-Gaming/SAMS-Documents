@@ -1,7 +1,7 @@
 <?php
 defined('SAMS_ROOT') || exit;
 $id = (int) ($_GET['id'] ?? 0);
-$patient = $id ? one('SELECT * FROM patients WHERE id = ?', [$id]) : null;
+$patient = $id ? fone('patients', $id) : null;
 if ($id && !$patient) {
     not_found('Patientenakte nicht gefunden.');
 }

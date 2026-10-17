@@ -14,7 +14,26 @@ defined('SAMS_ROOT') || exit;
  * checkbox, checkboxes, items (Tabellenzeilen), bodymap (Körperschema),
  * signature (Unterschrift auf dem Gerät, z.B. vom Patienten).
  */
-function document_types(): array
+/**
+ * Dokumentarten der aktuellen (oder angegebenen) Fraktion. Eingebaute Arten
+ * gelten für die Fraktionsarten unter 'kinds' (Standard: Rettungsdienst, '*' = alle),
+ * eigene Vorlagen gehören einer Fraktion.
+ */
+function document_types(?int $factionId = null): array
+{
+    $factionId ??= fid();
+    $kind = faction_kind($factionId);
+    return array_filter(document_types_all(), function ($t) use ($kind, $factionId) {
+        if (isset($t['faction_id'])) {
+            return (int) $t['faction_id'] === $factionId;
+        }
+        $kinds = $t['kinds'] ?? ['medical'];
+        return $kinds === '*' || in_array($kind, (array) $kinds, true);
+    });
+}
+
+/** Alle Dokumentarten aller Fraktionen (zum Anzeigen bestehender Dokumente). */
+function document_types_all(): array
 {
     static $types = null;
     if ($types !== null) {
@@ -423,6 +442,7 @@ function document_types(): array
             'role'     => 'medic',
             'patient'  => 'optional',
             'template' => 'schreiben',
+            'kinds'    => '*',
             'fields'   => [
                 ['name' => 'recipient', 'label' => 'Empfänger', 'type' => 'textarea', 'rows' => 4, 'placeholder' => "Los Santos Police Department\nz. Hd. Captain …\nMission Row\nLos Santos"],
                 ['name' => 'your_ref', 'label' => 'Ihr Zeichen', 'type' => 'text', 'width' => 'half'],
@@ -445,7 +465,7 @@ function document_types(): array
 
 function doc_type(string $key): ?array
 {
-    $types = document_types();
+    $types = document_types_all();
     return isset($types[$key]) ? ['key' => $key] + $types[$key] : null;
 }
 
@@ -460,7 +480,7 @@ function datalists(): array
         }
     }
     // Artikel aus dem Medikamentenbestand immer vorschlagen (sichere Zuordnung beim Einlösen)
-    $lists['meds'] = array_values(array_unique(array_merge(db_column_list('SELECT name FROM medications WHERE active = 1 ORDER BY name'), $lists['meds'] ?? [])));
+    $lists['meds'] = array_values(array_unique(array_merge(db_column_list('SELECT name FROM medications WHERE active = 1 AND ' . fw() . ' ORDER BY name'), $lists['meds'] ?? [])));
     return $lists;
 }
 
@@ -506,9 +526,9 @@ function datalists_builtin(): array
             'Havrix (Hepatitis A)', 'Twinrix (Hepatitis A + B)', 'Influvac Tetra (Influenza)', 'Comirnaty (COVID-19)', 'Priorix (Masern, Mumps, Röteln)',
             'Rabipur (Tollwut)', 'Typhim Vi (Typhus)', 'Stamaril (Gelbfieber)', 'Pneumovax 23 (Pneumokokken)',
         ],
-        'ranks' => db_column_list('SELECT name FROM ranks ORDER BY level DESC'),
-        'qualifications' => db_column_list('SELECT name FROM qualifications ORDER BY name'),
-        'staff_departments' => db_column_list('SELECT name FROM departments WHERE active = 1 ORDER BY sort, name'),
+        'ranks' => db_column_list('SELECT name FROM ranks WHERE ' . fw() . ' ORDER BY level DESC'),
+        'qualifications' => db_column_list('SELECT name FROM qualifications WHERE ' . fw() . ' ORDER BY name'),
+        'staff_departments' => db_column_list('SELECT name FROM departments WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name'),
         'services' => price_list() ? array_map('price_label', price_list()) : [
             'Notfalleinsatz Rettungswagen', 'Notarzteinsatz', 'Luftrettung (Helikopter)', 'Ambulante Erstversorgung', 'Ärztliche Untersuchung',
             'Wundversorgung / Naht', 'Gipsverband / Schienung', 'Röntgen', 'CT', 'Stationäre Behandlung (pro Tag)', 'Operation',
@@ -775,10 +795,10 @@ function bodymap_svg(array $points, bool $editable = false): string
 /** Nächste fortlaufende Dokumentnummer, z.B. SAMS-AU-2026-00042 */
 function next_document_number(array $type): string
 {
-    $prefix = setting('doc_prefix', 'SAMS');
+    $prefix = doc_prefix();
     $year = date('Y');
     $base = $prefix . '-' . $type['code'] . '-' . $year . '-';
-    $last = scalar('SELECT number FROM documents WHERE number LIKE ? ORDER BY id DESC LIMIT 1', [$base . '%']);
+    $last = scalar('SELECT number FROM documents WHERE number LIKE ? AND ' . fw() . ' ORDER BY id DESC LIMIT 1', [$base . '%']);
     $n = $last ? ((int) substr((string) $last, strlen($base))) + 1 : 1;
     return $base . str_pad((string) $n, 5, '0', STR_PAD_LEFT);
 }

@@ -25,7 +25,11 @@ function current_user(bool $refresh = false): ?array
     if ($uid) {
         $row = one('SELECT * FROM users WHERE id = ? AND active = 1', [$uid]);
         // "Alle Sitzungen beenden" und Passwortwechsel erhöhen session_version
-        if ($row && (int) $row['session_version'] === (int) ($_SESSION['sv'] ?? 0)) {
+        $factionOff = $row && empty($row['is_superadmin']) && empty(faction_by_id((int) ($row['faction_id'] ?? 1))['active']);
+        if ($factionOff) {
+            flash('error', 'Deine Fraktion ist derzeit deaktiviert.');
+            unset($_SESSION['uid'], $_SESSION['sv']);
+        } elseif ($row && (int) $row['session_version'] === (int) ($_SESSION['sv'] ?? 0)) {
             $user = $row;
         } else {
             unset($_SESSION['uid'], $_SESSION['sv']);
@@ -42,6 +46,7 @@ function current_user(bool $refresh = false): ?array
             $_SESSION['last_activity'] = time();
         }
     }
+    faction_context_for_user($user);
     return $user;
 }
 

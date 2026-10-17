@@ -3,7 +3,7 @@ defined('SAMS_ROOT') || exit;
 /** Personalakte: Laufbahn, Personaldokumente, Dienstzeiten und Notizen. */
 $me = current_user();
 $id = (int) ($_GET['id'] ?? $me['id']);
-$target = one('SELECT * FROM users WHERE id = ?', [$id]);
+$target = fone('users', $id);
 if (!$target || !can_view_personnel($target)) {
     not_found('Personalakte nicht gefunden.');
 }

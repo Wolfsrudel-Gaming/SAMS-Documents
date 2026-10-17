@@ -15,6 +15,9 @@ $type = null;
 if ($code !== '') {
     $doc = one('SELECT * FROM documents WHERE verify_code = ?', [$code]);
     $type = $doc ? doc_type($doc['type']) : null;
+    if ($doc) {
+        set_faction_context((int) $doc['faction_id']); // Logo und Name der ausstellenden Behörde
+    }
 }
 $issuer = $doc ? (json_decode((string) $doc['issuer_snapshot'], true) ?: []) : [];
 $patient = $doc ? (json_decode((string) $doc['patient_snapshot'], true) ?: []) : [];
@@ -42,7 +45,7 @@ $states = [
 <main class="main">
     <div class="verify card">
         <div class="verify-head">
-            <img src="<?= e(setting('logo', 'assets/img/logo.svg')) ?>" alt="">
+            <img src="<?= e(faction_logo()) ?>" alt="">
             <div><h1>Echtheitsprüfung</h1><p class="muted"><?= e(org('org_name')) ?> · <?= e(org('org_sub')) ?></p></div>
         </div>
         <form method="get" class="verify-form">

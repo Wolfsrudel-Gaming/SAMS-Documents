@@ -1,7 +1,7 @@
 <?php
 defined('SAMS_ROOT') || exit;
 /** Einstellungen je Dokumentart: Freigabepflicht (Gegenzeichnung) und Standardmodus des Formulars. */
-$ranks = all('SELECT * FROM ranks ORDER BY level DESC');
+$ranks = all('SELECT * FROM ranks WHERE ' . fw() . ' ORDER BY level DESC');
 $levels = [0 => 'keine Freigabe nötig'];
 foreach ($ranks as $r) {
     $levels[(int) $r['level']] = 'unterhalb ' . $r['name'] . ' (Stufe ' . (int) $r['level'] . ')';

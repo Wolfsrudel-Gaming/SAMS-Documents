@@ -17,8 +17,8 @@ if (is_post()) {
     }
 }
 
-$a = $target ? one('SELECT * FROM patients WHERE id = ? AND merged_into IS NULL', [$target]) : null;
-$b = $source ? one('SELECT * FROM patients WHERE id = ? AND merged_into IS NULL', [$source]) : null;
+$a = $target ? one('SELECT * FROM patients WHERE id = ? AND merged_into IS NULL AND ' . fw(), [$target]) : null;
+$b = $source ? one('SELECT * FROM patients WHERE id = ? AND merged_into IS NULL AND ' . fw(), [$source]) : null;
 $count = fn(int $pid) => array_sum(array_map(fn($t) => (int) scalar("SELECT COUNT(*) FROM $t WHERE patient_id = ?", [$pid]), ['entries', 'documents', 'cases', 'attachments']));
 
 ob_start(); ?>

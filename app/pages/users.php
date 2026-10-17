@@ -6,7 +6,7 @@ $rankFilter = (int) ($_GET['rank'] ?? 0);
 $depFilter = (int) ($_GET['dep'] ?? 0);
 $status = (string) ($_GET['status'] ?? 'active');
 
-$where = ['1=1'];
+$where = [fw('u')];
 $params = [];
 if ($q !== '') {
     $esc = db_driver() === 'mysql' ? '' : " ESCAPE '\\'";
@@ -40,7 +40,7 @@ $pages = max(1, (int) ceil($total / $per));
 // Abteilungen der angezeigten Konten in einer Abfrage laden
 $deps = [];
 $depById = [];
-foreach (all('SELECT * FROM departments ORDER BY sort, name') as $d) {
+foreach (all('SELECT * FROM departments WHERE ' . fw() . ' ORDER BY sort, name') as $d) {
     $depById[(int) $d['id']] = $d;
 }
 if ($users) {
@@ -51,8 +51,8 @@ if ($users) {
         }
     }
 }
-$ranks = all('SELECT * FROM ranks ORDER BY level DESC, name');
-$counts = ['active' => (int) scalar('SELECT COUNT(*) FROM users WHERE active = 1'), 'inactive' => (int) scalar('SELECT COUNT(*) FROM users WHERE active = 0')];
+$ranks = all('SELECT * FROM ranks WHERE ' . fw() . ' ORDER BY level DESC, name');
+$counts = ['active' => (int) scalar('SELECT COUNT(*) FROM users WHERE active = 1 AND ' . fw()), 'inactive' => (int) scalar('SELECT COUNT(*) FROM users WHERE active = 0 AND ' . fw())];
 
 ob_start(); ?>
 <div class="page-head">

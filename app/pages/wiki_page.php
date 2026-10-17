@@ -2,7 +2,7 @@
 defined('SAMS_ROOT') || exit;
 /** Wiki-Seite anzeigen, inkl. Versionsgeschichte. */
 $slug = (string) ($_GET['slug'] ?? '');
-$pg = one('SELECT p.*, u.name AS editor FROM wiki_pages p LEFT JOIN users u ON u.id = p.updated_by WHERE p.slug = ?', [$slug]);
+$pg = one('SELECT p.*, u.name AS editor FROM wiki_pages p LEFT JOIN users u ON u.id = p.updated_by WHERE p.slug = ? AND ' . fw('p'), [$slug]);
 if (!$pg) {
     if (can('wiki.edit')) {
         flash('warn', 'Diese Seite gibt es noch nicht – leg sie jetzt an.');

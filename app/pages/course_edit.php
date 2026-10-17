@@ -3,12 +3,12 @@ defined('SAMS_ROOT') || exit;
 /** Lehrgang bearbeiten: Einstellungen, Lernmodule, Prüfungsfragen, Ergebnisse. */
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
-$course = $id ? one('SELECT * FROM training_courses WHERE id = ?', [$id]) : null;
+$course = $id ? fone('training_courses', $id) : null;
 if ($id && !$course) {
     not_found('Lehrgang nicht gefunden.');
 }
-$quals = all('SELECT * FROM qualifications ORDER BY name');
-$signers = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 ORDER BY name'), fn($u) => user_level($u) >= 50 || !empty($u['is_superadmin'])));
+$quals = all('SELECT * FROM qualifications WHERE ' . fw() . ' ORDER BY name');
+$signers = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 AND ' . fw() . ' ORDER BY name'), fn($u) => user_level($u) >= 50 || !empty($u['is_superadmin'])));
 $errors = [];
 
 /** Antworten aus der Textarea: eine pro Zeile, richtige beginnen mit * */

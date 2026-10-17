@@ -10,10 +10,10 @@ if ($q === '') {
     redirect(url(can('patients.view') ? 'patients' : 'dashboard'));
 }
 $code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $q));
-if (can('documents.view') && ($doc = one('SELECT id FROM documents WHERE number = ? OR verify_code = ?', [strtoupper($q), $code]))) {
+if (can('documents.view') && ($doc = one('SELECT id FROM documents WHERE (number = ? OR verify_code = ?) AND ' . fw(), [strtoupper($q), $code]))) {
     redirect(url('document', ['id' => $doc['id']]));
 }
-if (can('patients.view') && ($p = one("SELECT id FROM patients WHERE citizen_id = ? AND citizen_id <> '' AND merged_into IS NULL", [$q]))) {
+if (can('patients.view') && ($p = one("SELECT id FROM patients WHERE citizen_id = ? AND citizen_id <> '' AND merged_into IS NULL AND " . fw(), [$q]))) {
     redirect(url('patient', ['id' => $p['id']]));
 }
 
@@ -32,36 +32,36 @@ $snippet = function (string $text) use ($q): string {
 $nameExpr = db_driver() === 'mysql' ? "CONCAT(first_name, ' ', last_name)" : "first_name || ' ' || last_name";
 
 if (can('patients.view')) {
-    $rows = all("SELECT * FROM patients WHERE merged_into IS NULL AND ($nameExpr LIKE ? OR citizen_id LIKE ? OR phone LIKE ? OR insurance_number LIKE ?) ORDER BY archived_at IS NOT NULL, last_name LIMIT $limit", [$like, $like, $like, $like]);
-    $sections['Patientenakten'] = array_map(fn($p) => ['url' => url('patient', ['id' => $p['id']]), 'title' => patient_name($p, true) . ($p['archived_at'] ? ' (archiviert)' : ''),
+    $rows = all("SELECT * FROM patients WHERE merged_into IS NULL AND " . fw() . " AND ($nameExpr LIKE ? OR citizen_id LIKE ? OR phone LIKE ? OR insurance_number LIKE ?) ORDER BY archived_at IS NOT NULL, last_name LIMIT $limit", [$like, $like, $like, $like]);
+    $sections[term('records')] = array_map(fn($p) => ['url' => url('patient', ['id' => $p['id']]), 'title' => patient_name($p, true) . ($p['archived_at'] ? ' (archiviert)' : ''),
         'meta' => 'geb. ' . fmt_date($p['dob']) . ($p['citizen_id'] ? ' · ' . $p['citizen_id'] : ''), 'text' => ''], $rows);
 
-    $rows = all('SELECT c.*, p.first_name, p.last_name FROM cases c JOIN patients p ON p.id = c.patient_id WHERE c.number LIKE ? OR c.title LIKE ? OR c.diagnosis LIKE ? OR c.incident LIKE ? OR c.location LIKE ? ORDER BY c.id DESC LIMIT ' . $limit, [$like, $like, $like, $like, $like]);
-    $sections['Fälle'] = array_map(fn($c) => ['url' => url('case', ['id' => $c['id']]), 'title' => $c['title'], 'meta' => $c['number'] . ' · ' . patient_name($c, true),
+    $rows = all('SELECT c.*, p.first_name, p.last_name FROM cases c JOIN patients p ON p.id = c.patient_id WHERE ' . fw('c') . ' AND (c.number LIKE ? OR c.title LIKE ? OR c.diagnosis LIKE ? OR c.incident LIKE ? OR c.location LIKE ?) ORDER BY c.id DESC LIMIT ' . $limit, [$like, $like, $like, $like, $like]);
+    $sections[term('cases')] = array_map(fn($c) => ['url' => url('case', ['id' => $c['id']]), 'title' => $c['title'], 'meta' => $c['number'] . ' · ' . patient_name($c, true),
         'text' => $snippet($c['diagnosis'] . ' ' . $c['incident'] . ' ' . $c['location'])], $rows);
 
-    $rows = all('SELECT e.*, p.first_name, p.last_name FROM entries e JOIN patients p ON p.id = e.patient_id WHERE e.title LIKE ? OR e.content LIKE ? ORDER BY e.occurred_at DESC LIMIT 60', [$like, $like]);
+    $rows = all('SELECT e.*, p.first_name, p.last_name FROM entries e JOIN patients p ON p.id = e.patient_id WHERE ' . fw('p') . ' AND (e.title LIKE ? OR e.content LIKE ?) ORDER BY e.occurred_at DESC LIMIT 60', [$like, $like]);
     $rows = array_slice(array_values(array_filter($rows, 'entry_visible')), 0, $limit);
     $sections['Akteneinträge'] = array_map(fn($e) => ['url' => url('patient', ['id' => $e['patient_id']]), 'title' => $e['title'], 'meta' => fmt_datetime($e['occurred_at']) . ' · ' . patient_name($e, true) . ' · ' . $e['type'],
         'text' => $snippet($e['content'])], $rows);
 }
 if (can('documents.view')) {
-    $rows = all('SELECT * FROM documents WHERE number LIKE ? OR patient_snapshot LIKE ? ORDER BY issued_at DESC LIMIT ' . $limit, [$like, $like]);
+    $rows = all('SELECT * FROM documents WHERE ' . fw() . ' AND (number LIKE ? OR patient_snapshot LIKE ?) ORDER BY issued_at DESC LIMIT ' . $limit, [$like, $like]);
     $sections['Dokumente'] = array_map(function ($d) {
         $p = json_decode((string) $d['patient_snapshot'], true) ?: [];
         return ['url' => url('document', ['id' => $d['id']]), 'title' => (doc_type($d['type'])['title'] ?? $d['type']), 'meta' => $d['number'] . ' · ' . fmt_date($d['issued_at']) . ($p ? ' · ' . patient_name($p, true) : ''), 'text' => ''];
     }, $rows);
 }
 if (can('wiki.view|wiki.edit')) {
-    $rows = all('SELECT * FROM wiki_pages WHERE title LIKE ? OR content LIKE ? ORDER BY title LIMIT ' . $limit, [$like, $like]);
+    $rows = all('SELECT * FROM wiki_pages WHERE ' . fw() . ' AND (title LIKE ? OR content LIKE ?) ORDER BY title LIMIT ' . $limit, [$like, $like]);
     $sections['Wiki'] = array_map(fn($w) => ['url' => url('wiki_page', ['slug' => $w['slug']]), 'title' => $w['title'], 'meta' => $w['category'], 'text' => $snippet((string) $w['content'])], $rows);
 }
 if (can('training.view|training.manage')) {
-    $rows = all('SELECT * FROM training_courses WHERE active = 1 AND (title LIKE ? OR description LIKE ?) ORDER BY title LIMIT ' . $limit, [$like, $like]);
+    $rows = all('SELECT * FROM training_courses WHERE ' . fw() . ' AND active = 1 AND (title LIKE ? OR description LIKE ?) ORDER BY title LIMIT ' . $limit, [$like, $like]);
     $sections['Lehrgänge'] = array_map(fn($c) => ['url' => url('course', ['id' => $c['id']]), 'title' => $c['title'], 'meta' => 'Lehrgang', 'text' => $snippet((string) $c['description'])], $rows);
 }
 if (can('users.view') || can('personnel.view')) {
-    $rows = all('SELECT * FROM users WHERE name LIKE ? OR username LIKE ? OR badge_number LIKE ? ORDER BY name LIMIT ' . $limit, [$like, $like, $like]);
+    $rows = all('SELECT * FROM users WHERE ' . fw() . ' AND (name LIKE ? OR username LIKE ? OR badge_number LIKE ?) ORDER BY name LIMIT ' . $limit, [$like, $like, $like]);
     $sections['Personal'] = array_map(fn($u) => ['url' => url(can('personnel.view') ? 'personnel' : 'user_edit', ['id' => $u['id']]), 'title' => user_display($u),
         'meta' => user_rank_name($u) . ($u['badge_number'] ? ' · ' . $u['badge_number'] : '') . ($u['active'] ? '' : ' · gesperrt'), 'text' => ''], $rows);
 }
