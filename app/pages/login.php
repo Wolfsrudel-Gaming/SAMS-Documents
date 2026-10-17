@@ -43,6 +43,9 @@ if (is_post()) {
             case 'inactive':
                 $error = 'Dieses Konto ist gesperrt. Bitte wende dich an deine Leitung.';
                 break;
+            case 'faction_inactive':
+                $error = 'Deine Fraktion ist derzeit deaktiviert.';
+                break;
             default:
                 $error = 'Benutzername oder Passwort falsch.';
         }

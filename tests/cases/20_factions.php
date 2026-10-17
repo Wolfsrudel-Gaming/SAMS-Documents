@@ -62,7 +62,7 @@ check($admin->has('Tester'), 'Zurück zum Rettungsdienst');
 // Deaktivierte Fraktion
 $admin->get('/index.php?p=factions&edit=' . $pd);
 $admin->post('/index.php?p=factions', ['action' => 'save', 'id' => (string) $pd, 'name' => 'Los Santos Police Department', 'short' => 'LSPD', 'color' => '#1d3a6e', 'modules[]' => ['records', 'billing', 'wanted', 'requests']]);
-check($chief->get('/index.php?p=dashboard')->has('derzeit deaktiviert'), 'Deaktivierte Fraktion kann sich nicht anmelden');
+check($chief->get('/index.php?p=dashboard')->has('derzeit deaktiviert') && (new Client(TEST_BASE))->login('chief.miller')->has('derzeit deaktiviert'), 'Deaktivierte Fraktion kann sich nicht anmelden');
 texec('UPDATE factions SET active = 1 WHERE id = ?', [$pd]);
 $chief = (new Client(TEST_BASE))->login('chief.miller');
 // Inhalte der Polizei: Dokumentarten, Bußgeldbescheid mit Strafkatalog, Aktenfelder, Eintragsarten

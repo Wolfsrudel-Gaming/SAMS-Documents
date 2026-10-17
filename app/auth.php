@@ -169,6 +169,9 @@ function attempt_login(string $username, string $password): string
         record_login_attempt($username, false);
         return 'inactive';
     }
+    if (empty($u['is_superadmin']) && empty(faction_by_id((int) ($u['faction_id'] ?? 1))['active'])) {
+        return 'faction_inactive';
+    }
     if (password_needs_rehash($u['password_hash'], PASSWORD_DEFAULT)) {
         update('users', (int) $u['id'], ['password_hash' => password_hash($password, PASSWORD_DEFAULT)]);
     }
