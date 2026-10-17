@@ -406,6 +406,7 @@ function document_types(): array
                     'text'  => ['label' => 'Leistung', 'list' => 'services'],
                     'qty'   => ['label' => 'Anzahl', 'type' => 'number', 'default' => '1'],
                     'price' => ['label' => 'Einzelpreis', 'type' => 'number', 'step' => '0.01'],
+                    'reason' => ['label' => 'Begründung (bei Abweichung)', 'placeholder' => 'nur bei abweichendem Preis'],
                 ]],
                 ['name' => 'tax', 'label' => 'Steuersatz (%)', 'type' => 'number', 'default' => '0', 'width' => 'half'],
                 ['name' => 'paid', 'label' => 'Bereits bar bezahlt', 'type' => 'checkbox', 'width' => 'half'],
@@ -482,7 +483,7 @@ function datalists(): array
             'Anästhesie / Intensivmedizin', 'Notaufnahme', 'Radiologie', 'Psychiatrie / Psychotherapie', 'Psychologie', 'Gynäkologie',
             'Pädiatrie', 'HNO', 'Augenheilkunde', 'Dermatologie', 'Urologie', 'Rechtsmedizin', 'Physiotherapie', 'Zahnmedizin',
         ],
-        'services' => [
+        'services' => price_list() ? array_map('price_label', price_list()) : [
             'Notfalleinsatz Rettungswagen', 'Notarzteinsatz', 'Luftrettung (Helikopter)', 'Ambulante Erstversorgung', 'Ärztliche Untersuchung',
             'Wundversorgung / Naht', 'Gipsverband / Schienung', 'Röntgen', 'CT', 'Stationäre Behandlung (pro Tag)', 'Operation',
             'Ausstellung Attest', 'Tauglichkeitsuntersuchung', 'Blutentnahme auf behördliche Anordnung', 'Psychologisches Gutachten',

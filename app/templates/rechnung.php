@@ -3,23 +3,21 @@ defined('SAMS_ROOT') || exit;
 /** Rechnung / Liquidation */
 $recipient = ($d['recipient'] ?? '') !== '' ? $d['recipient'] : '';
 $items = (array) ($d['items'] ?? []);
-$net = 0.0;
-foreach ($items as $it) {
-    $net += (float) str_replace(',', '.', (string) ($it['qty'] ?? 1)) * (float) str_replace(',', '.', (string) ($it['price'] ?? 0));
-}
-$taxRate = (float) str_replace(',', '.', (string) ($d['tax'] ?? 0));
-$tax = round($net * $taxRate / 100, 2);
-$total = $net + $tax;
-$due = date('Y-m-d', strtotime(($doc['issued_at'] ?? now()) . ' +' . max(0, (int) ($d['due_days'] ?? 14)) . ' days'));
+[$net, $tax, $total] = invoice_totals($d);
+$taxRate = to_float($d['tax'] ?? 0);
+$due = invoice_due($doc, $d);
+$paid = !empty($d['paid']) || ($doc['pay_status'] ?? '') === 'paid';
+$dunning = ($doc['pay_status'] ?? '') === 'dunned' ? (int) ($doc['dunning_level'] ?? 0) : 0;
 echo a4_open($doc, $draft);
 echo doc_letterhead($doc, [
     'recipient' => $recipient,
     'no_patient_address' => $recipient !== '',
-    'info' => ['Leistungsdatum' => fmt_date($d['service_date'] ?? '')],
+    'info' => ['Leistungsdatum' => fmt_date($d['service_date'] ?? '')] + ($dunning ? ['Mahndatum' => fmt_date($doc['dunned_at'])] : []),
 ]);
 ?>
 <div class="doc-body">
-    <h2 class="doc-subject">Rechnung</h2>
+    <h2 class="doc-subject"><?= $dunning ? $dunning . '. Mahnung' : 'Rechnung' ?></h2>
+    <?php if ($dunning): ?><p>Sicher haben Sie übersehen, dass die nachstehende Rechnung vom <?= e(fmt_date($doc['issued_at'])) ?> noch offen ist. Bis heute konnten wir keinen Zahlungseingang feststellen.</p><?php endif; ?>
     <?php if ($p): ?><p class="small">Patient/in: <?= e(patient_name($p)) ?>, geb. <?= e(fmt_date($p['dob'] ?? '')) ?><?= ($p['insurance_number'] ?? '') ? ' · Vers.-Nr. ' . e($p['insurance_number']) : '' ?></p><?php endif; ?>
     <p>Für die erbrachten Leistungen erlauben wir uns, wie folgt zu berechnen:</p>
     <table class="tbl invoice">
@@ -28,7 +26,7 @@ echo doc_letterhead($doc, [
         <?php foreach ($items as $i => $it):
             $qty = (float) str_replace(',', '.', (string) ($it['qty'] ?: 1));
             $price = (float) str_replace(',', '.', (string) ($it['price'] ?: 0)); ?>
-            <tr><td><?= $i + 1 ?></td><td><?= e($it['text'] ?? '') ?></td><td class="right"><?= e(rtrim(rtrim(number_format($qty, 2, ',', ''), '0'), ',')) ?></td>
+            <tr><td><?= $i + 1 ?></td><td><?= e($it['text'] ?? '') ?><?php if (trim((string) ($it['reason'] ?? '')) !== ''): ?><br><small class="muted">Begründung: <?= e($it['reason']) ?></small><?php endif; ?></td><td class="right"><?= e(rtrim(rtrim(number_format($qty, 2, ',', ''), '0'), ',')) ?></td>
                 <td class="right"><?= e(money($price)) ?></td><td class="right"><?= e(money($qty * $price)) ?></td></tr>
         <?php endforeach; ?>
         </tbody>
@@ -38,9 +36,13 @@ echo doc_letterhead($doc, [
             <tr class="sum"><td colspan="4" class="right">Rechnungsbetrag</td><td class="right"><?= e(money($total)) ?></td></tr>
         </tfoot>
     </table>
-    <?php if (!empty($d['paid'])): ?>
-        <div class="paid-stamp">BEZAHLT<small><?= e(fmt_date($doc['issued_at'] ?? now())) ?></small></div>
-        <p>Der Rechnungsbetrag wurde bar beglichen. Vielen Dank.</p>
+    <?php if ($paid): ?>
+        <div class="paid-stamp">BEZAHLT<small><?= e(fmt_date(($doc['paid_at'] ?? '') ?: ($doc['issued_at'] ?? now()))) ?></small></div>
+        <p>Der Rechnungsbetrag wurde beglichen. Vielen Dank.</p>
+    <?php elseif ($dunning): ?>
+        <p>Wir bitten Sie, den offenen Betrag von <strong><?= e(money($total)) ?></strong> bis spätestens <strong><?= e(fmt_date($due)) ?></strong> unter Angabe der Rechnungsnummer
+            <strong class="mono"><?= e($doc['number'] ?? '') ?></strong> zu überweisen.<?= $dunning >= 3 ? ' Nach Ablauf dieser Frist übergeben wir die Forderung ohne weitere Ankündigung an das Department of Justice.' : '' ?>
+            Sollten Sie die Zahlung inzwischen geleistet haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.</p>
     <?php else: ?>
         <p>Bitte überweisen Sie den Rechnungsbetrag bis zum <strong><?= e(fmt_date($due)) ?></strong> unter Angabe der Rechnungsnummer
             <strong class="mono"><?= e($doc['number'] ?? '') ?></strong> auf das unten genannte Konto.</p>

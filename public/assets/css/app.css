@@ -257,8 +257,9 @@ label { display: block; font-weight: 600; font-size: .85rem; margin-bottom: .2re
 .field.w-half { flex: 1 1 calc(50% - .8rem); }
 .field.w-third { flex: 1 1 calc(33.33% - .8rem); }
 .field.w-quarter { flex: 1 1 calc(25% - .8rem); }
+.field.w-two-thirds { flex: 2 1 calc(66.66% - .8rem); }
 .field.w-sixth { flex: 1 1 calc(16.66% - .8rem); min-width: 105px; }
-@media (max-width: 700px) { .field.w-half, .field.w-third, .field.w-quarter { flex-basis: 100%; } .field.w-sixth { flex-basis: calc(50% - .8rem); } }
+@media (max-width: 700px) { .field.w-half, .field.w-third, .field.w-two-thirds, .field.w-quarter { flex-basis: 100%; } .field.w-sixth { flex-basis: calc(50% - .8rem); } }
 .choices { display: flex; flex-wrap: wrap; gap: .3rem 1rem; }
 .choices.cols-3 { display: grid; grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 700px) { .choices.cols-3 { grid-template-columns: 1fr 1fr; } }
@@ -441,3 +442,5 @@ html.in-tablet .topbar-right { display: none; }
 .docform details.handover summary { cursor: pointer; font-weight: 600; color: var(--muted); }
 .addenda-list .addendum { border-left: 3px solid var(--primary); padding: .4rem .7rem; margin: .5rem 0; background: var(--row-alt); }
 .nav-count { display: inline-block; min-width: 1.3em; padding: 0 .35em; margin-left: .35em; border-radius: 9px; background: var(--accent); color: #fff; font-size: .72rem; font-weight: 700; text-align: center; line-height: 1.35em; }
+.text-danger { color: var(--danger); font-weight: 600; }
+.pay-card .inline-form { flex-wrap: wrap; } .pay-card .inline-form input { max-width: 260px; }

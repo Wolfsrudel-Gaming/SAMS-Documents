@@ -289,3 +289,21 @@
         });
     });
 })();
+
+// Rechnung: Preis aus der Gebührenordnung übernehmen, sobald eine Leistung gewählt wird
+(function () {
+    'use strict';
+    document.addEventListener('change', function (e) {
+        var input = e.target;
+        if (!window.SAMS_PRICES || !input.name || !/\[text\]$/.test(input.name)) { return; }
+        var price = window.SAMS_PRICES[input.value.trim()];
+        var row = input.closest('tr');
+        var priceInput = row && row.querySelector('input[name$="[price]"]');
+        if (price === undefined || !priceInput) { return; }
+        // Nur überschreiben, wenn leer oder zuvor automatisch gesetzt
+        if (priceInput.value === '' || priceInput.dataset.auto === priceInput.value) {
+            priceInput.value = price.toFixed(2);
+            priceInput.dataset.auto = priceInput.value;
+        }
+    });
+})();

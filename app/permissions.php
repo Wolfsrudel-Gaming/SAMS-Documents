@@ -40,6 +40,10 @@ function permission_catalog(): array
             'documents.addendum'    => 'Nachträge zu fremden Dokumenten schreiben',
             'documents.drafts_all'  => 'Alle Entwürfe einsehen',
         ],
+        'Abrechnung' => [
+            'invoices.manage' => 'Rechnungen verwalten (bezahlt, mahnen)',
+            'prices.manage'   => 'Gebührenordnung (Preisliste) pflegen',
+        ],
         'Dokumente ausstellen' => $docs,
         'Personal' => [
             'users.view'           => 'Personalliste ansehen',

@@ -139,6 +139,9 @@ if (is_post()) {
         if (!empty($data['au_since']) && !empty($data['au_until']) && $data['au_until'] < $data['au_since']) {
             $errors[] = 'Das Ende der Arbeitsunfähigkeit liegt vor dem Beginn.';
         }
+        if ($type['key'] === 'rechnung') {
+            $errors = array_merge($errors, invoice_item_errors($data));
+        }
         if ($sigMode === 'live' && $liveSignature === '') {
             $errors[] = 'Bitte unterschreiben oder die hinterlegte Unterschrift wählen.';
         }
@@ -267,6 +270,7 @@ ob_start(); ?>
     </details>
 </form>
 
+<?php if ($type['key'] === 'rechnung'): ?><script>window.SAMS_PRICES = <?= price_list_json() ?>;</script><?php endif; ?>
 <?php if ($preview): ?>
 <section class="preview" id="preview">
     <h2>Vorschau</h2>

@@ -124,6 +124,10 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
             'issued_at' => now(),
             'valid_until' => $validUntil,
         ]);
+        if ($type['key'] === 'rechnung') {
+            $paid = !empty($data['paid']);
+            update('documents', $id, ['pay_status' => $paid ? 'paid' : 'open', 'amount_cents' => (int) round(invoice_totals($data)[2] * 100), 'paid_at' => $paid ? now() : null]);
+        }
         if ($patient) {
             q('UPDATE patients SET updated_at = ? WHERE id = ?', [now(), $patient['id']]);
             if ($type['key'] === 'todesbescheinigung' && !empty($data['mark_deceased'])) {

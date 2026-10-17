@@ -24,6 +24,29 @@ if (is_post() && post('action') === 'revoke') {
     redirect(url('document', ['id' => $id]));
 }
 
+if (is_post() && post('action') === 'pay_status') {
+    csrf_check();
+    require_perm('invoices.manage');
+    if ($doc['type'] !== 'rechnung' || $doc['status'] === 'revoked') {
+        forbidden('Nur für gültige Rechnungen.');
+    }
+    $to = (string) post('to');
+    $note = mb_substr(trim((string) post('pay_note')), 0, 190);
+    $row = match ($to) {
+        'paid' => ['pay_status' => 'paid', 'paid_at' => now()],
+        'dunned' => ['pay_status' => 'dunned', 'dunning_level' => min(3, (int) $doc['dunning_level'] + 1), 'dunned_at' => now()],
+        'open' => ['pay_status' => 'open', 'paid_at' => null],
+        default => null,
+    };
+    if ($row) {
+        update('documents', $id, $row + ['pay_note' => $note]);
+        $label = $to === 'dunned' ? $row['dunning_level'] . '. Mahnung' : PAY_STATUS[$to][1];
+        audit('invoice.status', 'document', $id, $doc['number'] . ' → ' . $label . ($note !== '' ? ' (' . $note . ')' : ''));
+        flash('success', 'Rechnung: ' . $label . '.' . ($to === 'dunned' ? ' Die Mahnung kann jetzt gedruckt oder im Spiel übergeben werden.' : ''));
+    }
+    redirect(url('document', ['id' => $id]));
+}
+
 if (is_post() && post('action') === 'addendum') {
     csrf_check();
     if (!can_add_addendum($doc)) {
@@ -99,7 +122,7 @@ $fileName = preg_replace('/[^A-Za-z0-9\-]/', '_', $doc['number'] . '_' . ($doc['
 ob_start(); ?>
 <div class="page-head no-print">
     <div>
-        <h1><?= e($type['title'] ?? $doc['type']) ?> <?= doc_status_badge($doc) ?></h1>
+        <h1><?= e($type['title'] ?? $doc['type']) ?> <?= doc_status_badge($doc) ?> <?= pay_status_badge($doc) ?></h1>
         <p class="muted mono"><?= e($doc['number']) ?> · Prüfcode <?= e($doc['verify_code']) ?> · ausgestellt <?= e(fmt_datetime($doc['issued_at'])) ?> von <?= e(user_display($doc['issuer_snapshot'])) ?></p>
     </div>
     <div class="btn-row">
@@ -123,6 +146,24 @@ ob_start(); ?>
 
 <?php if ($doc['status'] === 'revoked'): ?>
     <div class="flash error no-print"><strong>Storniert</strong> am <?= e(fmt_datetime($doc['revoked_at'])) ?> durch <?= e($doc['revoker']) ?>: <?= e($doc['revoked_reason']) ?></div>
+<?php endif; ?>
+
+<?php if ($doc['type'] === 'rechnung' && $doc['status'] !== 'revoked' && can('invoices.manage')): ?>
+<section class="card no-print pay-card">
+    <form method="post" class="inline-form">
+        <?= csrf_field() ?><input type="hidden" name="action" value="pay_status">
+        <span><strong>Zahlung:</strong> <?= pay_status_badge($doc) ?> · <?= e(money($doc['amount_cents'] / 100)) ?>
+            <?= $doc['pay_status'] === 'paid' ? ' · eingegangen am ' . e(fmt_date($doc['paid_at'])) : ' · fällig am ' . e(fmt_date(invoice_due($doc, $doc['data']))) ?>
+            <?= $doc['pay_note'] ? ' · <span class="muted">' . e($doc['pay_note']) . '</span>' : '' ?></span>
+        <input name="pay_note" maxlength="190" placeholder="Notiz (z. B. bar bei Entlassung)">
+        <?php if ($doc['pay_status'] !== 'paid'): ?>
+            <button class="btn small primary" name="to" value="paid">Als bezahlt markieren</button>
+            <?php if ((int) $doc['dunning_level'] < 3): ?><button class="btn small" name="to" value="dunned" onclick="return confirm('<?= (int) $doc['dunning_level'] + 1 ?>. Mahnung erstellen?')"><?= (int) $doc['dunning_level'] + 1 ?>. Mahnung</button><?php endif; ?>
+        <?php else: ?>
+            <button class="btn small" name="to" value="open">Zahlung zurücknehmen</button>
+        <?php endif; ?>
+    </form>
+</section>
 <?php endif; ?>
 
 <div class="doc-stage" id="doc-stage"><?= $html ?></div>

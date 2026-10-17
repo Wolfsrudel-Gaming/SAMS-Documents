@@ -11,6 +11,7 @@ $navGroups = [
         'documents'    => ['Dokumente', 'documents.view', 'docs'],
         'document_new' => ['Neues Dokument', 'documents.issue.*', 'doc-plus'],
         'drafts'       => ['Entwürfe & Freigaben', 'documents.issue.*|documents.approve|documents.drafts_all', 'edit'],
+        'invoices'     => ['Rechnungen', 'invoices.manage', 'docs'],
     ],
     'Verwaltung' => [
         'users'    => ['Personal', 'users.view', 'users'],
@@ -18,6 +19,7 @@ $navGroups = [
         'org'      => ['Abteilungen & Qualifikationen', 'departments.manage|qualifications.manage', 'folder'],
         'settings' => ['Einstellungen', 'settings.manage', 'settings'],
         'doc_types' => ['Dokumentarten', 'settings.manage', 'docs'],
+        'prices'   => ['Gebührenordnung', 'prices.manage', 'settings'],
         'printers' => ['Drucker', 'printers.manage', 'print'],
         'audit'    => ['Zugriffsprotokoll', 'audit.view', 'log'],
         'system'   => ['System & Updates', 'system.manage', 'server'],
