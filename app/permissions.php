@@ -36,6 +36,9 @@ function permission_catalog(): array
             'documents.revoke.own'  => 'Eigene Dokumente stornieren',
             'documents.revoke.all'  => 'Alle Dokumente stornieren',
             'documents.print'       => 'Dokumente im Spiel drucken',
+            'documents.approve'     => 'Dokumente freigeben (Gegenzeichnung)',
+            'documents.addendum'    => 'Nachträge zu fremden Dokumenten schreiben',
+            'documents.drafts_all'  => 'Alle Entwürfe einsehen',
         ],
         'Dokumente ausstellen' => $docs,
         'Personal' => [

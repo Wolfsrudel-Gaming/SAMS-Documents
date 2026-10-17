@@ -24,6 +24,23 @@ if (is_post() && post('action') === 'revoke') {
     redirect(url('document', ['id' => $id]));
 }
 
+if (is_post() && post('action') === 'addendum') {
+    csrf_check();
+    if (!can_add_addendum($doc)) {
+        forbidden('Du darfst zu diesem Dokument keinen Nachtrag schreiben.');
+    }
+    $text = mb_substr(trim((string) post('text')), 0, 10000);
+    if ($text === '') {
+        flash('error', 'Der Nachtrag ist leer.');
+    } else {
+        insert('document_addenda', ['document_id' => $id, 'text' => $text, 'author_snapshot' => json_encode(issuer_snapshot($me), JSON_UNESCAPED_UNICODE),
+            'created_by' => $me['id'], 'created_at' => now()]);
+        audit('document.addendum', 'document', $id, $doc['number'] . ': ' . mb_strimwidth($text, 0, 120, '…'));
+        flash('success', 'Nachtrag gespeichert. Er erscheint als zusätzliches Blatt am Dokument und in der Echtheitsprüfung.');
+    }
+    redirect(url('document', ['id' => $id]) . '#addenda');
+}
+
 if (is_post() && in_array(post('action'), ['print', 'cancel_job'], true)) {
     csrf_check();
     if (post('action') === 'cancel_job') {
@@ -152,6 +169,25 @@ ob_start(); ?>
             <?php endforeach; ?>
             </tbody>
         </table>
+    <?php endif; ?>
+</section>
+<?php endif; ?>
+
+<?php $addenda = document_addenda($id); if ($addenda || can_add_addendum($doc)): ?>
+<section class="card no-print" id="addenda">
+    <h2>Nachträge (<?= count($addenda) ?>)</h2>
+    <div class="addenda-list">
+        <?php foreach ($addenda as $i => $a): ?>
+            <div class="addendum"><strong>Nachtrag Nr. <?= $i + 1 ?></strong> · <?= e(fmt_datetime($a['created_at'])) ?> · <?= e(user_display($a['author'])) ?><div><?= nl($a['text']) ?></div></div>
+        <?php endforeach; ?>
+    </div>
+    <?php if (can_add_addendum($doc)): ?>
+        <form method="post" class="form-grid">
+            <?= csrf_field() ?><input type="hidden" name="action" value="addendum">
+            <div class="field w-full"><label>Neuer Nachtrag</label><textarea name="text" rows="3" required placeholder="z. B. Berichtigung: Die Diagnose lautet korrekt S52.5 links (nicht rechts)."></textarea>
+                <div class="hint">Ausgestellte Dokumente werden nie verändert. Ein Nachtrag wird als zusätzliches Blatt angehängt und kann nicht gelöscht werden.</div></div>
+            <div class="form-actions"><button class="btn" onclick="return confirm('Nachtrag verbindlich hinzufügen?')">Nachtrag hinzufügen</button></div>
+        </form>
     <?php endif; ?>
 </section>
 <?php endif; ?>

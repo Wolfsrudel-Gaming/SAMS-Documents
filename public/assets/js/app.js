@@ -262,3 +262,30 @@
     });
     sync();
 })();
+
+// Dokumentformular: Schnell-/Vollmodus und Wahl der Unterschrift
+(function () {
+    'use strict';
+    document.querySelectorAll('[data-mode-for]').forEach(function (tabs) {
+        var form = document.querySelector(tabs.dataset.modeFor);
+        if (!form) { return; }
+        var set = function (mode) {
+            form.classList.toggle('quick', mode === 'quick');
+            tabs.querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.dataset.mode === mode); });
+            try { localStorage.setItem('sams.docmode.' + location.search.replace(/.*type=([^&]+).*/, '$1'), mode); } catch (e) { /* ohne Speicher */ }
+        };
+        tabs.querySelectorAll('button').forEach(function (b) {
+            b.addEventListener('click', function () { set(b.dataset.mode); });
+        });
+        try {
+            var saved = localStorage.getItem('sams.docmode.' + location.search.replace(/.*type=([^&]+).*/, '$1'));
+            if (saved) { set(saved); }
+        } catch (e) { /* ohne Speicher */ }
+    });
+    document.querySelectorAll('input[name="sig_mode"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+            var live = document.querySelector('.live-sig');
+            if (live) { live.hidden = r.value !== 'live' || !r.checked; }
+        });
+    });
+})();

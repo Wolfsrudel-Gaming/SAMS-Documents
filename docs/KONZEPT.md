@@ -107,15 +107,15 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - Neue Rechte: `patients.archive`, `cases.manage`, `entries.all_departments`
 - *Offen für später:* Verknüpfung mit dem Bürgerportal (Etappe 6)
 
-### Etappe 3 – Dokumente
+### Etappe 3 – Dokumente *(Workflow umgesetzt in v1.6.0)*
 - Neue Dokumentarten: psychologisches Gutachten, Unterbringungsantrag, Impfnachweis, OP-Bericht,
   OP-Aufklärung/Einwilligung, Dienstausweis, Ausbildungsnachweis, Beförderungsurkunde, Abmahnung,
   Kündigung, Arbeitsvertrag, weitere nach Bedarf
-- **Entwürfe:** speichern, später fertigstellen, an Kollegen übergeben
-- **Freigaben:** pro Dokumentart einstellbar (z. B. Azubi braucht Gegenzeichnung, Gutachten braucht einen Oberarzt)
-- **Nachträge** statt Änderungen, sichtbar auf dem Dokument und in der Echtheitsprüfung
-- **Unterschrift:** hinterlegt oder live, wählbar
-- **Schnell- und Vollmodus** pro Dokumentart
+- ✅ **Entwürfe:** speichern (auch unvollständig), später fertigstellen, an Kollegen übergeben (mit Hinweis)
+- ✅ **Freigaben:** pro Dokumentart einstellbar unter *Verwaltung → Dokumentarten* („Freigabe nötig unterhalb Rang X, freigeben ab Rang Y“); Gegenzeichnung erscheint auf dem Dokument und in der Echtheitsprüfung, Zurückweisen mit Begründung
+- ✅ **Nachträge** statt Änderungen: eigenes Blatt am Dokument, in der Echtheitsprüfung mit Datum und Verfasser (ohne Inhalt)
+- ✅ **Unterschrift:** hinterlegt oder live, beim Ausstellen wählbar
+- ✅ **Schnell- und Vollmodus** pro Dokumentart (Standard einstellbar, im Formular umschaltbar)
 - **Preisliste** (Gebührenordnung) im Admin-Panel, Abweichung nur mit Begründung. **Rechnungsstatus** offen/bezahlt/gemahnt.
 - **Freigabe für Behörden:** einzelne Dokumente für LSPD/Justiz per Link oder Konto freischalten
 - **Vorlagen-Editor:** Leitung legt neue Dokumentarten im Browser an (Felder, Layout-Grundtyp Brief/Formular/Protokoll, Text mit Platzhaltern)

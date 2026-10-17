@@ -619,7 +619,7 @@ function render_field(array $f, $value): string
             $html = $label . '<input type="' . $inputType . '" id="' . e($id) . '" name="d[' . e($name) . ']" value="' . e($value) . '"' . $step . $list . $ph . $reqAttr . '>';
     }
 
-    return '<div class="field w-' . e($width) . ' t-' . e($type) . '">' . $html . '</div>';
+    return '<div class="field w-' . e($width) . ' t-' . e($type) . ($req ? ' is-req' : '') . '">' . $html . '</div>';
 }
 
 /**

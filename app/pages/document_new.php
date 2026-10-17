@@ -1,12 +1,23 @@
 <?php
 defined('SAMS_ROOT') || exit;
 $me = current_user();
-$typeKey = (string) ($_GET['type'] ?? post('type', ''));
+
+// Bestehenden Entwurf weiterbearbeiten (?draft=ID)
+$draftId = (int) ($_GET['draft'] ?? post('draft_id', 0));
+$draft = $draftId ? one('SELECT * FROM document_drafts WHERE id = ?', [$draftId]) : null;
+if ($draftId && !$draft) {
+    not_found('Entwurf nicht gefunden.');
+}
+if ($draft && !draft_editable($draft)) {
+    redirect(url('draft', ['id' => $draftId]));
+}
+
+$typeKey = $draft ? $draft['type'] : (string) ($_GET['type'] ?? post('type', ''));
 $type = $typeKey !== '' ? doc_type($typeKey) : null;
-$patientId = (int) ($_GET['patient'] ?? post('patient_id', 0));
+$patientId = $draft ? (int) $draft['patient_id'] : (int) ($_GET['patient'] ?? post('patient_id', 0));
 $patient = $patientId ? one('SELECT * FROM patients WHERE id = ?', [$patientId]) : null;
 // Dokument aus einer Fallakte heraus (Patient und Felder werden übernommen)
-$caseId = (int) ($_GET['case'] ?? post('case_id', 0));
+$caseId = $draft ? (int) $draft['case_id'] : (int) ($_GET['case'] ?? post('case_id', 0));
 $case = $caseId ? one("SELECT * FROM cases WHERE id = ? AND status = 'open'", [$caseId]) : null;
 if ($case) {
     $patient = one('SELECT * FROM patients WHERE id = ?', [$case['patient_id']]);
@@ -19,6 +30,7 @@ if (!$type) {
     ob_start(); ?>
     <div class="page-head">
         <div><h1>Neues Dokument</h1><?php if ($patient): ?><p class="muted">für <?= e(patient_name($patient)) ?><?= $case ? ' · Fall ' . e($case['number']) : '' ?></p><?php endif; ?></div>
+        <a class="btn" href="<?= e(url('drafts')) ?>">Meine Entwürfe</a>
     </div>
     <?php
     $byCat = [];
@@ -34,7 +46,7 @@ if (!$type) {
                    title="<?= $allowed ? '' : 'Dein Rang darf dieses Dokument nicht ausstellen' ?>">
                     <span class="tile-code"><?= e($t['code']) ?></span>
                     <strong><?= e($t['title']) ?></strong>
-                    <small><?= $allowed ? e($t['category']) : 'keine Berechtigung' ?></small>
+                    <small><?= $allowed ? e($t['category']) . ($allowed && needs_approval($k, $me) ? ' · mit Freigabe' : '') : 'keine Berechtigung' ?></small>
                 </a>
             <?php endforeach; ?>
             </div>
@@ -49,14 +61,18 @@ if (!$type) {
 if (!can('documents.issue.' . $type['key'])) {
     forbidden('Dein Rang darf „' . $type['title'] . '“ nicht ausstellen.');
 }
+$cfg = doc_type_config($type['key']);
+$approval = needs_approval($type['key'], $me);
 
-// Vorbelegung: aus Vorlage (?from=ID) oder Standardwerten
-$data = [];
+// Vorbelegung: Entwurf, Vorlage (?from=ID) oder Standardwerte
+$data = $draft ? (json_decode((string) $draft['data'], true) ?: []) : [];
+$liveSignature = $draft ? (string) $draft['signature'] : '';
 $fromId = (int) ($_GET['from'] ?? 0);
-if ($fromId && ($src = one('SELECT * FROM documents WHERE id = ? AND type = ?', [$fromId, $type['key']]))) {
+if (!$draft && $fromId && ($src = one('SELECT * FROM documents WHERE id = ? AND type = ?', [$fromId, $type['key']]))) {
     $data = json_decode((string) $src['data'], true) ?: [];
     if (!$patient && $src['patient_id']) {
         $patient = one('SELECT * FROM patients WHERE id = ?', [$src['patient_id']]);
+        require_active_patient($patient);
     }
 }
 foreach ($type['fields'] as $f) {
@@ -65,104 +81,143 @@ foreach ($type['fields'] as $f) {
     }
 }
 // Sinnvolle Vorbelegungen aus Fall und Akte
-if ($case && !$fromId) {
+if ($case && !$fromId && !$draft) {
     $data = prefill_from_case($type, $case, $data);
 }
 if ($patient && $type['key'] === 'au' && empty($data['employer'])) {
     $data['employer'] = $patient['employer'];
 }
 
+// Kolleg/innen, an die ein Entwurf übergeben werden kann (dürfen diese Dokumentart ausstellen)
+$colleagues = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 AND id <> ? ORDER BY name', [$me['id']]),
+    fn($u) => in_array('documents.issue.' . $type['key'], user_permissions($u), true)));
+
 $errors = [];
 $preview = '';
 
 if (is_post()) {
     csrf_check();
+    $action = (string) post('action');
+    if ($action === 'discard' && $draft) {
+        q('DELETE FROM document_drafts WHERE id = ?', [$draftId]);
+        audit('draft.delete', 'document', null, $type['short'] . ' Entwurf #' . $draftId);
+        flash('success', 'Entwurf verworfen.');
+        redirect(url('drafts'));
+    }
     [$data, $errors] = collect_fields($type['fields'], is_array($_POST['d'] ?? null) ? $_POST['d'] : []);
     if ($case && (int) post('patient_id') !== (int) $case['patient_id']) {
         $case = null; // anderer Patient gewählt: Fallzuordnung entfällt
     }
-    if (!$case && ($patient = one('SELECT * FROM patients WHERE id = ?', [(int) post('patient_id')]))) {
+    if (!$case) {
+        $patient = post('patient_id') ? one('SELECT * FROM patients WHERE id = ?', [(int) post('patient_id')]) : null;
         require_active_patient($patient);
     }
-    if ($type['patient'] === 'required' && !$patient) {
-        $errors[] = 'Bitte eine Patientenakte auswählen.';
-    }
-    if (!empty($data['au_since']) && !empty($data['au_until']) && $data['au_until'] < $data['au_since']) {
-        $errors[] = 'Das Ende der Arbeitsunfähigkeit liegt vor dem Beginn.';
-    }
+    $sigMode = post('sig_mode') === 'live' ? 'live' : 'stored';
+    $liveSignature = $sigMode === 'live' ? clean_signature(post('live_signature')) : '';
 
-    $docRow = [
-        'id' => 0,
-        'type' => $type['key'],
-        'number' => post('action') === 'preview' ? 'ENTWURF' : '',
-        'data' => $data,
-        'patient_snapshot' => patient_snapshot($patient) ?? [],
-        'issuer_snapshot' => issuer_snapshot($me),
-        'verify_code' => 'ENTWURF0',
-        'status' => 'valid',
-        'issued_at' => now(),
-    ];
-
-    if (post('action') === 'preview') {
-        $preview = render_document($docRow, ['draft' => true]);
-    } elseif (!$errors) {
-        db()->beginTransaction();
-        try {
-            do {
-                $code = random_code(8);
-            } while (scalar('SELECT id FROM documents WHERE verify_code = ?', [$code]));
-            $validUntil = isset($type['valid']) ? (string) ($data[$type['valid']] ?? '') : '';
-            $id = insert('documents', [
-                'number' => next_document_number($type),
-                'type' => $type['key'],
-                'patient_id' => $patient['id'] ?? null,
-                'case_id' => $case['id'] ?? null,
-                'data' => json_encode($data, JSON_UNESCAPED_UNICODE),
-                'patient_snapshot' => json_encode(patient_snapshot($patient), JSON_UNESCAPED_UNICODE),
-                'issuer_snapshot' => json_encode(issuer_snapshot($me), JSON_UNESCAPED_UNICODE),
-                'verify_code' => $code,
-                'view_token' => bin2hex(random_bytes(20)),
-                'status' => 'valid',
-                'issued_by' => $me['id'],
-                'issued_at' => now(),
-                'valid_until' => $validUntil,
-            ]);
-            if ($patient) {
-                q('UPDATE patients SET updated_at = ? WHERE id = ?', [now(), $patient['id']]);
-                if ($type['key'] === 'todesbescheinigung' && !empty($data['mark_deceased'])) {
-                    q('UPDATE patients SET deceased_at = ? WHERE id = ?', [$data['death_date'], $patient['id']]);
-                }
-            }
-            db()->commit();
-        } catch (Throwable $ex) {
-            db()->rollBack();
-            throw $ex;
+    // Entwürfe dürfen unvollständig sein; Prüfung erst beim Ausstellen/Einreichen
+    $saveDraft = function (string $status, int $ownerId, string $note) use (&$draft, $type, &$patient, &$case, &$data, &$liveSignature, $me): int {
+        $row = [
+            'type' => $type['key'], 'patient_id' => $patient['id'] ?? null, 'case_id' => $case['id'] ?? null,
+            'data' => json_encode($data, JSON_UNESCAPED_UNICODE), 'signature' => $liveSignature,
+            'status' => $status, 'owner_id' => $ownerId, 'note' => $note, 'updated_at' => now(),
+        ];
+        if ($status === 'pending') {
+            $row += ['submitted_by' => $me['id'], 'submitted_at' => now()];
         }
-        audit('document.issue', 'document', $id, $type['short'] . ' ' . patient_name($patient));
+        if ($draft) {
+            update('document_drafts', (int) $draft['id'], $row);
+            return (int) $draft['id'];
+        }
+        return insert('document_drafts', $row + ['created_by' => $me['id'], 'created_at' => now()]);
+    };
+
+    if (in_array($action, ['issue', 'submit'], true)) {
+        if ($type['patient'] === 'required' && !$patient) {
+            $errors[] = 'Bitte eine Patientenakte auswählen.';
+        }
+        if (!empty($data['au_since']) && !empty($data['au_until']) && $data['au_until'] < $data['au_since']) {
+            $errors[] = 'Das Ende der Arbeitsunfähigkeit liegt vor dem Beginn.';
+        }
+        if ($sigMode === 'live' && $liveSignature === '') {
+            $errors[] = 'Bitte unterschreiben oder die hinterlegte Unterschrift wählen.';
+        }
+    }
+
+    if ($action === 'preview') {
+        $issuerSnap = issuer_snapshot($me);
+        if ($liveSignature !== '') {
+            $issuerSnap['signature'] = $liveSignature;
+        }
+        $preview = render_document([
+            'id' => 0, 'type' => $type['key'], 'number' => 'ENTWURF', 'data' => $data,
+            'patient_snapshot' => patient_snapshot($patient) ?? [], 'issuer_snapshot' => $issuerSnap,
+            'verify_code' => 'ENTWURF0', 'status' => 'valid', 'issued_at' => now(),
+        ], ['draft' => true]);
+    } elseif ($action === 'save') {
+        $id = $saveDraft('draft', (int) $me['id'], '');
+        audit($draft ? 'draft.update' : 'draft.create', 'document', null, $type['short'] . ' Entwurf #' . $id);
+        flash('success', 'Entwurf gespeichert. Du findest ihn unter „Entwürfe“.');
+        redirect(url('document_new', ['draft' => $id]));
+    } elseif ($action === 'handover') {
+        $to = (int) post('handover_to');
+        $target = null;
+        foreach ($colleagues as $c) {
+            $target = (int) $c['id'] === $to ? $c : $target;
+        }
+        if (!$target) {
+            $errors[] = 'Bitte eine Person wählen, die dieses Dokument ausstellen darf.';
+        } else {
+            $note = mb_substr(trim((string) post('handover_note')), 0, 1000);
+            $id = $saveDraft('draft', (int) $target['id'], $note);
+            audit('draft.handover', 'document', null, $type['short'] . ' Entwurf #' . $id . ' an ' . user_display($target));
+            flash('success', 'Entwurf an ' . user_display($target) . ' übergeben.');
+            redirect(url('drafts'));
+        }
+    } elseif ($action === 'submit' && $approval && !$errors) {
+        $id = $saveDraft('pending', (int) $me['id'], mb_substr(trim((string) post('submit_note')), 0, 1000));
+        audit('draft.submit', 'document', null, $type['short'] . ' Entwurf #' . $id . ' zur Freigabe');
+        flash('success', 'Zur Freigabe eingereicht. Das Dokument wird ausgestellt, sobald es freigegeben ist.');
+        redirect(url('drafts'));
+    } elseif ($action === 'issue' && !$approval && !$errors) {
+        $id = issue_document($type, $patient, $case, $data, $me, null, $liveSignature);
+        if ($draft) {
+            q('DELETE FROM document_drafts WHERE id = ?', [$draft['id']]);
+        }
         flash('success', $type['title'] . ' wurde ausgestellt.');
         redirect(url('document', ['id' => $id]));
     }
 }
 
 $patients = all('SELECT id, first_name, last_name, dob, citizen_id FROM patients WHERE archived_at IS NULL ORDER BY last_name, first_name');
+$hasStored = !empty($me['signature']);
+$sigMode = is_post() ? (post('sig_mode') === 'live' ? 'live' : 'stored') : ($liveSignature !== '' || !$hasStored ? 'live' : 'stored');
 
 ob_start(); ?>
 <div class="page-head">
     <div>
-        <h1><?= e($type['title']) ?></h1>
-        <p class="muted"><?= e($type['category']) ?> · Kürzel <?= e($type['code']) ?></p>
+        <h1><?= e($type['title']) ?> <?= $draft ? draft_status_badge($draft) : '' ?></h1>
+        <p class="muted"><?= e($type['category']) ?> · Kürzel <?= e($type['code']) ?><?= $approval ? ' · <strong>benötigt Freigabe</strong> (ab Rangstufe ' . (int) $cfg['approval_by'] . ')' : '' ?></p>
     </div>
-    <a class="btn" href="<?= e(url('document_new', ['patient' => $patientId ?: null, 'case' => $case['id'] ?? null])) ?>">Andere Dokumentart</a>
+    <div class="btn-row">
+        <div class="tabs mode-toggle" data-mode-for="#docform">
+            <button type="button" data-mode="quick" class="<?= $cfg['mode'] === 'quick' ? 'active' : '' ?>">Schnell</button><button type="button" data-mode="full" class="<?= $cfg['mode'] === 'full' ? 'active' : '' ?>">Vollständig</button>
+        </div>
+        <?php if (!$draft): ?><a class="btn" href="<?= e(url('document_new', ['patient' => $patientId ?: null, 'case' => $case['id'] ?? null])) ?>">Andere Dokumentart</a><?php endif; ?>
+    </div>
 </div>
 <?php foreach ($errors as $err): ?><div class="flash error"><?= e($err) ?></div><?php endforeach; ?>
+<?php if ($draft && $draft['status'] === 'rejected' && $draft['note']): ?><div class="flash warn"><strong>Zurückgewiesen:</strong> <?= e($draft['note']) ?></div>
+<?php elseif ($draft && $draft['note']): ?><div class="flash warn"><strong>Hinweis zur Übergabe:</strong> <?= e($draft['note']) ?></div><?php endif; ?>
 
-<form method="post" class="card form-grid docform" action="<?= e(url('document_new', ['type' => $type['key']])) ?>">
+<form method="post" class="card form-grid docform<?= $cfg['mode'] === 'quick' ? ' quick' : '' ?>" id="docform" action="<?= e(url('document_new', ['type' => $type['key']])) ?>">
     <?= csrf_field() ?>
     <input type="hidden" name="type" value="<?= e($type['key']) ?>">
+    <?php if ($draft): ?><input type="hidden" name="draft_id" value="<?= (int) $draft['id'] ?>"><?php endif; ?>
     <?php if ($case): ?><input type="hidden" name="case_id" value="<?= (int) $case['id'] ?>">
-        <div class="field w-full"><div class="flash success">Aus Fall <strong><?= e($case['number']) ?></strong> · <?= e($case['title']) ?> – Diagnose, Ort und Hergang wurden übernommen.</div></div><?php endif; ?>
-    <h3 class="form-heading">Patient/in<?= $type['patient'] === 'required' ? ' <span class="req">*</span>' : ' (optional)' ?></h3>
-    <div class="field w-full">
+        <div class="field w-full keep"><div class="flash success">Aus Fall <strong><?= e($case['number']) ?></strong> · <?= e($case['title']) ?><?= $draft ? '' : ' – Diagnose, Ort und Hergang wurden übernommen.' ?></div></div><?php endif; ?>
+    <h3 class="form-heading keep">Patient/in<?= $type['patient'] === 'required' ? ' <span class="req">*</span>' : ' (optional)' ?></h3>
+    <div class="field w-full keep">
         <select name="patient_id" class="patient-select"<?= $type['patient'] === 'required' ? ' required' : '' ?>>
             <option value="">– <?= $type['patient'] === 'required' ? 'bitte wählen' : 'keine Akte' ?> –</option>
             <?php foreach ($patients as $pp): ?>
@@ -174,11 +229,42 @@ ob_start(); ?>
     <?php foreach ($type['fields'] as $f): ?>
         <?= render_field($f, isset($f['name']) ? ($data[$f['name']] ?? '') : null) ?>
     <?php endforeach; ?>
-    <div class="form-actions sticky">
-        <button class="btn" name="action" value="preview" formnovalidate>Vorschau</button>
-        <button class="btn primary" name="action" value="issue" onclick="return confirm('Dokument verbindlich ausstellen? Es kann danach nicht mehr geändert, nur noch storniert werden.')">Verbindlich ausstellen</button>
-        <span class="muted small">Ausgestellt durch <?= e(user_display($me)) ?><?= empty($me['signature']) ? ' · <strong>keine Unterschrift hinterlegt</strong>' : '' ?></span>
+
+    <h3 class="form-heading keep">Unterschrift</h3>
+    <div class="field w-full keep">
+        <div class="choices">
+            <label class="choice"><input type="radio" name="sig_mode" value="stored"<?= checked($sigMode === 'stored') ?><?= $hasStored ? '' : ' disabled' ?>> Hinterlegte Unterschrift<?= $hasStored ? '' : ' (keine im Profil hinterlegt)' ?></label>
+            <label class="choice"><input type="radio" name="sig_mode" value="live"<?= checked($sigMode === 'live') ?>> Jetzt unterschreiben</label>
+        </div>
+        <div class="live-sig"<?= $sigMode === 'live' ? '' : ' hidden' ?>>
+            <div class="sigpad" data-input="live_signature"><canvas width="600" height="180"></canvas><button type="button" class="btn small sig-clear">Löschen</button></div>
+            <input type="hidden" id="live_signature" name="live_signature" value="<?= e($liveSignature) ?>">
+        </div>
     </div>
+
+    <div class="form-actions sticky keep">
+        <button class="btn" name="action" value="preview" formnovalidate>Vorschau</button>
+        <button class="btn" name="action" value="save" formnovalidate>Als Entwurf speichern</button>
+        <?php if ($approval): ?>
+            <button class="btn primary" name="action" value="submit">Zur Freigabe einreichen</button>
+        <?php else: ?>
+            <button class="btn primary" name="action" value="issue" onclick="return confirm('Dokument verbindlich ausstellen? Es kann danach nicht mehr geändert werden – Korrekturen nur per Nachtrag oder Stornierung.')">Verbindlich ausstellen</button>
+        <?php endif; ?>
+        <?php if ($draft): ?><button class="btn danger" name="action" value="discard" formnovalidate onclick="return confirm('Entwurf verwerfen?')">Verwerfen</button><?php endif; ?>
+        <span class="muted small">Ausgestellt durch <?= e(user_display($me)) ?></span>
+    </div>
+
+    <details class="w-full handover keep">
+        <summary>An Kollegin / Kollegen übergeben</summary>
+        <div class="form-grid">
+            <div class="field w-half"><label>Übergeben an</label>
+                <select name="handover_to"><option value="">– bitte wählen –</option>
+                    <?php foreach ($colleagues as $c): ?><option value="<?= (int) $c['id'] ?>"><?= e(user_display($c)) ?><?= $c['badge_number'] ? ' (' . e($c['badge_number']) . ')' : '' ?></option><?php endforeach; ?>
+                </select></div>
+            <div class="field w-half"><label>Hinweis</label><input name="handover_note" maxlength="1000" placeholder="z. B. Befund fehlt noch, bitte fertigstellen"></div>
+            <div class="form-actions"><button class="btn" name="action" value="handover" formnovalidate>Entwurf übergeben</button></div>
+        </div>
+    </details>
 </form>
 
 <?php if ($preview): ?>

@@ -290,3 +290,12 @@
     .paper.a5 { page: a5; min-height: 209.5mm; }
     .paper.a6l { page: a6l; min-height: 104.5mm; }
 }
+
+/* Gegenzeichnung und Nachträge */
+.sigblock .sig-sign.cosign { min-width: 50mm; }
+.sigblock .sig-sign.cosign .sig-img { margin-left: 6mm; }
+.sigblock .sig-sign.cosign .sig-font { margin-left: 6mm; font-size: 21pt; }
+.paper.addendum .addendum-text { border: .25mm solid #999; padding: 3mm 4mm; min-height: 60mm; margin: 2mm 0 3mm; font-size: 10pt; line-height: 1.45; }
+.sigblock:has(.cosign) { gap: 6mm; }
+.sigblock:has(.cosign) .sig-place { flex-basis: 36mm; }
+.sigblock:has(.cosign) .sig-sign { min-width: 0; }

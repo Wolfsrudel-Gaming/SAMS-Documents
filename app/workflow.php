@@ -1,0 +1,159 @@
+<?php
+declare(strict_types=1);
+defined('SAMS_ROOT') || exit;
+
+/**
+ * Dokumenten-Workflow: Einstellungen je Dokumentart, Ausstellen, Entwürfe,
+ * Freigaben (Gegenzeichnung) und Nachträge.
+ */
+
+const DRAFT_STATUS = [
+    'draft'    => ['grey', 'Entwurf'],
+    'pending'  => ['orange', 'wartet auf Freigabe'],
+    'rejected' => ['red', 'zurückgewiesen'],
+];
+
+/**
+ * Einstellungen je Dokumentart (Einstellung doc_type_config, JSON):
+ *   approval_below  Ränge unterhalb dieser Stufe brauchen eine Freigabe (0 = nie)
+ *   approval_by     Mindest-Rangstufe für die Freigabe
+ *   mode            full | quick (Schnellmodus zeigt nur Pflichtfelder)
+ */
+function doc_type_config(string $type): array
+{
+    static $all = null;
+    if ($all === null) {
+        $all = json_decode((string) setting('doc_type_config', '{}'), true) ?: [];
+    }
+    $c = is_array($all[$type] ?? null) ? $all[$type] : [];
+    return [
+        'approval_below' => max(0, (int) ($c['approval_below'] ?? 0)),
+        'approval_by' => max(0, (int) ($c['approval_by'] ?? 70)),
+        'mode' => ($c['mode'] ?? 'full') === 'quick' ? 'quick' : 'full',
+    ];
+}
+
+function needs_approval(string $type, array $user): bool
+{
+    $cfg = doc_type_config($type);
+    return $cfg['approval_below'] > 0 && user_level($user) < $cfg['approval_below'];
+}
+
+/** Darf der angemeldete Benutzer diesen eingereichten Entwurf freigeben? */
+function can_approve(array $draft): bool
+{
+    $me = current_user();
+    return $draft['status'] === 'pending' && can('documents.approve')
+        && (int) $draft['submitted_by'] !== (int) $me['id']
+        && user_level($me) >= doc_type_config($draft['type'])['approval_by'];
+}
+
+function draft_editable(array $draft): bool
+{
+    $me = current_user();
+    return $draft['status'] !== 'pending' && (int) $draft['owner_id'] === (int) $me['id'];
+}
+
+function draft_visible(array $draft): bool
+{
+    $me = current_user();
+    return (int) $draft['owner_id'] === (int) $me['id'] || (int) $draft['created_by'] === (int) $me['id']
+        || can('documents.drafts_all') || can_approve($draft);
+}
+
+function draft_status_badge(array $draft): string
+{
+    [$c, $l] = DRAFT_STATUS[$draft['status']] ?? ['grey', $draft['status']];
+    return '<span class="badge ' . $c . '">' . e($l) . '</span>';
+}
+
+/** Anzahl offener Aufgaben für die Navigation (eigene Entwürfe + Freigaben). */
+function draft_inbox_count(): int
+{
+    $me = current_user();
+    if (!$me) {
+        return 0;
+    }
+    $n = (int) scalar("SELECT COUNT(*) FROM document_drafts WHERE owner_id = ? AND status IN ('draft', 'rejected')", [$me['id']]);
+    if (can('documents.approve')) {
+        foreach (all("SELECT * FROM document_drafts WHERE status = 'pending' AND submitted_by <> ?", [$me['id']]) as $d) {
+            $n += can_approve($d) ? 1 : 0;
+        }
+    }
+    return $n;
+}
+
+/** Live-Unterschrift aus dem Formular prüfen (PNG als Data-URL). */
+function clean_signature($raw): string
+{
+    return is_string($raw) && preg_match('#^data:image/png;base64,[A-Za-z0-9+/=]+$#', $raw) && strlen($raw) < 400000 ? $raw : '';
+}
+
+/**
+ * Dokument verbindlich ausstellen. Vergibt Nummer und Prüfcode.
+ * $issuer: Benutzer, in dessen Namen ausgestellt wird; $cosigner: freigebende Person (optional).
+ */
+function issue_document(array $type, ?array $patient, ?array $case, array $data, array $issuer, ?array $cosigner = null, string $liveSignature = ''): int
+{
+    $issuerSnap = issuer_snapshot($issuer);
+    if ($liveSignature !== '') {
+        $issuerSnap['signature'] = $liveSignature;
+        $issuerSnap['signature_live'] = true;
+    }
+    if ($cosigner) {
+        $issuerSnap['cosigner'] = issuer_snapshot($cosigner) + ['at' => now()];
+    }
+    db()->beginTransaction();
+    try {
+        do {
+            $code = random_code(8);
+        } while (scalar('SELECT id FROM documents WHERE verify_code = ?', [$code]));
+        $validUntil = isset($type['valid']) ? (string) ($data[$type['valid']] ?? '') : '';
+        $id = insert('documents', [
+            'number' => next_document_number($type),
+            'type' => $type['key'],
+            'patient_id' => $patient['id'] ?? null,
+            'case_id' => $case['id'] ?? null,
+            'data' => json_encode($data, JSON_UNESCAPED_UNICODE),
+            'patient_snapshot' => json_encode(patient_snapshot($patient), JSON_UNESCAPED_UNICODE),
+            'issuer_snapshot' => json_encode($issuerSnap, JSON_UNESCAPED_UNICODE),
+            'verify_code' => $code,
+            'view_token' => bin2hex(random_bytes(20)),
+            'status' => 'valid',
+            'issued_by' => $issuer['id'],
+            'issued_at' => now(),
+            'valid_until' => $validUntil,
+        ]);
+        if ($patient) {
+            q('UPDATE patients SET updated_at = ? WHERE id = ?', [now(), $patient['id']]);
+            if ($type['key'] === 'todesbescheinigung' && !empty($data['mark_deceased'])) {
+                q('UPDATE patients SET deceased_at = ? WHERE id = ?', [$data['death_date'], $patient['id']]);
+            }
+        }
+        db()->commit();
+    } catch (Throwable $ex) {
+        db()->rollBack();
+        throw $ex;
+    }
+    audit('document.issue', 'document', $id, $type['short'] . ' ' . patient_name($patient) . ($cosigner ? ' (freigegeben durch ' . user_display($cosigner) . ')' : ''));
+    return $id;
+}
+
+// ------------------------------------------------------------------ Nachträge
+
+function document_addenda(int $documentId): array
+{
+    if ($documentId <= 0) {
+        return [];
+    }
+    return array_map(function ($a) {
+        $a['author'] = json_decode((string) $a['author_snapshot'], true) ?: [];
+        return $a;
+    }, all('SELECT * FROM document_addenda WHERE document_id = ? ORDER BY id', [$documentId]));
+}
+
+function can_add_addendum(array $doc): bool
+{
+    $me = current_user();
+    return $doc['status'] !== 'revoked' && ((int) $doc['issued_by'] === (int) $me['id'] || can('documents.addendum'));
+}

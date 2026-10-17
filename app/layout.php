@@ -10,12 +10,14 @@ $navGroups = [
         'patients'     => ['Patientenakten', 'patients.view', 'patients'],
         'documents'    => ['Dokumente', 'documents.view', 'docs'],
         'document_new' => ['Neues Dokument', 'documents.issue.*', 'doc-plus'],
+        'drafts'       => ['Entwürfe & Freigaben', 'documents.issue.*|documents.approve|documents.drafts_all', 'edit'],
     ],
     'Verwaltung' => [
         'users'    => ['Personal', 'users.view', 'users'],
         'ranks'    => ['Ränge & Rechte', 'ranks.manage', 'shield'],
         'org'      => ['Abteilungen & Qualifikationen', 'departments.manage|qualifications.manage', 'folder'],
         'settings' => ['Einstellungen', 'settings.manage', 'settings'],
+        'doc_types' => ['Dokumentarten', 'settings.manage', 'docs'],
         'printers' => ['Drucker', 'printers.manage', 'print'],
         'audit'    => ['Zugriffsprotokoll', 'audit.view', 'log'],
         'system'   => ['System & Updates', 'system.manage', 'server'],
@@ -23,7 +25,7 @@ $navGroups = [
 ];
 // Unterseiten der passenden Navigation zuordnen
 $activeMap = ['patient' => 'patients', 'patient_edit' => 'patients', 'patient_print' => 'patients', 'entry_edit' => 'patients', 'case' => 'patients', 'case_edit' => 'patients',
-    'document' => 'documents', 'user_edit' => 'users', 'rank_edit' => 'ranks', 'password_change' => 'profile', 'twofa' => 'profile'];
+    'document' => 'documents', 'draft' => 'drafts', 'user_edit' => 'users', 'rank_edit' => 'ranks', 'password_change' => 'profile', 'twofa' => 'profile'];
 $active = $activeMap[$current] ?? $current;
 ?><!doctype html>
 <html lang="de">
@@ -67,7 +69,7 @@ $active = $activeMap[$current] ?? $current;
         if (!$visible) continue; ?>
         <div class="nav-group"><?= e($group) ?></div>
         <?php foreach ($visible as $p => [$label, $role, $ic]): ?>
-            <a href="<?= e(url($p)) ?>" title="<?= e($label) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e($label) ?></span></a>
+            <a href="<?= e(url($p)) ?>" title="<?= e($label) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e($label) ?></span><?php if ($p === 'drafts' && ($cnt = draft_inbox_count())): ?><b class="nav-count"><?= $cnt ?></b><?php endif; ?></a>
         <?php endforeach; ?>
     <?php endforeach; ?>
     <div class="nav-group">Extern</div>

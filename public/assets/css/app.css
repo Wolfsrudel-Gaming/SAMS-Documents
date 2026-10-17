@@ -431,3 +431,13 @@ html.in-tablet .topbar-right { display: none; }
 .case-list td .badge { margin-right: .25rem; }
 .archived-banner { display: flex; gap: .75rem; align-items: center; justify-content: space-between; }
 .patient-banner.archived { filter: grayscale(.6); }
+
+/* Etappe 3: Dokument-Workflow */
+.docform.quick .field:not(.is-req):not(.keep), .docform.quick .form-heading:not(.keep) { display: none; }
+.mode-toggle { margin: 0; }
+.mode-toggle button { padding: .3rem .7rem; }
+.docform .live-sig { margin-top: .5rem; max-width: 620px; }
+.docform details.handover { border-top: 1px solid var(--line-soft); padding-top: .6rem; margin-top: .2rem; }
+.docform details.handover summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+.addenda-list .addendum { border-left: 3px solid var(--primary); padding: .4rem .7rem; margin: .5rem 0; background: var(--row-alt); }
+.nav-count { display: inline-block; min-width: 1.3em; padding: 0 .35em; margin-left: .35em; border-radius: 9px; background: var(--accent); color: #fff; font-size: .72rem; font-weight: 700; text-align: center; line-height: 1.35em; }

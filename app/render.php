@@ -29,8 +29,44 @@ function render_document(array $doc, array $opts = []): string
     require SAMS_ROOT . '/app/templates/' . $type['template'] . '.php';
     $html = ob_get_clean();
 
+    // Nachträge werden als eigenes Blatt angehängt (Original bleibt unverändert)
+    if (empty($opts['no_addenda'])) {
+        foreach (document_addenda((int) ($doc['id'] ?? 0)) as $i => $addendum) {
+            $html .= addendum_sheet($doc, $addendum, $i + 1);
+        }
+    }
+
     $classes = 'doc-wrap' . ($draft ? ' is-draft' : '') . (($doc['status'] ?? '') === 'revoked' ? ' is-revoked' : '');
     return '<div class="' . $classes . '">' . $html . '</div>';
+}
+
+/** Blatt „Nachtrag Nr. n zu Dokument …“ im Protokoll-Stil. */
+function addendum_sheet(array $doc, array $addendum, int $n): string
+{
+    $type = doc_type($doc['type']);
+    $protoTitle = 'Nachtrag Nr. ' . $n;
+    $protoSub = 'zu ' . ($type['short'] ?? 'Dokument') . ' vom ' . fmt_date($doc['issued_at'] ?? '');
+    $sigDoc = ['issuer_snapshot' => $addendum['author'], 'issued_at' => $addendum['created_at']] + $doc;
+    $p = $doc['patient_snapshot'] ?? [];
+    ob_start(); ?>
+    <section class="paper a4 proto addendum">
+        <?= doc_watermark($doc, false) ?>
+        <?php require SAMS_ROOT . '/app/templates/_protohead.php'; ?>
+        <h3 class="psec">Bezug</h3>
+        <div class="pgrid">
+            <div class="pc w4"><span class="fl">Dokument</span><span class="fv"><?= e($type['title'] ?? $doc['type']) ?></span></div>
+            <div class="pc w4"><span class="fl">Dokument-Nr. / Prüfcode</span><span class="fv mono"><?= e($doc['number'] ?? '') ?> · <?= e($doc['verify_code'] ?? '') ?></span></div>
+            <div class="pc w4"><span class="fl">Patient/in</span><span class="fv"><?= e($p ? patient_name($p, true) : '–') ?></span></div>
+        </div>
+        <h3 class="psec">Nachtrag vom <?= e(fmt_datetime($addendum['created_at'])) ?></h3>
+        <div class="addendum-text printed"><?= nl($addendum['text']) ?></div>
+        <p class="small">Dieser Nachtrag ergänzt bzw. berichtigt das oben genannte Dokument. Das Originaldokument bleibt unverändert gültig, soweit es durch diesen Nachtrag nicht berichtigt wird.</p>
+        <?= doc_signature($sigDoc, 'rect', 'Unterschrift Verfasser/in des Nachtrags') ?>
+        <div style="flex:1"></div>
+        <?= doc_footer($doc) ?>
+    </section>
+    <?php
+    return ob_get_clean();
 }
 
 /** Deterministische Pseudo-Zufallszahl je Dokument (z.B. Stempelwinkel). */
@@ -183,6 +219,13 @@ function doc_signature(array $doc, string $stamp = 'rect', string $caption = '',
             <span class="sig-cap"><?= e($caption) ?></span>
             <span class="sig-name"><?= e(user_display($u)) ?><?= !empty($u['rank_name']) ? ' · ' . e($u['rank_name']) : '' ?></span>
         </div>
+        <?php if (!empty($u['cosigner'])): $c = $u['cosigner']; ?>
+        <div class="sig-sign cosign">
+            <div class="sig-area"><?= signature_html($c, doc_rand($doc, 'cosig', -3, 3)) ?></div>
+            <span class="sig-cap">Gegengezeichnet / freigegeben am <?= e(fmt_date($c['at'] ?? '')) ?></span>
+            <span class="sig-name"><?= e(user_display($c)) ?><?= !empty($c['rank_name']) ? ' · ' . e($c['rank_name']) : '' ?></span>
+        </div>
+        <?php endif; ?>
     </div>
     <?php
     return ob_get_clean();

@@ -59,6 +59,8 @@ $states = [
                 <?php if ($doc['valid_until']): ?><dt>Gültig bis</dt><dd><?= e(fmt_date($doc['valid_until'])) ?></dd><?php endif; ?>
                 <dt>Ausgestellt von</dt><dd><?= e(user_display($issuer)) ?><?= !empty($issuer['rank_name']) ? ', ' . e($issuer['rank_name']) : '' ?><?= !empty($issuer['badge_number']) ? ' (Dienstnr. ' . e($issuer['badge_number']) . ')' : '' ?></dd>
                 <?php if ($patient): ?><dt>Ausgestellt für</dt><dd><?= e(initials_name($patient)) ?><?= !empty($patient['dob']) ? ', geb. ' . e(fmt_date($patient['dob'], 'Y')) : '' ?></dd><?php endif; ?>
+                <?php if (!empty($issuer['cosigner'])): ?><dt>Gegengezeichnet</dt><dd><?= e(user_display($issuer['cosigner'])) ?><?= !empty($issuer['cosigner']['rank_name']) ? ', ' . e($issuer['cosigner']['rank_name']) : '' ?></dd><?php endif; ?>
+                <?php foreach (document_addenda((int) $doc['id']) as $i => $a): ?><dt>Nachtrag Nr. <?= $i + 1 ?></dt><dd><?= e(fmt_datetime($a['created_at'])) ?> · <?= e(user_display($a['author'])) ?></dd><?php endforeach; ?>
                 <?php if ($state === 'revoked'): ?><dt>Storniert am</dt><dd><?= e(fmt_datetime($doc['revoked_at'])) ?></dd><?php endif; ?>
             </dl>
             <p class="muted small">Vergleichen Sie Dokument-Nr. und Angaben mit dem vorliegenden Original. Aus Datenschutzgründen werden keine medizinischen Inhalte angezeigt.</p>
