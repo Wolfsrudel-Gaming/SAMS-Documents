@@ -23,10 +23,13 @@ function permission_catalog(): array
         'Patientenakten' => [
             'patients.view'        => 'Akten ansehen',
             'patients.edit'        => 'Akten anlegen und bearbeiten',
-            'patients.delete'      => 'Akten löschen',
+            'patients.delete'      => 'Archivierte Akten endgültig löschen',
+            'patients.archive'     => 'Akten archivieren und reaktivieren',
+            'cases.manage'         => 'Fallakten anlegen, bearbeiten und abschließen',
             'entries.create'       => 'Akteneinträge schreiben',
             'entries.confidential' => 'Vertrauliche Einträge lesen',
             'entries.edit_all'     => 'Einträge anderer bearbeiten',
+            'entries.all_departments' => 'Abteilungseinträge aller Abteilungen lesen',
         ],
         'Dokumente' => [
             'documents.view'        => 'Dokumente ansehen',

@@ -13,7 +13,8 @@ $labels = [
     'entry.delete' => 'Eintrag gelöscht', 'document.issue' => 'Dokument ausgestellt', 'document.view' => 'Dokument angesehen',
     'document.revoke' => 'Dokument storniert', 'user.create' => 'Konto angelegt', 'user.update' => 'Konto geändert',
     'user.signature' => 'Unterschrift geändert', 'user.password' => 'Passwort geändert', 'settings.update' => 'Einstellungen geändert',
-    'patient.print' => 'Akte gedruckt', 'user.password_reset' => 'Passwort zurückgesetzt', 'user.sessions_ended' => 'Sitzungen beendet',
+    'patient.print' => 'Akte gedruckt', 'patient.archive' => 'Akte archiviert', 'patient.restore' => 'Akte reaktiviert',
+    'case.create' => 'Fall angelegt', 'case.update' => 'Fall geändert', 'case.view' => 'Fall geöffnet', 'case.close' => 'Fall abgeschlossen', 'case.reopen' => 'Fall wieder geöffnet', 'user.password_reset' => 'Passwort zurückgesetzt', 'user.sessions_ended' => 'Sitzungen beendet',
     'user.2fa_reset' => '2FA zurückgesetzt', 'user.2fa_enabled' => '2FA aktiviert', 'user.2fa_disabled' => '2FA abgeschaltet',
     'user.2fa_codes' => 'Neue 2FA-Codes', 'user.2fa_recovery_used' => '2FA-Wiederherstellungscode benutzt', 'user.deactivate' => 'Konto gesperrt',
     'user.reactivate' => 'Konto entsperrt', 'rank.create' => 'Rang angelegt', 'rank.update' => 'Rang geändert', 'rank.delete' => 'Rang gelöscht',
@@ -24,7 +25,7 @@ $labels = [
     'document.print' => 'Druckauftrag gesendet', 'document.printed' => 'Am Drucker abgeholt', 'document.print_cancel' => 'Druckauftrag abgebrochen',
     'printers.create' => 'Drucker angelegt', 'printers.update' => 'Drucker geändert', 'printers.delete' => 'Drucker gelöscht', 'printers.pickup_rule' => 'Abholregel geändert',
 ];
-$links = ['patient' => 'patient', 'document' => 'document', 'user' => 'user_edit', 'rank' => 'rank_edit', 'printer' => 'printers'];
+$links = ['patient' => 'patient', 'document' => 'document', 'user' => 'user_edit', 'rank' => 'rank_edit', 'printer' => 'printers', 'case' => 'case'];
 ob_start(); ?>
 <div class="page-head"><div><h1>Zugriffsprotokoll</h1><p class="muted">Alle Zugriffe auf Akten und Dokumente werden protokolliert (<?= $total ?> Einträge).</p></div>
     <form action="index.php"><input type="hidden" name="p" value="audit">

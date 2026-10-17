@@ -92,6 +92,7 @@ ob_start(); ?>
         <button class="btn" data-copy="<?= e(verify_url($doc['verify_code'])) ?>">Prüflink kopieren</button>
         <?php if (can('documents.issue.' . $doc['type'])): ?><a class="btn" href="<?= e(url('document_new', ['type' => $doc['type'], 'from' => $id])) ?>">Als Vorlage verwenden</a><?php endif; ?>
         <?php if ($doc['patient_id']): ?><a class="btn" href="<?= e(url('patient', ['id' => $doc['patient_id']])) ?>">Zur Akte</a><?php endif; ?>
+        <?php if (!empty($doc['case_id'])): ?><a class="btn" href="<?= e(url('case', ['id' => $doc['case_id']])) ?>">Zum Fall</a><?php endif; ?>
     </div>
 </div>
 

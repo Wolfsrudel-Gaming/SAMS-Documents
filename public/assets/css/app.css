@@ -425,3 +425,9 @@ html.in-tablet body.has-nav { padding-bottom: 0; }
 html.in-tablet .sidenav { bottom: 0; }
 .tablet-row { justify-content: space-between; padding: .3rem 0; border-bottom: 1px solid var(--line-soft); }
 html.in-tablet .topbar-right { display: none; }
+
+/* Etappe 2: Fallakten & Archiv */
+.btn-row form.inline-form { display: inline-flex; }
+.case-list td .badge { margin-right: .25rem; }
+.archived-banner { display: flex; gap: .75rem; align-items: center; justify-content: space-between; }
+.patient-banner.archived { filter: grayscale(.6); }

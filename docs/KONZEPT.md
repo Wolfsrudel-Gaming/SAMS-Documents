@@ -1,6 +1,6 @@
 # SAMS Dokumenten- & Aktensystem – Konzept Version 1
 
-Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1 umgesetzt
+Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design, Etappe 1, 2 und Tablet/Drucker umgesetzt
 
 Dieses Konzept fasst die Fragerunde (60 Fragen) und die anschließenden Festlegungen zusammen.
 Es beschreibt, was in Version 1 gebaut wird, in welcher Reihenfolge, und was bewusst später kommt.
@@ -99,11 +99,13 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 
 **Umstellung des Bestands:** die bisherigen vier festen Rollen werden zu Rängen mit passenden Rechten migriert.
 
-### Etappe 2 – Akten und Fallakte
-- Patientenakten erweitert: Archivierung, Abteilungs-Sichtbarkeit (z. B. nur Psychologie), Verknüpfung mit dem Bürgerportal vorbereitet
-- **Fallakte:** ein Fall (z. B. ein Verkehrsunfall) bündelt Einträge und Dokumente und füllt neue Dokumente vor
-- Archiv mit Suche, Archivieren statt Löschen
-- KIS-Oberfläche: kompakt, mit Reitern und Tabellen
+### Etappe 2 – Akten und Fallakte ✅ *umgesetzt in v1.5.0*
+- Patientenakten erweitert: Archivierung (schreibgeschützt, reaktivierbar), Abteilungs-Sichtbarkeit einzelner Einträge (z. B. nur Psychologie)
+- **Fallakte:** ein Fall (z. B. ein Verkehrsunfall) mit Fallnummer `SAMS-F-JJJJ-NNNNN` bündelt Einträge und Dokumente; „Dokument aus Fall“ übernimmt Diagnose, Ort, Hergang und Datum
+- Fälle abschließen / wieder öffnen; in abgeschlossene Fälle keine neuen Einträge
+- Archiv mit Suche (Filter Aktiv/Archiv/Alle), **Archivieren statt Löschen**: endgültiges Löschen nur noch aus dem Archiv mit eigenem Recht
+- Neue Rechte: `patients.archive`, `cases.manage`, `entries.all_departments`
+- *Offen für später:* Verknüpfung mit dem Bürgerportal (Etappe 6)
 
 ### Etappe 3 – Dokumente
 - Neue Dokumentarten: psychologisches Gutachten, Unterbringungsantrag, Impfnachweis, OP-Bericht,

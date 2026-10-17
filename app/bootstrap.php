@@ -32,6 +32,7 @@ require __DIR__ . '/documents.php';
 require __DIR__ . '/render.php';
 require __DIR__ . '/icons.php';
 require __DIR__ . '/printing.php';
+require __DIR__ . '/cases.php';
 
 set_exception_handler('handle_exception');
 set_error_handler(function (int $no, string $msg, string $file, int $line): bool {

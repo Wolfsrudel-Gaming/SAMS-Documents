@@ -6,10 +6,49 @@ if (!$p) {
     not_found('Patientenakte nicht gefunden.');
 }
 $me = current_user();
+$archived = patient_archived($p);
+
+if (is_post()) {
+    csrf_check();
+    if (post('action') === 'delete' && $archived) {
+        // Endgültig löschen nur aus dem Archiv heraus (Archivieren statt Löschen)
+        require_perm('patients.delete');
+        db()->beginTransaction();
+        q('DELETE FROM entries WHERE patient_id = ?', [$id]);
+        q('UPDATE documents SET case_id = NULL WHERE case_id IN (SELECT id FROM cases WHERE patient_id = ?)', [$id]);
+        q('DELETE FROM cases WHERE patient_id = ?', [$id]);
+        q('DELETE FROM patients WHERE id = ?', [$id]);
+        db()->commit();
+        audit('patient.delete', 'patient', $id, patient_name($p));
+        flash('success', 'Patientenakte endgültig gelöscht. Ausgestellte Dokumente bleiben erhalten.');
+        redirect(url('patients', ['view' => 'archive']));
+    }
+    require_perm('patients.archive');
+    if (post('action') === 'archive' && !$archived) {
+        $reason = mb_substr(trim((string) post('reason')), 0, 190);
+        update('patients', $id, ['archived_at' => now(), 'archived_reason' => $reason, 'archived_by' => $me['id'], 'updated_at' => now()]);
+        q("UPDATE cases SET status = 'closed', closed_at = ?, closed_by = ? WHERE patient_id = ? AND status = 'open'", [now(), $me['id'], $id]);
+        audit('patient.archive', 'patient', $id, patient_name($p) . ($reason !== '' ? ' – ' . $reason : ''));
+        flash('success', 'Akte archiviert. Offene Fälle wurden abgeschlossen.');
+    } elseif (post('action') === 'restore' && $archived) {
+        update('patients', $id, ['archived_at' => null, 'archived_reason' => '', 'archived_by' => null, 'updated_at' => now()]);
+        audit('patient.restore', 'patient', $id, patient_name($p));
+        flash('success', 'Akte reaktiviert.');
+    }
+    redirect(url('patient', ['id' => $id]));
+}
+
 audit('patient.view', 'patient', $id, patient_name($p));
 
-$entries = all('SELECT e.*, u.name AS author, u.title AS author_title FROM entries e LEFT JOIN users u ON u.id = e.created_by
+$entries = all('SELECT e.*, u.name AS author, u.title AS author_title, c.number AS case_number, dp.name AS department
+    FROM entries e LEFT JOIN users u ON u.id = e.created_by LEFT JOIN cases c ON c.id = e.case_id LEFT JOIN departments dp ON dp.id = e.department_id
     WHERE e.patient_id = ? ORDER BY e.occurred_at DESC, e.id DESC', [$id]);
+$cases = all("SELECT c.*, d.name AS department,
+        (SELECT COUNT(*) FROM entries e WHERE e.case_id = c.id) AS entry_count,
+        (SELECT COUNT(*) FROM documents x WHERE x.case_id = c.id) AS doc_count
+    FROM cases c LEFT JOIN departments d ON d.id = c.department_id WHERE c.patient_id = ?
+    ORDER BY CASE WHEN c.status = 'open' THEN 0 ELSE 1 END, COALESCE(c.incident_at, c.created_at) DESC", [$id]);
+$archivedBy = $archived && $p['archived_by'] ? one('SELECT name FROM users WHERE id = ?', [$p['archived_by']]) : null;
 $docs = all('SELECT d.*, u.name AS issuer_name FROM documents d LEFT JOIN users u ON u.id = d.issued_by
     WHERE d.patient_id = ? ORDER BY d.issued_at DESC', [$id]);
 
@@ -23,10 +62,18 @@ foreach ($docs as $d) {
 }
 usort($timeline, fn($a, $b) => strcmp($b['at'], $a['at']));
 
-$canSeeConfidential = fn($en) => !$en['confidential'] || can('entries.confidential') || (int) $en['created_by'] === (int) $me['id'];
 
 ob_start(); ?>
-<div class="patient-banner">
+<?php if ($archived): ?>
+<div class="flash warn archived-banner">
+    <div><strong>Archivierte Akte</strong> seit <?= e(fmt_datetime($p['archived_at'])) ?><?= $archivedBy ? ' durch ' . e($archivedBy['name']) : '' ?><?= $p['archived_reason'] ? ' · ' . e($p['archived_reason']) : '' ?>. Die Akte ist schreibgeschützt.</div>
+    <form method="post" class="inline-form"><?= csrf_field() ?>
+        <?php if (can('patients.archive')): ?><button class="btn small" name="action" value="restore">Reaktivieren</button><?php endif; ?>
+        <?php if (can('patients.delete')): ?><button class="btn small danger" name="action" value="delete" onclick="return confirm('Akte inkl. aller Einträge und Fälle endgültig löschen? Das kann nicht rückgängig gemacht werden. Ausgestellte Dokumente bleiben erhalten.')">Endgültig löschen</button><?php endif; ?>
+    </form>
+</div>
+<?php endif; ?>
+<div class="patient-banner<?= $archived ? ' archived' : '' ?>">
     <div class="pb-avatar"><?= icon('user') ?></div>
     <div>
         <div class="pb-name"><?= e(patient_name($p, true)) ?> <?= $p['deceased_at'] ? '<span class="badge black">† ' . e(fmt_date($p['deceased_at'])) . '</span>' : '' ?></div>
@@ -39,10 +86,13 @@ ob_start(); ?>
         </div>
     </div>
     <div class="btn-row">
-        <a class="btn" href="<?= e(url('patient_edit', ['id' => $id])) ?>"><?= icon('edit') ?>Stammdaten</a>
+        <?php if (!$archived): ?>
+            <?php if (can('patients.edit')): ?><a class="btn" href="<?= e(url('patient_edit', ['id' => $id])) ?>"><?= icon('edit') ?>Stammdaten</a><?php endif; ?>
+            <?php if (can('cases.manage')): ?><a class="btn" href="<?= e(url('case_edit', ['patient' => $id])) ?>"><?= icon('plus') ?>Fall</a><?php endif; ?>
+            <?php if (can('entries.create')): ?><a class="btn" href="<?= e(url('entry_edit', ['patient' => $id])) ?>"><?= icon('plus') ?>Akteneintrag</a><?php endif; ?>
+        <?php endif; ?>
         <a class="btn" href="<?= e(url('patient_print', ['id' => $id])) ?>" target="_blank"><?= icon('print') ?>Drucken</a>
-        <a class="btn" href="<?= e(url('entry_edit', ['patient' => $id])) ?>"><?= icon('plus') ?>Akteneintrag</a>
-        <?php if (can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new', ['patient' => $id])) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
+        <?php if (!$archived && can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new', ['patient' => $id])) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
     </div>
 </div>
 
@@ -78,9 +128,33 @@ ob_start(); ?>
         <?php if (trim((string) $p['notes']) !== ''): ?>
             <h2>Notizen</h2><p><?= nl($p['notes']) ?></p>
         <?php endif; ?>
+        <?php if (!$archived && can('patients.archive')): ?>
+            <h2>Archiv</h2>
+            <form method="post" class="inline-form" onsubmit="return confirm('Akte archivieren? Sie bleibt lesbar, aber es können keine neuen Einträge oder Dokumente mehr angelegt werden.')">
+                <?= csrf_field() ?><input name="reason" placeholder="Grund (z. B. verzogen, verstorben)" maxlength="190">
+                <button class="btn small" name="action" value="archive">Archivieren</button>
+            </form>
+        <?php endif; ?>
     </section>
 
     <section>
+        <div class="card">
+            <div class="card-head"><h2>Fälle</h2>
+                <?php if (!$archived && can('cases.manage')): ?><a class="btn small" href="<?= e(url('case_edit', ['patient' => $id])) ?>">+ Neuer Fall</a><?php endif; ?></div>
+            <table class="list compact case-list">
+                <tbody>
+                <?php foreach ($cases as $c): ?>
+                    <tr onclick="location.href='<?= e(url('case', ['id' => $c['id']])) ?>'">
+                        <td><strong><?= e($c['title']) ?></strong><br><small class="muted mono"><?= e($c['number']) ?></small> <small class="muted">· <?= e(CASE_KINDS[$c['kind']] ?? $c['kind']) ?><?= $c['department'] ? ' · ' . e($c['department']) : '' ?></small></td>
+                        <td class="small"><?= e(fmt_datetime($c['incident_at'] ?: $c['created_at'])) ?></td>
+                        <td class="small right"><?= (int) $c['entry_count'] ?> Eintr. · <?= (int) $c['doc_count'] ?> Dok.</td>
+                        <td class="right"><?= case_status_badge($c) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (!$cases): ?><tr><td class="muted">Noch keine Fälle. Ein Fall bündelt Einträge und Dokumente zu einem Einsatz oder einer Behandlung.</td></tr><?php endif; ?>
+                </tbody>
+            </table>
+        </div>
         <div class="card">
             <div class="card-head"><h2>Verlauf</h2>
                 <div class="tabs" data-filter="#timeline">
@@ -97,12 +171,14 @@ ob_start(); ?>
                                 <span class="badge"><?= e($r['type']) ?></span>
                                 <strong><?= e($r['title']) ?></strong>
                                 <?php if ($r['confidential']): ?><span class="badge purple" title="Nur ärztlicher Dienst und Verfasser">vertraulich</span><?php endif; ?>
-                                <a class="tl-edit" href="<?= e(url('entry_edit', ['id' => $r['id']])) ?>">bearbeiten</a>
+                                <?php if ($r['department']): ?><span class="badge" title="Nur für Mitglieder dieser Abteilung"><?= e($r['department']) ?></span><?php endif; ?>
+                                <?php if ($r['case_number']): ?><a class="badge blue" href="<?= e(url('case', ['id' => $r['case_id']])) ?>"><?= e($r['case_number']) ?></a><?php endif; ?>
+                                <?php if (!$archived): ?><a class="tl-edit" href="<?= e(url('entry_edit', ['id' => $r['id']])) ?>">bearbeiten</a><?php endif; ?>
                             </div>
-                            <?php if ($canSeeConfidential($r)): ?>
+                            <?php if (entry_visible($r)): ?>
                                 <div class="tl-text"><?= nl($r['content']) ?></div>
                             <?php else: ?>
-                                <div class="tl-text muted"><em>Inhalt nur für den ärztlichen Dienst einsehbar.</em></div>
+                                <div class="tl-text muted"><em>Inhalt für dich nicht einsehbar (vertraulich oder einer anderen Abteilung vorbehalten).</em></div>
                             <?php endif; ?>
                             <small class="muted"><?= e(trim($r['author_title'] . ' ' . $r['author'])) ?></small>
                         </div>

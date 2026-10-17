@@ -5,6 +5,7 @@ $patient = $id ? one('SELECT * FROM patients WHERE id = ?', [$id]) : null;
 if ($id && !$patient) {
     not_found('Patientenakte nicht gefunden.');
 }
+require_active_patient($patient);
 
 $fields = [
     'first_name', 'last_name', 'dob', 'gender', 'citizen_id', 'phone', 'address', 'occupation', 'employer',
@@ -16,13 +17,6 @@ $errors = [];
 
 if (is_post()) {
     csrf_check();
-    if (post('action') === 'delete') {
-        require_perm('patients.delete');
-        q('DELETE FROM patients WHERE id = ?', [$id]);
-        audit('patient.delete', 'patient', $id, patient_name($patient));
-        flash('success', 'Patientenakte gelöscht.');
-        redirect(url('patients'));
-    }
     foreach ($fields as $f) {
         $data[$f] = mb_substr((string) post($f), 0, 5000);
     }
@@ -98,9 +92,6 @@ ob_start(); ?>
 
     <div class="form-actions">
         <button class="btn primary">Speichern</button>
-        <?php if ($patient && can('patients.delete')): ?>
-            <button class="btn danger" name="action" value="delete" formnovalidate onclick="return confirm('Akte inkl. aller Einträge endgültig löschen? Ausgestellte Dokumente bleiben erhalten.')">Akte löschen</button>
-        <?php endif; ?>
     </div>
 </form>
 <?php

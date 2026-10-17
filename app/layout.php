@@ -22,7 +22,7 @@ $navGroups = [
     ],
 ];
 // Unterseiten der passenden Navigation zuordnen
-$activeMap = ['patient' => 'patients', 'patient_edit' => 'patients', 'patient_print' => 'patients', 'entry_edit' => 'patients',
+$activeMap = ['patient' => 'patients', 'patient_edit' => 'patients', 'patient_print' => 'patients', 'entry_edit' => 'patients', 'case' => 'patients', 'case_edit' => 'patients',
     'document' => 'documents', 'user_edit' => 'users', 'rank_edit' => 'ranks', 'password_change' => 'profile', 'twofa' => 'profile'];
 $active = $activeMap[$current] ?? $current;
 ?><!doctype html>

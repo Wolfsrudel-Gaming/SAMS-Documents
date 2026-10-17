@@ -14,6 +14,9 @@ if ($q !== '') {
     }
     $params['q'] = like($q);
 }
+// Archivierte Akten nur auf Wunsch
+$view = in_array($_GET['view'] ?? '', ['archive', 'all'], true) ? $_GET['view'] : 'active';
+$where .= ['active' => ' AND archived_at IS NULL', 'archive' => ' AND archived_at IS NOT NULL', 'all' => ''][$view];
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $per = 25;
 $total = (int) scalar("SELECT COUNT(*) FROM patients WHERE $where", $params);
@@ -29,6 +32,9 @@ ob_start(); ?>
 <form class="card filter" action="index.php">
     <input type="hidden" name="p" value="patients">
     <input name="q" value="<?= e($q) ?>" placeholder="Name, Bürger-ID, Telefon oder Versichertennummer …" autofocus>
+    <select name="view" onchange="this.form.submit()">
+        <?php foreach (['active' => 'Aktive Akten', 'archive' => 'Archiv', 'all' => 'Alle'] as $k => $l): ?><option value="<?= $k ?>"<?= selected($k, $view) ?>><?= $l ?></option><?php endforeach; ?>
+    </select>
     <button class="btn">Suchen</button>
 </form>
 <div class="card">
@@ -37,7 +43,7 @@ ob_start(); ?>
     <tbody>
     <?php foreach ($patients as $p): ?>
         <tr onclick="location.href='<?= e(url('patient', ['id' => $p['id']])) ?>'">
-            <td><strong><?= e(patient_name($p, true)) ?></strong><?= $p['deceased_at'] ? ' <span class="badge black">† verstorben</span>' : '' ?></td>
+            <td><strong><?= e(patient_name($p, true)) ?></strong><?= $p['deceased_at'] ? ' <span class="badge black">† verstorben</span>' : '' ?><?= $p['archived_at'] ? ' <span class="badge grey">archiviert</span>' : '' ?></td>
             <td><?= e(fmt_date($p['dob'])) ?> <?= $p['dob'] ? '<small class="muted">(' . e(age($p['dob'])) . ' J.)</small>' : '' ?></td>
             <td class="mono"><?= e($p['citizen_id']) ?></td>
             <td><?= e($p['phone']) ?></td>
@@ -53,7 +59,7 @@ ob_start(); ?>
 <?php if ($pages > 1): ?>
 <div class="pager">
     <?php for ($i = 1; $i <= $pages; $i++): ?>
-        <a class="<?= $i === $page ? 'active' : '' ?>" href="<?= e(url('patients', ['q' => $q, 'page' => $i])) ?>"><?= $i ?></a>
+        <a class="<?= $i === $page ? 'active' : '' ?>" href="<?= e(url('patients', ['q' => $q, 'view' => $view !== 'active' ? $view : null, 'page' => $i])) ?>"><?= $i ?></a>
     <?php endfor; ?>
 </div>
 <?php endif; ?>

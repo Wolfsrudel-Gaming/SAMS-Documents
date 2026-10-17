@@ -41,8 +41,10 @@ Ausgestellte Dokumente sind **unveränderlich** (Patienten- und Ausstellerdaten 
 
 - **Patientenakten**: Personalien, Bürger-ID (z. B. `citizenid` aus ESX/QBCore), Versicherung, Blutgruppe, Allergien
   (Warnhinweis), Vorerkrankungen, Medikation, Notfallkontakt, Organspende, Patientenverfügung, Kennzeichnungen
+- **Fallakten**: ein Fall (z. B. Verkehrsunfall, stationärer Aufenthalt) bündelt Einträge und Dokumente; „Dokument aus Fall“ übernimmt Diagnose, Ort und Hergang
+- **Archiv**: Akten werden archiviert statt gelöscht (schreibgeschützt, reaktivierbar, eigene Suche)
 - **Akteneinträge** (Behandlung, Einsatz, Psychologisches Gespräch …) mit SOAP-/ABCDE-Vorlagen, optional **vertraulich**
-  (nur ärztlicher Dienst); chronologischer Verlauf aus Einträgen und Dokumenten; Akte als PDF drucken
+  (nur ärztlicher Dienst) oder **nur für eine Abteilung** sichtbar; chronologischer Verlauf aus Einträgen und Dokumenten; Akte als PDF drucken
 - **Öffentliche Echtheitsprüfung** `verify.php` – QR-Code scannen oder Prüfcode eingeben. Zeigt gültig / abgelaufen /
   storniert / nicht gefunden, aber keine medizinischen Inhalte (nur Initialen + Geburtsjahr)
 - **Personalverwaltung**: Konten werden von Admin/Chiefs angelegt, das System erzeugt ein Startpasswort, das beim ersten Login geändert werden muss. Passwort zurücksetzen, Konto sperren (mit Grund), alle Sitzungen beenden, 2FA zurücksetzen, Verlauf aller Änderungen

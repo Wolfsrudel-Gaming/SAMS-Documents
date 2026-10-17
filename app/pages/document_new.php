@@ -5,12 +5,20 @@ $typeKey = (string) ($_GET['type'] ?? post('type', ''));
 $type = $typeKey !== '' ? doc_type($typeKey) : null;
 $patientId = (int) ($_GET['patient'] ?? post('patient_id', 0));
 $patient = $patientId ? one('SELECT * FROM patients WHERE id = ?', [$patientId]) : null;
+// Dokument aus einer Fallakte heraus (Patient und Felder werden übernommen)
+$caseId = (int) ($_GET['case'] ?? post('case_id', 0));
+$case = $caseId ? one("SELECT * FROM cases WHERE id = ? AND status = 'open'", [$caseId]) : null;
+if ($case) {
+    $patient = one('SELECT * FROM patients WHERE id = ?', [$case['patient_id']]);
+    $patientId = (int) $patient['id'];
+}
+require_active_patient($patient);
 
 // Schritt 1: Dokumentart wählen
 if (!$type) {
     ob_start(); ?>
     <div class="page-head">
-        <div><h1>Neues Dokument</h1><?php if ($patient): ?><p class="muted">für <?= e(patient_name($patient)) ?></p><?php endif; ?></div>
+        <div><h1>Neues Dokument</h1><?php if ($patient): ?><p class="muted">für <?= e(patient_name($patient)) ?><?= $case ? ' · Fall ' . e($case['number']) : '' ?></p><?php endif; ?></div>
     </div>
     <?php
     $byCat = [];
@@ -22,7 +30,7 @@ if (!$type) {
             <h2><?= e($cat) ?></h2>
             <div class="tiles">
             <?php foreach ($types as $k => $t): $allowed = can('documents.issue.' . $k); ?>
-                <a class="tile<?= $allowed ? '' : ' disabled' ?>" href="<?= $allowed ? e(url('document_new', ['type' => $k, 'patient' => $patientId ?: null])) : '#' ?>"
+                <a class="tile<?= $allowed ? '' : ' disabled' ?>" href="<?= $allowed ? e(url('document_new', ['type' => $k, 'patient' => $patientId ?: null, 'case' => $case['id'] ?? null])) : '#' ?>"
                    title="<?= $allowed ? '' : 'Dein Rang darf dieses Dokument nicht ausstellen' ?>">
                     <span class="tile-code"><?= e($t['code']) ?></span>
                     <strong><?= e($t['title']) ?></strong>
@@ -56,7 +64,10 @@ foreach ($type['fields'] as $f) {
         $data[$f['name']] = field_default($f);
     }
 }
-// Sinnvolle Vorbelegungen aus der Akte
+// Sinnvolle Vorbelegungen aus Fall und Akte
+if ($case && !$fromId) {
+    $data = prefill_from_case($type, $case, $data);
+}
 if ($patient && $type['key'] === 'au' && empty($data['employer'])) {
     $data['employer'] = $patient['employer'];
 }
@@ -67,6 +78,12 @@ $preview = '';
 if (is_post()) {
     csrf_check();
     [$data, $errors] = collect_fields($type['fields'], is_array($_POST['d'] ?? null) ? $_POST['d'] : []);
+    if ($case && (int) post('patient_id') !== (int) $case['patient_id']) {
+        $case = null; // anderer Patient gewählt: Fallzuordnung entfällt
+    }
+    if (!$case && ($patient = one('SELECT * FROM patients WHERE id = ?', [(int) post('patient_id')]))) {
+        require_active_patient($patient);
+    }
     if ($type['patient'] === 'required' && !$patient) {
         $errors[] = 'Bitte eine Patientenakte auswählen.';
     }
@@ -99,6 +116,7 @@ if (is_post()) {
                 'number' => next_document_number($type),
                 'type' => $type['key'],
                 'patient_id' => $patient['id'] ?? null,
+                'case_id' => $case['id'] ?? null,
                 'data' => json_encode($data, JSON_UNESCAPED_UNICODE),
                 'patient_snapshot' => json_encode(patient_snapshot($patient), JSON_UNESCAPED_UNICODE),
                 'issuer_snapshot' => json_encode(issuer_snapshot($me), JSON_UNESCAPED_UNICODE),
@@ -126,7 +144,7 @@ if (is_post()) {
     }
 }
 
-$patients = all('SELECT id, first_name, last_name, dob, citizen_id FROM patients ORDER BY last_name, first_name');
+$patients = all('SELECT id, first_name, last_name, dob, citizen_id FROM patients WHERE archived_at IS NULL ORDER BY last_name, first_name');
 
 ob_start(); ?>
 <div class="page-head">
@@ -134,13 +152,15 @@ ob_start(); ?>
         <h1><?= e($type['title']) ?></h1>
         <p class="muted"><?= e($type['category']) ?> · Kürzel <?= e($type['code']) ?></p>
     </div>
-    <a class="btn" href="<?= e(url('document_new', ['patient' => $patientId ?: null])) ?>">Andere Dokumentart</a>
+    <a class="btn" href="<?= e(url('document_new', ['patient' => $patientId ?: null, 'case' => $case['id'] ?? null])) ?>">Andere Dokumentart</a>
 </div>
 <?php foreach ($errors as $err): ?><div class="flash error"><?= e($err) ?></div><?php endforeach; ?>
 
 <form method="post" class="card form-grid docform" action="<?= e(url('document_new', ['type' => $type['key']])) ?>">
     <?= csrf_field() ?>
     <input type="hidden" name="type" value="<?= e($type['key']) ?>">
+    <?php if ($case): ?><input type="hidden" name="case_id" value="<?= (int) $case['id'] ?>">
+        <div class="field w-full"><div class="flash success">Aus Fall <strong><?= e($case['number']) ?></strong> · <?= e($case['title']) ?> – Diagnose, Ort und Hergang wurden übernommen.</div></div><?php endif; ?>
     <h3 class="form-heading">Patient/in<?= $type['patient'] === 'required' ? ' <span class="req">*</span>' : ' (optional)' ?></h3>
     <div class="field w-full">
         <select name="patient_id" class="patient-select"<?= $type['patient'] === 'required' ? ' required' : '' ?>>
