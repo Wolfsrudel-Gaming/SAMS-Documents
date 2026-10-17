@@ -65,6 +65,10 @@ function permission_catalog(): array
             'duty.view'   => 'Sehen, wer im Dienst ist',
             'duty.manage' => 'Dienstzeiten aller einsehen und korrigieren',
         ],
+        'Ausbildung' => [
+            'training.view'   => 'Lehrgänge lernen und Prüfungen ablegen',
+            'training.manage' => 'Lehrgänge, Module und Prüfungsfragen verwalten, Ergebnisse sehen',
+        ],
         'Organisation' => [
             'ranks.manage'          => 'Ränge und Rechte verwalten',
             'departments.manage'    => 'Abteilungen verwalten',

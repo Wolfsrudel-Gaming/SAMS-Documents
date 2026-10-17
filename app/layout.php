@@ -13,6 +13,7 @@ $navGroups = [
         'drafts'       => ['Entwürfe & Freigaben', 'documents.issue.*|documents.approve|documents.drafts_all', 'edit'],
         'invoices'     => ['Rechnungen', 'invoices.manage', 'docs'],
         'duty'         => ['Dienstzeiten', 'duty.clock|duty.view|duty.manage', 'clock'],
+        'training'     => ['Ausbildung', 'training.view|training.manage', 'shield'],
         'shared'       => ['Für mich freigegeben', 'documents.shared_view', 'external'],
     ],
     'Verwaltung' => [
@@ -30,7 +31,7 @@ $navGroups = [
 ];
 // Unterseiten der passenden Navigation zuordnen
 $activeMap = ['patient' => 'patients', 'patient_edit' => 'patients', 'patient_print' => 'patients', 'entry_edit' => 'patients', 'case' => 'patients', 'case_edit' => 'patients',
-    'document' => 'documents', 'draft' => 'drafts', 'user_edit' => 'users', 'personnel' => 'users', 'rank_edit' => 'ranks', 'password_change' => 'profile', 'twofa' => 'profile'];
+    'document' => 'documents', 'draft' => 'drafts', 'user_edit' => 'users', 'personnel' => 'users', 'course' => 'training', 'exam' => 'training', 'course_edit' => 'training', 'rank_edit' => 'ranks', 'password_change' => 'profile', 'twofa' => 'profile'];
 $active = $activeMap[$current] ?? $current;
 ?><!doctype html>
 <html lang="de">

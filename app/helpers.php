@@ -234,3 +234,61 @@ function theme_style(): string
         . '--nav:' . $nav . ';--nav-dark:' . shade($nav, -0.3) . ';--nav-hover:' . shade($nav, 0.08) . ';'
         . '}</style>';
 }
+
+/**
+ * Einfache Textauszeichnung für Lerninhalte und Wiki (sicher escaped):
+ * # Überschrift, ## Unterüberschrift, - Aufzählung, 1. Nummerierung,
+ * **fett**, *kursiv*, [Text](https://…) und Leerzeile = neuer Absatz.
+ */
+function light_markup(string $text): string
+{
+    $inline = function (string $s): string {
+        $s = e($s);
+        $s = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $s);
+        $s = preg_replace('/(?<![*\w])\*(?!\s)(.+?)(?<!\s)\*(?![*\w])/', '<em>$1</em>', $s);
+        $s = preg_replace_callback('/\[([^\]]+)\]\((https?:\/\/[^\s)]+|index\.php\?[^\s)]+)\)/', fn($m) => '<a href="' . $m[2] . '"' . (str_starts_with($m[2], 'http') ? ' target="_blank" rel="noopener"' : '') . '>' . $m[1] . '</a>', $s);
+        return $s;
+    };
+    $out = '';
+    $list = null;
+    $para = [];
+    $flush = function () use (&$para, &$out, $inline) {
+        if ($para) {
+            $out .= '<p>' . implode('<br>', array_map($inline, $para)) . '</p>';
+            $para = [];
+        }
+    };
+    $closeList = function () use (&$list, &$out) {
+        if ($list) {
+            $out .= "</$list>";
+            $list = null;
+        }
+    };
+    foreach (preg_split('/\r?\n/', $text) as $line) {
+        $t = rtrim($line);
+        if (preg_match('/^(#{1,3})\s+(.+)$/', $t, $m)) {
+            $flush();
+            $closeList();
+            $lvl = strlen($m[1]) + 1;
+            $out .= "<h$lvl>" . $inline($m[2]) . "</h$lvl>";
+        } elseif (preg_match('/^\s*[-•]\s+(.+)$/', $t, $m) || preg_match('/^\s*\d+[.)]\s+(.+)$/', $t, $m)) {
+            $flush();
+            $type = preg_match('/^\s*\d/', $t) ? 'ol' : 'ul';
+            if ($list !== $type) {
+                $closeList();
+                $out .= "<$type>";
+                $list = $type;
+            }
+            $out .= '<li>' . $inline($m[1]) . '</li>';
+        } elseif (trim($t) === '') {
+            $flush();
+            $closeList();
+        } else {
+            $closeList();
+            $para[] = $t;
+        }
+    }
+    $flush();
+    $closeList();
+    return $out;
+}

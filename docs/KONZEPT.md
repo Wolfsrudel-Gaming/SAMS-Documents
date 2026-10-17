@@ -131,7 +131,7 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 
 ### Etappe 5 – Personal, Ausbildung, Wiki, Kommunikation
 - ✅ **Personalakte** *(v1.12.0)*: Laufbahn (Eintritt, Rangwechsel, Qualifikationen und ausgestellte Personaldokumente werden automatisch eingetragen), Belobigungen/Notizen/Abmahnungen von Hand, vertrauliche Einträge nur für die Leitung, Personaldokumente, Dienstzeit der letzten 8 Wochen; jede/r sieht die eigene Akte (ohne vertrauliche Notizen)
-- **Ausbildung:** Ausbildungspläne, Module, Online-Prüfungen, automatische Zertifikate/Urkunden
+- ✅ **Ausbildung** *(v1.13.0)*: Lehrgänge mit Lernmodulen (formatierter Text), Online-Prüfung mit Fragenpool (zufällige Fragen und Antwortreihenfolge, Mehrfachauswahl, Zeitlimit, Versuche pro Tag, Bestehensgrenze, Bewertung nur auf dem Server), nach Bestehen automatisch Qualifikation, Zertifikat (Ausbildungsnachweis) und Laufbahn-Eintrag; Gültigkeit mit Rezertifizierung; Ergebnisübersicht für Ausbilder
 - **Wiki:** SOPs, Medikamentenliste, Behandlungsabläufe. Pflegt auch die Vorschlagslisten in den Formularen.
 - **Schwarzes Brett** mit Lesebestätigung, **interne Nachrichten**
 
