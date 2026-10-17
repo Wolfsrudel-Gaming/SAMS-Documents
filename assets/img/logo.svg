@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <title>SAMS – Star of Life</title>
+  <defs>
+    <rect id="arm" x="-13" y="-50" width="26" height="100" rx="2.5"/>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="#fff" stroke="#0b4f9c" stroke-width="3"/>
+  <g transform="translate(60 60)" fill="#0b4f9c">
+    <use href="#arm"/>
+    <use href="#arm" transform="rotate(60)"/>
+    <use href="#arm" transform="rotate(-60)"/>
+  </g>
+  <g transform="translate(60 60)" fill="none" stroke="#fff" stroke-linecap="round">
+    <path d="M0 -38 V40" stroke-width="4"/>
+    <path d="M0 -32 c10 4 10 11 0 15 c-10 4 -10 11 0 15 c10 4 10 11 0 15 c-6 2.5 -7 6 -3 9" stroke-width="3.6"/>
+    <circle cx="0" cy="-36" r="3.5" fill="#fff" stroke="none"/>
+  </g>
+</svg>
