@@ -55,9 +55,27 @@ function require_login(): array
     return $u;
 }
 
+/**
+ * IP-Adresse des Besuchers. Kommt die Anfrage von einem Proxy im lokalen/privaten
+ * Netz (z. B. nginx vor Docker), wird die ursprüngliche Adresse aus X-Forwarded-For genommen.
+ */
 function client_ip(): string
 {
-    return substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 64);
+    $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $isPrivate = $ip !== '' && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+    $forwarded = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+    if ($isPrivate && $forwarded !== '') {
+        // Von rechts nach links: erste Adresse, die nicht selbst ein interner Proxy ist
+        foreach (array_reverse(array_map('trim', explode(',', $forwarded))) as $hop) {
+            if (filter_var($hop, FILTER_VALIDATE_IP)) {
+                $ip = $hop;
+                if (filter_var($hop, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                    break;
+                }
+            }
+        }
+    }
+    return substr($ip, 0, 64);
 }
 
 /** Wartezeit in Minuten, falls zu viele Fehlversuche – sonst 0. */

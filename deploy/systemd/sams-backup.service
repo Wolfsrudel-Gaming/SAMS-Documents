@@ -5,6 +5,8 @@ Description=SAMS tägliches Datenbank-Backup
 Type=oneshot
 User=sams
 Group=www-data
+# Neue Dateien in storage/ für PHP-FPM (Gruppe www-data) beschreibbar anlegen
+UMask=0002
 WorkingDirectory=/var/www/sams
 # Ohne Docker:
 ExecStart=/usr/bin/php /var/www/sams/bin/sams backup daily

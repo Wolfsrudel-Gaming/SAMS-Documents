@@ -122,7 +122,7 @@ function audit(string $action, string $objectType = '', ?int $objectId = null, s
             'object_type' => $objectType,
             'object_id'   => $objectId,
             'details'     => mb_substr($details, 0, 1000),
-            'ip'          => $_SERVER['REMOTE_ADDR'] ?? '',
+            'ip'          => function_exists('client_ip') ? client_ip() : ($_SERVER['REMOTE_ADDR'] ?? ''),
             'created_at'  => now(),
         ]);
     } catch (PDOException $e) {

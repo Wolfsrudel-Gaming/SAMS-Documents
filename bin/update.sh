@@ -19,6 +19,7 @@
 #   bin/update.sh --force   auch ohne neuen Commit bzw. einen fehlgeschlagenen erneut versuchen
 #
 set -uo pipefail
+umask 0002
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
@@ -66,6 +67,20 @@ write_status() {
 
 php_run() { $PHP_CMD bin/sams "$@"; }
 
+# Docker-Betrieb: Container müssen laufen, bevor PHP-Befehle darin ausgeführt werden
+DOCKER=0
+[[ "$PHP_CMD" == *"docker compose"* || "$PHP_CMD" == *"docker-compose"* ]] && DOCKER=1
+ensure_docker() {
+    [[ $DOCKER -eq 1 ]] || return 0
+    docker compose up -d "$@" >>"$LOG" 2>&1 || { log "FEHLER: docker compose up fehlgeschlagen."; return 1; }
+    for _ in $(seq 1 30); do
+        $PHP_CMD -r 'exit(0);' >/dev/null 2>&1 && return 0
+        sleep 2
+    done
+    log "FEHLER: App-Container antwortet nicht."
+    return 1
+}
+
 # Nur eine Instanz gleichzeitig
 exec 9>"$STORAGE/update/update.lock"
 flock -n 9 || exit 0
@@ -99,6 +114,8 @@ fi
 
 log "Update ${OLD:0:7} → ${NEW:0:7} (Branch $BRANCH) gestartet."
 
+ensure_docker || { write_status "failed" "$OLD" "$NEW" "Docker-Container nicht bereit"; exit 1; }
+
 # 1. Backup
 BACKUP="$(php_run backup pre-update 2>>"$LOG" | sed -n 's/^Backup erstellt: //p')"
 if [[ -z "$BACKUP" ]]; then
@@ -125,7 +142,13 @@ if ! git reset --hard --quiet "$NEW" 2>>"$LOG"; then
     notify "⚠️ SAMS-Update fehlgeschlagen (git reset)."
     exit 1
 fi
-chmod +x bin/sams bin/update.sh 2>/dev/null || true
+chmod +x bin/sams bin/update.sh deploy/*.sh 2>/dev/null || true
+
+# Docker-Image neu bauen, wenn sich das Docker-Setup geändert hat
+if [[ $DOCKER -eq 1 ]] && git diff --name-only "$OLD" "$NEW" | grep -qE '^(Dockerfile|docker-compose\.yml|docker/)'; then
+    log "Docker-Setup geändert – baue Container neu."
+    ensure_docker --build || log "WARNUNG: Neubau fehlgeschlagen, verwende bestehende Container."
+fi
 
 # 4. Migrationen
 if ! php_run migrate >>"$LOG" 2>&1; then

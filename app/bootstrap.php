@@ -4,6 +4,9 @@ declare(strict_types=1);
 define('SAMS_ROOT', dirname(__DIR__));
 define('SAMS_CLI', PHP_SAPI === 'cli');
 
+// Dateien in storage/ für Webserver (www-data) und Update-Benutzer gemeinsam beschreibbar anlegen
+umask(0002);
+
 require __DIR__ . '/config.php';
 
 define('SAMS_VERSION', trim((string) @file_get_contents(SAMS_ROOT . '/VERSION')) ?: '0.0.0');

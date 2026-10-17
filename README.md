@@ -58,9 +58,32 @@ Ausgestellte Dokumente sind **unveränderlich** (Patienten- und Ausstellerdaten 
 
 ## Installation
 
-Voraussetzungen: Linux-Server mit Git und entweder **Docker** (empfohlen) oder **nginx + PHP 8.2+ (php-fpm, pdo_mysql, gd) + MariaDB**.
+### Schnellstart: Einrichtungsskript (empfohlen)
 
-### 1. Code holen
+Für einen frischen **Ubuntu/Debian-Server** übernimmt [`deploy/install.sh`](deploy/install.sh) die komplette Einrichtung inklusive Auto-Update:
+Pakete, Systembenutzer `sams`, Deploy-Key, Code, `.env` mit zufälligen Passwörtern, Datenbank, nginx, HTTPS (Let's Encrypt),
+Admin-Konto, Update-Timer und tägliche Backups. Wahlweise **Docker** oder **klassisch** (nginx + PHP-FPM + MariaDB).
+
+1. Die Domain (z. B. `sams.deinserver.de`) per DNS auf den Server zeigen lassen.
+2. Das Skript auf den Server bringen – das Repository ist privat, daher z. B.:
+   - in GitHub `deploy/install.sh` öffnen → **Raw** → Inhalt kopieren → auf dem Server `nano install.sh`, einfügen, speichern, **oder**
+   - vom eigenen PC: `scp deploy/install.sh root@dein-server:/root/`
+3. Starten:
+   ```bash
+   sudo bash install.sh
+   ```
+4. Das Skript fragt Betriebsart, Domain, Branch und HTTPS ab. Danach zeigt es einen **Deploy-Key** an: Den in GitHub unter
+   **Repository → Settings → Deploy keys → Add deploy key** eintragen (*Allow write access* **nicht** anhaken) und Enter drücken.
+5. Am Ende legst du dein Hauptadministrator-Konto an. Das Skript zeigt zum Schluss die Daten für den optionalen GitHub-Webhook.
+
+Danach stehen auf dem Server die Befehle `sams status`, `sams backup`, `sams backups` und `sams-update` (Update sofort ausführen) zur Verfügung.
+Das Skript kann jederzeit erneut ausgeführt werden, z. B. um Domain oder Branch zu ändern – Daten und Passwörter bleiben erhalten.
+
+### Manuelle Installation
+
+Voraussetzungen: Linux-Server mit Git und entweder **Docker** oder **nginx + PHP 8.2+ (php-fpm, pdo_mysql, gd, mbstring) + MariaDB**.
+
+#### 1. Code holen
 
 Das Repository ist privat, der Server braucht daher einen **Deploy-Key** (nur Lesezugriff):
 
@@ -82,7 +105,7 @@ sudo -u sams nano .env        # Passwörter, APP_URL, UPDATE_BRANCH setzen
 
 > Die Vorlagen in `deploy/` gehen von `/var/www/sams` und dem Benutzer `sams` aus.
 
-### 2a. Start mit Docker (empfohlen)
+#### 2a. Start mit Docker
 
 ```bash
 docker compose up -d --build
@@ -91,13 +114,13 @@ docker compose exec app php bin/sams create-admin admin
 ```
 
 In der `.env` für Docker: `DB_HOST=db` und `UPDATE_PHP_CMD=docker compose exec -T app php`.
-Der Web-Container lauscht auf `127.0.0.1:8080` – davor gehört ein Reverse-Proxy mit HTTPS (z. B. nginx mit certbot oder Caddy) für eure Domain. Der Benutzer `sams` muss Docker benutzen dürfen (`sudo usermod -aG docker sams`).
+Der Web-Container lauscht auf `127.0.0.1:8080` – davor gehört ein Reverse-Proxy mit HTTPS (Vorlage: [`deploy/nginx-proxy.conf`](deploy/nginx-proxy.conf)). Der Benutzer `sams` muss Docker benutzen dürfen (`sudo usermod -aG docker sams`).
 
-### 2b. Start ohne Docker
+#### 2b. Start ohne Docker
 
 - Datenbank und Benutzer in MariaDB anlegen, Zugangsdaten in `.env` eintragen (`DB_HOST=127.0.0.1`)
 - nginx: Vorlage [`deploy/nginx.conf`](deploy/nginx.conf) – **Webroot ist ausschließlich `public/`**
-- `storage/` muss für PHP-FPM beschreibbar sein: `sudo chgrp -R www-data storage && sudo chmod -R g+rwX storage`
+- `storage/` muss für PHP-FPM beschreibbar sein: `sudo chgrp -R www-data storage && sudo chmod -R g+rwX storage && sudo find storage -type d -exec chmod g+s {} +`
 - Datenbank anlegen und Admin-Konto erstellen:
 
 ```bash
@@ -107,7 +130,7 @@ php bin/sams create-admin admin
 
 (Alternativ führt `https://eure-domain/install.php` im Browser durch die Einrichtung.)
 
-### 3. Auto-Update einrichten
+#### 3. Auto-Update einrichten
 
 `bin/update.sh` prüft per `git fetch`, ob es auf dem eingestellten Branch (`UPDATE_BRANCH`) einen neuen Commit gibt. Wenn ja:
 
@@ -118,6 +141,8 @@ php bin/sams create-admin admin
 5. Wartungsmodus aus, optional Meldung nach Discord (`UPDATE_DISCORD_WEBHOOK`)
 
 **Schlägt eine Migration fehl,** werden Code und Datenbank automatisch auf den vorherigen Stand zurückgesetzt. Der fehlerhafte Commit wird nicht erneut versucht, bis ein neuer Commit kommt oder im Admin-Bereich „Jetzt auf Updates prüfen“ geklickt wird.
+
+Das Einrichtungsskript erledigt diesen Schritt automatisch. Manuell:
 
 **Timer (systemd, empfohlen)** – prüft alle 2 Minuten:
 
@@ -133,6 +158,8 @@ Alternativ per Cron: [`deploy/crontab.example`](deploy/crontab.example).
 **Sofort-Update per GitHub-Webhook (optional):** In GitHub unter *Settings → Webhooks* eintragen:
 Payload-URL `https://eure-domain/hooks/github.php`, Content type `application/json`, Secret = `UPDATE_WEBHOOK_SECRET` aus der `.env`, Event „push“.
 Der Webhook legt nur eine Anforderung ab; `sams-update.path` startet das Update dann sofort.
+
+**Docker:** Ändert ein Update das Docker-Setup (`Dockerfile`, `docker-compose.yml`, `docker/`), baut das Update-Skript die Container automatisch neu.
 
 **Kontrolle:** Admin-Bereich → *System & Updates* zeigt Version, ob der Timer läuft, das letzte Update, das Update-Protokoll und die Backups. Für Monitoring gibt es `https://eure-domain/health.php`.
 
