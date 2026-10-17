@@ -3,7 +3,7 @@ defined('SAMS_ROOT') || exit;
 $id = (int) ($_GET['id'] ?? 0);
 $patient = $id ? fone('patients', $id) : null;
 if ($id && !$patient) {
-    not_found('Patientenakte nicht gefunden.');
+    not_found(term('record') . ' nicht gefunden.');
 }
 require_active_patient($patient);
 
@@ -13,6 +13,9 @@ $fields = [
     'emergency_contact', 'organ_donor', 'flags', 'notes', 'deceased_at',
 ];
 $data = $patient ?? array_fill_keys($fields, '') + ['living_will' => 0];
+$medical = faction_kind() === 'medical';
+$extraFields = record_extra_fields();
+$extra = $patient ? record_extra($patient) : [];
 $errors = [];
 
 if (is_post()) {
@@ -21,6 +24,12 @@ if (is_post()) {
         $data[$f] = mb_substr((string) post($f), 0, 5000);
     }
     $data['living_will'] = post('living_will') ? 1 : 0;
+    foreach ($extraFields as $f) {
+        $v = $_POST['x'][$f['name']] ?? '';
+        $extra[$f['name']] = $f['type'] === 'checkboxes'
+            ? array_values(array_intersect((array) $v, array_keys($f['options'])))
+            : mb_substr(trim((string) $v), 0, 2000);
+    }
     if ($data['first_name'] === '' || $data['last_name'] === '') {
         $errors[] = 'Vor- und Nachname sind Pflichtfelder.';
     }
@@ -30,6 +39,9 @@ if (is_post()) {
     if (!$errors) {
         $row = array_intersect_key($data, array_flip(array_merge($fields, ['living_will'])));
         $row['updated_at'] = now();
+        if ($extraFields) {
+            $row['extra'] = json_encode($extra, JSON_UNESCAPED_UNICODE);
+        }
         if ($patient) {
             update('patients', $id, $row);
             audit('patient.update', 'patient', $id, patient_name($row));
@@ -39,7 +51,7 @@ if (is_post()) {
             $row['created_at'] = now();
             $id = insert('patients', $row);
             audit('patient.create', 'patient', $id, patient_name($row));
-            flash('success', 'Patientenakte angelegt.');
+            flash('success', term('record') . ' angelegt.');
         }
         redirect(url('patient', ['id' => $id]));
     }
@@ -48,7 +60,7 @@ if (is_post()) {
 $val = fn($k) => e($data[$k] ?? '');
 ob_start(); ?>
 <div class="page-head">
-    <h1><?= $patient ? 'Akte bearbeiten: ' . e(patient_name($patient)) : 'Neue Patientenakte' ?></h1>
+    <h1><?= $patient ? 'Akte bearbeiten: ' . e(patient_name($patient)) : 'Neue ' . e(term('record')) ?></h1>
     <?php if ($patient): ?><a class="btn" href="<?= e(url('patient', ['id' => $id])) ?>">Zurück zur Akte</a><?php endif; ?>
 </div>
 <?php foreach ($errors as $err): ?><div class="flash error"><?= e($err) ?></div><?php endforeach; ?>
@@ -67,6 +79,7 @@ ob_start(); ?>
     <div class="field w-half"><label>Anschrift</label><textarea name="address" rows="2"><?= $val('address') ?></textarea></div>
     <div class="field w-half"><label>Arbeitgeber</label><textarea name="employer" rows="2"><?= $val('employer') ?></textarea></div>
 
+    <?php if ($medical): ?>
     <h3 class="form-heading">Versicherung</h3>
     <div class="field w-half"><label>Krankenversicherung</label><input name="insurance" value="<?= $val('insurance') ?>" list="dl-insurance" placeholder="z.B. San Andreas Health Insurance"></div>
     <div class="field w-half"><label>Versichertennummer</label><input name="insurance_number" value="<?= $val('insurance_number') ?>"></div>
@@ -84,9 +97,20 @@ ob_start(); ?>
     <div class="field w-half"><label>Vorerkrankungen</label><textarea name="conditions" rows="2"><?= $val('conditions') ?></textarea></div>
     <div class="field w-half"><label>Dauermedikation</label><textarea name="medication" rows="2"><?= $val('medication') ?></textarea></div>
     <div class="field w-half"><label>Notfallkontakt</label><textarea name="emergency_contact" rows="2"><?= $val('emergency_contact') ?></textarea></div>
+    <?php endif; ?>
+    <?php if ($extraFields): ?>
+    <h3 class="form-heading">Angaben der <?= e(current_faction()['short'] ?: current_faction()['name']) ?></h3>
+    <?php foreach ($extraFields as $f): $v = $extra[$f['name']] ?? ($f['type'] === 'checkboxes' ? [] : ''); ?>
+        <div class="field <?= $f['type'] === 'textarea' || $f['type'] === 'checkboxes' ? 'w-half' : 'w-third' ?>"><label><?= e($f['label']) ?></label>
+        <?php if ($f['type'] === 'textarea'): ?><textarea name="x[<?= e($f['name']) ?>]" rows="2"><?= e($v) ?></textarea>
+        <?php elseif ($f['type'] === 'select'): ?><select name="x[<?= e($f['name']) ?>]"><?php foreach ($f['options'] as $ok => $ol): ?><option value="<?= e($ok) ?>"<?= selected($ok, $v) ?>><?= e($ol) ?></option><?php endforeach; ?></select>
+        <?php elseif ($f['type'] === 'checkboxes'): ?><div class="choices"><?php foreach ($f['options'] as $ok => $ol): ?><label class="choice"><input type="checkbox" name="x[<?= e($f['name']) ?>][]" value="<?= e($ok) ?>"<?= checked(in_array($ok, (array) $v, true)) ?>> <?= e($ol) ?></label><?php endforeach; ?></div>
+        <?php else: ?><input name="x[<?= e($f['name']) ?>]" value="<?= e($v) ?>"><?php endif; ?></div>
+    <?php endforeach; ?>
+    <?php endif; ?>
 
     <h3 class="form-heading">Interne Hinweise</h3>
-    <div class="field w-half"><label>Kennzeichnungen (kommagetrennt)</label><input name="flags" value="<?= $val('flags') ?>" placeholder="z.B. Aggressiv, Hausverbot, Begleitung LSPD"></div>
+    <div class="field w-half"><label>Kennzeichnungen (kommagetrennt)</label><input name="flags" value="<?= $val('flags') ?>" placeholder="<?= $medical ? 'z.B. Aggressiv, Hausverbot, Begleitung LSPD' : 'z.B. Gefährder, Informant, Hausverbot' ?>"></div>
     <div class="field w-half"><label>Verstorben am</label><input type="date" name="deceased_at" value="<?= $val('deceased_at') ?>"></div>
     <div class="field w-full"><label>Notizen</label><textarea name="notes" rows="3"><?= $val('notes') ?></textarea></div>
 

@@ -1,6 +1,5 @@
 <?php
 defined('SAMS_ROOT') || exit;
-const ENTRY_TYPES = ['Behandlung', 'Notfalleinsatz', 'Untersuchung', 'Verlaufsnotiz', 'Psychologisches Gespräch', 'Labor', 'Bildgebung', 'Operation', 'Medikation', 'Telefonat', 'Sonstiges'];
 
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
@@ -11,7 +10,7 @@ if ($id && !$entry) {
 $patientId = $entry ? (int) $entry['patient_id'] : (int) ($_GET['patient'] ?? 0);
 $patient = fone('patients', (int) $patientId);
 if (!$patient) {
-    not_found('Patientenakte nicht gefunden.');
+    not_found(term('record') . ' nicht gefunden.');
 }
 require_active_patient($patient);
 // Bearbeiten nur durch Verfasser oder ärztlichen Dienst – und nur, wenn der Eintrag lesbar ist
@@ -41,7 +40,7 @@ if (is_post()) {
         flash('success', 'Eintrag gelöscht.');
         redirect(url('patient', ['id' => $patientId]));
     }
-    $data['type'] = in_array(post('type'), ENTRY_TYPES, true) ? post('type') : 'Sonstiges';
+    $data['type'] = in_array(post('type'), entry_types(), true) ? post('type') : 'Sonstiges';
     $data['title'] = mb_substr((string) post('title'), 0, 190);
     $data['content'] = mb_substr((string) post('content'), 0, 50000);
     $data['confidential'] = post('confidential') ? 1 : 0;
@@ -78,6 +77,7 @@ if (is_post()) {
     }
 }
 
+$tpls = entry_templates();
 ob_start(); ?>
 <div class="page-head">
     <h1><?= $entry ? 'Eintrag bearbeiten' : 'Neuer Akteneintrag' ?> <small class="muted">· <?= e(patient_name($patient)) ?></small></h1>
@@ -87,11 +87,11 @@ ob_start(); ?>
 <form method="post" class="card form-grid">
     <?= csrf_field() ?>
     <div class="field w-third"><label>Art</label>
-        <select name="type"><?php foreach (ENTRY_TYPES as $t): ?><option<?= selected($t, $data['type']) ?>><?= e($t) ?></option><?php endforeach; ?></select></div>
+        <select name="type"><?php foreach (entry_types() as $t): ?><option<?= selected($t, $data['type']) ?>><?= e($t) ?></option><?php endforeach; ?></select></div>
     <div class="field w-third"><label>Zeitpunkt</label><input type="datetime-local" name="occurred_at" value="<?= e(str_replace(' ', 'T', substr($data['occurred_at'], 0, 16))) ?>"></div>
     <div class="field w-third"><label class="choice single" style="margin-top:1.6rem"><input type="checkbox" name="confidential" value="1"<?= checked($data['confidential']) ?>> Vertraulich (nur ärztlicher Dienst)</label></div>
-    <div class="field w-half"><label>Fall</label>
-        <select name="case_id"><option value="">– keinem Fall zuordnen –</option>
+    <div class="field w-half"><label><?= e(term('case')) ?></label>
+        <select name="case_id"><option value="">– keinem <?= e(term('case')) ?> zuordnen –</option>
             <?php foreach ($cases as $c): ?><option value="<?= (int) $c['id'] ?>"<?= selected($c['id'], $data['case_id'] ?? '') ?>><?= e($c['number'] . ' · ' . $c['title']) ?><?= $c['status'] === 'closed' ? ' (abgeschlossen)' : '' ?></option><?php endforeach; ?>
         </select></div>
     <div class="field w-half"><label>Sichtbar für</label>
@@ -102,9 +102,8 @@ ob_start(); ?>
         <div class="hint">Z. B. psychologische Gespräche nur für die Psychologie sichtbar machen.</div></div>
     <div class="field w-full"><label>Titel <span class="req">*</span></label><input name="title" value="<?= e($data['title']) ?>" required placeholder="z.B. Versorgung Schnittwunde li. Unterarm"></div>
     <div class="field w-full"><label>Inhalt</label>
-        <textarea name="content" rows="14" placeholder="Anamnese:&#10;Befund:&#10;Diagnose:&#10;Therapie:&#10;Procedere:"><?= e($data['content']) ?></textarea>
-        <div class="hint">Vorlage: <button type="button" class="btn small" data-insert="Anamnese:&#10;&#10;Befund:&#10;&#10;Diagnose:&#10;&#10;Therapie:&#10;&#10;Procedere:">SOAP</button>
-            <button type="button" class="btn small" data-insert="A – Atemwege:&#10;B – Atmung:&#10;C – Kreislauf:&#10;D – Neurologie:&#10;E – Exposure / Umgebung:">ABCDE</button></div>
+        <textarea name="content" rows="14" placeholder="<?= e(reset($tpls)) ?>"><?= e($data['content']) ?></textarea>
+        <div class="hint">Vorlage: <?php foreach ($tpls as $tl => $tt): ?><button type="button" class="btn small" data-insert="<?= e($tt) ?>"><?= e($tl) ?></button> <?php endforeach; ?></div>
     </div>
     <div class="form-actions">
         <button class="btn primary">Speichern</button>

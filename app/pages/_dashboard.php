@@ -5,7 +5,7 @@
         <p class="muted"><?= e(org('org_name')) ?> · <?= e(fmt_date(date('Y-m-d'), 'l, d.m.Y')) ?></p>
     </div>
     <div class="btn-row">
-        <?php if (can('patients.edit')): ?><a class="btn" href="<?= e(url('patient_edit')) ?>"><?= icon('plus') ?>Neue Patientenakte</a><?php endif; ?>
+        <?php if (can('patients.edit')): ?><a class="btn" href="<?= e(url('patient_edit')) ?>"><?= icon('plus') ?>Neue <?= e(term('record')) ?></a><?php endif; ?>
         <?php if (can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new')) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
     </div>
 </div>
@@ -85,7 +85,7 @@
                     <td class="right"><?= $p['blood_type'] ? '<span class="badge">' . e($p['blood_type']) . '</span>' : '' ?><br><small class="muted"><?= e(fmt_datetime($p['updated_at'])) ?></small></td>
                 </tr>
             <?php endforeach; ?>
-            <?php if (!$recentPatients): ?><tr><td class="muted">Noch keine Patientenakten.</td></tr><?php endif; ?>
+            <?php if (!$recentPatients): ?><tr><td class="muted">Noch keine <?= e(term('records')) ?>.</td></tr><?php endif; ?>
             </tbody>
         </table>
     </section>

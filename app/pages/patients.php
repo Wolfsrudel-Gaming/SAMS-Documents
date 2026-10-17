@@ -27,10 +27,10 @@ $pages = max(1, (int) ceil($total / $per));
 
 ob_start(); ?>
 <div class="page-head">
-    <div><h1>Patientenakten</h1><p class="muted"><?= $total ?> Akte(n)</p></div>
+    <div><h1><?= e(term('records')) ?></h1><p class="muted"><?= $total ?> Akte(n)</p></div>
     <div class="btn-row">
         <?php if (can('patients.merge')): ?><a class="btn" href="<?= e(url('patient_merge')) ?>">Doppelte Akten</a><?php endif; ?>
-        <a class="btn primary" href="<?= e(url('patient_edit')) ?>">+ Neue Patientenakte</a>
+        <a class="btn primary" href="<?= e(url('patient_edit')) ?>">+ Neue <?= e(term('record')) ?></a>
     </div>
 </div>
 <form class="card filter" action="index.php">
@@ -70,5 +70,5 @@ ob_start(); ?>
 </div>
 <?php
 $content = ob_get_clean();
-$title = 'Patientenakten';
+$title = term('records');
 require SAMS_ROOT . '/app/layout.php';

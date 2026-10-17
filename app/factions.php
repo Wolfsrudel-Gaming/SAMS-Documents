@@ -114,6 +114,34 @@ const FACTION_DEPARTMENT_TEMPLATES = [
     'government' => [['Bürgeramt', 'BA', '#2f5d50'], ['Ordnungsamt', 'OA', '#5b6b2e']],
 ];
 
+/** Startkatalog (Kürzel, Bezeichnung, Kategorie, Betrag, Haft-Einheiten) für Bußgeld-/Gebührenbescheide. */
+const FACTION_CATALOG_TEMPLATES = [
+    'police' => [
+        ['V01', 'Geschwindigkeitsüberschreitung bis 20 km/h', 'Verkehr', 250, 0], ['V02', 'Geschwindigkeitsüberschreitung über 20 km/h', 'Verkehr', 500, 0],
+        ['V03', 'Rotlichtverstoß', 'Verkehr', 400, 0], ['V04', 'Falschparken / Behinderung', 'Verkehr', 150, 0], ['V05', 'Fahren ohne Fahrerlaubnis', 'Verkehr', 1500, 0],
+        ['V06', 'Fahren unter Alkohol- oder Drogeneinfluss', 'Verkehr', 2000, 10], ['V07', 'Unerlaubtes Entfernen vom Unfallort', 'Verkehr', 3000, 15],
+        ['V08', 'Gefährlicher Eingriff in den Straßenverkehr', 'Verkehr', 5000, 20],
+        ['S01', 'Beleidigung', 'Straftaten', 500, 0], ['S02', 'Körperverletzung', 'Straftaten', 2500, 10], ['S03', 'Gefährliche Körperverletzung', 'Straftaten', 5000, 25],
+        ['S04', 'Diebstahl', 'Straftaten', 1500, 5], ['S05', 'Raub', 'Straftaten', 8000, 30], ['S06', 'Bewaffneter Raubüberfall', 'Straftaten', 15000, 45],
+        ['S07', 'Besitz von Betäubungsmitteln', 'Straftaten', 2000, 10], ['S08', 'Handel mit Betäubungsmitteln', 'Straftaten', 10000, 40],
+        ['S09', 'Unerlaubter Waffenbesitz', 'Straftaten', 5000, 20], ['S10', 'Widerstand gegen Vollstreckungsbeamte', 'Straftaten', 3000, 15],
+        ['S11', 'Flucht vor der Polizei', 'Straftaten', 2500, 10], ['S12', 'Sachbeschädigung', 'Straftaten', 1000, 0], ['S13', 'Hausfriedensbruch', 'Straftaten', 800, 0],
+        ['S14', 'Bestechung', 'Straftaten', 6000, 20],
+    ],
+    'justice' => [
+        ['K01', 'Gerichtsgebühr Strafverfahren', 'Gebühren', 1000, 0], ['K02', 'Gerichtsgebühr Zivilverfahren', 'Gebühren', 500, 0], ['K03', 'Zeugenentschädigung', 'Auslagen', 100, 0],
+        ['K04', 'Sachverständigengutachten', 'Auslagen', 750, 0], ['K05', 'Pflichtverteidigung', 'Auslagen', 1500, 0], ['K06', 'Bearbeitung Kaution', 'Gebühren', 250, 0],
+    ],
+    'fire' => [
+        ['F01', 'Fehlalarm Brandmeldeanlage', 'Einsätze', 500, 0], ['F02', 'Technische Hilfeleistung (je Stunde)', 'Einsätze', 300, 0], ['F03', 'Ölspurbeseitigung', 'Einsätze', 400, 0],
+        ['F04', 'Brandschau', 'Vorbeugender Brandschutz', 250, 0], ['F05', 'Brandsicherheitswache (je Stunde)', 'Vorbeugender Brandschutz', 200, 0],
+    ],
+    'government' => [
+        ['G01', 'Gewerbeanmeldung', 'Gewerbe', 150, 0], ['G02', 'Gaststättenerlaubnis', 'Gewerbe', 750, 0], ['G03', 'Veranstaltungsgenehmigung', 'Genehmigungen', 400, 0],
+        ['G04', 'Taxikonzession', 'Genehmigungen', 600, 0], ['G05', 'Beglaubigung', 'Bürgeramt', 50, 0], ['G06', 'Ausweisdokument', 'Bürgeramt', 100, 0],
+    ],
+];
+
 /** Rechte je Stufe (Dokumentrechte kommen aus den Rollen). Rechte nicht aktiver Module werden ausgefiltert. */
 function faction_tier_permissions(string $tier): array
 {
@@ -301,6 +329,10 @@ function create_faction(string $name, string $short, string $kind, string $color
         foreach ($identity as $k => $v) {
             save_setting(faction_setting_key($k), (string) $v);
         }
+        foreach (FACTION_CATALOG_TEMPLATES[$kind] ?? [] as $i => [$code, $pname, $cat, $amount, $jail]) {
+            insert('price_list', ['faction_id' => $id, 'code' => $code, 'name' => $pname, 'category' => $cat, 'price_cents' => $amount * 100, 'jail' => $jail,
+                'sort' => ($i + 1) * 10, 'active' => 1, 'created_at' => $now, 'updated_at' => $now]);
+        }
         faction_seed_content($id, $kind);
         set_faction_context($prev);
         db()->commit();
@@ -378,4 +410,115 @@ function doc_prefix(): string
 {
     $short = preg_replace('/[^A-Za-z0-9]/', '', (string) (current_faction()['short'] ?? ''));
     return (string) setting('doc_prefix', fid() === 1 ? 'SAMS' : (strtoupper($short) ?: 'DOK'));
+}
+
+// ---------------------------------------------------------- Abrechnung je Art
+
+/** Darstellung der Abrechnung (Dokumentart „rechnung“) je Fraktionsart. */
+const BILLING_LABELS = [
+    'medical' => ['title' => 'Rechnung', 'item' => 'Leistung', 'items' => 'Leistungen', 'date' => 'Leistungsdatum', 'intro' => 'Für die erbrachten Leistungen erlauben wir uns, wie folgt zu berechnen:', 'office' => 'Abrechnungsstelle', 'total' => 'Rechnungsbetrag'],
+    'police' => ['title' => 'Bußgeldbescheid', 'item' => 'Tatbestand', 'items' => 'Tatbestände', 'date' => 'Tatzeit', 'intro' => 'Gegen Sie wird wegen der nachstehend aufgeführten Verstöße ein Bußgeld festgesetzt:', 'office' => 'Bußgeldstelle', 'total' => 'Festgesetzter Betrag'],
+    'justice' => ['title' => 'Kostenrechnung', 'item' => 'Kostenposition', 'items' => 'Kosten', 'date' => 'Datum', 'intro' => 'In der oben bezeichneten Sache werden folgende Kosten erhoben:', 'office' => 'Kostenstelle', 'total' => 'Gesamtbetrag'],
+    'fire' => ['title' => 'Gebührenbescheid', 'item' => 'Leistung', 'items' => 'Leistungen', 'date' => 'Einsatzdatum', 'intro' => 'Für den Einsatz werden nach der Gebührenordnung folgende Gebühren erhoben:', 'office' => 'Gebührenstelle', 'total' => 'Gebühr gesamt'],
+    'government' => ['title' => 'Gebührenbescheid', 'item' => 'Gebühr', 'items' => 'Gebühren', 'date' => 'Datum', 'intro' => 'Für die nachstehenden Amtshandlungen werden folgende Gebühren erhoben:', 'office' => 'Gebührenstelle', 'total' => 'Gebühr gesamt'],
+];
+
+function billing_labels(?int $factionId = null): array
+{
+    return BILLING_LABELS[faction_kind($factionId)] ?? BILLING_LABELS['medical'];
+}
+
+/** Arbeitet der Katalog mit Haft-Einheiten (Polizei, Justiz)? */
+function catalog_has_jail(?int $factionId = null): bool
+{
+    return in_array(faction_kind($factionId), ['police', 'justice'], true);
+}
+
+// ----------------------------------------------------------- Akten je Art
+
+const DANGER_FLAGS = ['bewaffnet' => 'bewaffnet', 'gewaltbereit' => 'gewaltbereit', 'flucht' => 'Fluchtgefahr', 'btm' => 'BtM-Konsum', 'psych' => 'psychisch auffällig', 'ansteckend' => 'Ansteckungsgefahr'];
+const LICENSE_STATES = ['' => 'unbekannt', 'gueltig' => 'gültig', 'keiner' => 'keiner', 'entzogen' => 'entzogen', 'gesperrt' => 'gesperrt'];
+
+/** Zusätzliche Aktenfelder je Fraktionsart (gespeichert in patients.extra). */
+function record_extra_fields(?string $kind = null): array
+{
+    $kind ??= faction_kind();
+    $person = [
+        ['name' => 'aliases', 'label' => 'Aliasnamen / Spitznamen', 'type' => 'text'],
+        ['name' => 'gang', 'label' => 'Gruppierung / Organisation', 'type' => 'text'],
+        ['name' => 'danger', 'label' => 'Gefährdungshinweise', 'type' => 'checkboxes', 'options' => DANGER_FLAGS],
+        ['name' => 'license_driver', 'label' => 'Führerschein', 'type' => 'select', 'options' => LICENSE_STATES],
+        ['name' => 'license_weapon', 'label' => 'Waffenschein', 'type' => 'select', 'options' => LICENSE_STATES],
+        ['name' => 'vehicles', 'label' => 'Fahrzeuge (Kennzeichen, Modell, Farbe)', 'type' => 'textarea'],
+        ['name' => 'description', 'label' => 'Personenbeschreibung (Größe, Statur, Tattoos …)', 'type' => 'textarea'],
+    ];
+    return match ($kind) {
+        'police' => $person,
+        'justice' => array_merge([['name' => 'lawyer', 'label' => 'Rechtsbeistand', 'type' => 'text']], array_slice($person, 0, 3), [['name' => 'priors', 'label' => 'Vorstrafen (Kurzfassung)', 'type' => 'textarea']]),
+        'government' => [
+            ['name' => 'business', 'label' => 'Gewerbe / Firma', 'type' => 'text'],
+            ['name' => 'licenses', 'label' => 'Lizenzen und Genehmigungen', 'type' => 'textarea'],
+        ],
+        default => [],
+    };
+}
+
+function record_extra(array $p): array
+{
+    return json_decode((string) ($p['extra'] ?? ''), true) ?: [];
+}
+
+/** Anzeigewert eines Zusatzfeldes. */
+function record_extra_value(array $f, $v): string
+{
+    if (is_array($v)) {
+        return implode(', ', array_map(fn($k) => $f['options'][$k] ?? $k, $v));
+    }
+    return isset($f['options']) ? (string) ($f['options'][$v] ?? $v) : (string) $v;
+}
+
+/** Arten von Akteneinträgen je Fraktionsart. */
+function entry_types(?string $kind = null): array
+{
+    return match ($kind ?? faction_kind()) {
+        'police' => ['Vorgang / Notiz', 'Anzeige', 'Personenkontrolle', 'Verkehrskontrolle', 'Vernehmung', 'Festnahme', 'Durchsuchung', 'Sicherstellung', 'Gefährderansprache', 'Platzverweis', 'Telefonat', 'Sonstiges'],
+        'justice' => ['Notiz', 'Eingang', 'Verhandlung', 'Beschluss', 'Urteil', 'Akteneinsicht', 'Vollstreckung', 'Telefonat', 'Sonstiges'],
+        'fire' => ['Einsatz', 'Brandschau', 'Beratung', 'Notiz', 'Sonstiges'],
+        'government' => ['Notiz', 'Antrag', 'Bescheid', 'Vorsprache', 'Telefonat', 'Sonstiges'],
+        default => ['Behandlung', 'Notfalleinsatz', 'Untersuchung', 'Verlaufsnotiz', 'Psychologisches Gespräch', 'Labor', 'Bildgebung', 'Operation', 'Medikation', 'Telefonat', 'Sonstiges'],
+    };
+}
+
+/** Textvorlagen für Akteneinträge: [Bezeichnung => Text]. */
+function entry_templates(?string $kind = null): array
+{
+    return match ($kind ?? faction_kind()) {
+        'police' => [
+            'Sachverhalt' => "Ort / Zeit:\n\nBeteiligte:\n\nSachverhalt:\n\nMaßnahmen:\n\nVerbleib:",
+            'Vernehmung' => "Vernommen als: Beschuldigte/r / Zeug/in\nBelehrung erfolgt: ja\n\nAngaben zur Sache:\n\nUnterschrift verweigert: nein",
+            'Festnahme' => "Grund der Festnahme:\nRechte verlesen um:\nDurchsuchung / Sicherstellungen:\nVerletzungen / Rettungsdienst:\nVerbleib (Zelle / Haftrichter):",
+        ],
+        'justice' => [
+            'Verhandlung' => "Termin:\nAnwesend:\n\nVerlauf:\n\nErgebnis:",
+            'Beschluss' => "Antrag:\n\nEntscheidung:\n\nBegründung:",
+        ],
+        'fire' => ['Einsatz' => "Alarmierung:\nLage bei Eintreffen:\nMaßnahmen:\nEinsatzende:"],
+        'government' => ['Antrag' => "Anliegen:\n\nUnterlagen:\n\nErgebnis:"],
+        default => [
+            'SOAP' => "Anamnese:\n\nBefund:\n\nDiagnose:\n\nTherapie:\n\nProcedere:",
+            'ABCDE' => "A – Atemwege:\nB – Atmung:\nC – Kreislauf:\nD – Neurologie:\nE – Exposure / Umgebung:",
+        ],
+    };
+}
+
+/** Bezeichnungen der Fall-/Vorgangsfelder je Fraktionsart. */
+function case_labels(?string $kind = null): array
+{
+    return match ($kind ?? faction_kind()) {
+        'police' => ['incident' => 'Sachverhalt', 'incident_ph' => 'Was ist passiert? Wer war beteiligt?', 'diagnosis' => 'Tatvorwurf / Delikte', 'diagnosis_ph' => 'Ein Delikt pro Zeile'],
+        'justice' => ['incident' => 'Sachverhalt', 'incident_ph' => 'Gegenstand des Verfahrens', 'diagnosis' => 'Anklagepunkte / Gegenstand', 'diagnosis_ph' => 'Ein Punkt pro Zeile'],
+        'fire' => ['incident' => 'Lage', 'incident_ph' => 'Lage bei Eintreffen', 'diagnosis' => 'Maßnahmen', 'diagnosis_ph' => 'Eine Maßnahme pro Zeile'],
+        'government' => ['incident' => 'Anliegen', 'incident_ph' => 'Worum geht es?', 'diagnosis' => 'Ergebnis / Bescheid', 'diagnosis_ph' => ''],
+        default => ['incident' => 'Hergang / Anlass', 'incident_ph' => 'Was ist passiert? Wie wurde der Patient vorgefunden?', 'diagnosis' => 'Diagnose(n)', 'diagnosis_ph' => 'Eine Diagnose pro Zeile, gern mit ICD-10 (z. B. S52.5 Distale Radiusfraktur)'],
+    };
 }

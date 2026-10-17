@@ -29,8 +29,8 @@ $filters = ['unpaid' => 'Unbezahlt', 'overdue' => 'Überfällig', 'open' => 'Off
 
 ob_start(); ?>
 <div class="page-head">
-    <div><h1>Rechnungen</h1><p class="muted">Offene Forderungen, Mahnungen und Zahlungseingänge.</p></div>
-    <?php if (can('documents.issue.rechnung')): ?><a class="btn primary" href="<?= e(url('document_new', ['type' => 'rechnung'])) ?>"><?= icon('doc-plus') ?>Neue Rechnung</a><?php endif; ?>
+    <div><h1><?= e(term('billing')) ?></h1><p class="muted">Offene Forderungen, Mahnungen und Zahlungseingänge.</p></div>
+    <?php if (can('documents.issue.rechnung')): ?><a class="btn primary" href="<?= e(url('document_new', ['type' => 'rechnung'])) ?>"><?= icon('doc-plus') ?><?= e(billing_labels()['title']) ?></a><?php endif; ?>
 </div>
 <div class="stats">
     <div class="stat"><strong><?= e(money($sum('open'))) ?></strong><span>offen</span></div>
@@ -39,13 +39,13 @@ ob_start(); ?>
 </div>
 <form class="card filter" action="index.php">
     <input type="hidden" name="p" value="invoices">
-    <input name="q" value="<?= e($q) ?>" placeholder="Rechnungsnummer oder Name …">
+    <input name="q" value="<?= e($q) ?>" placeholder="Nummer oder Name …">
     <select name="status" onchange="this.form.submit()"><?php foreach ($filters as $k => $l): ?><option value="<?= $k ?>"<?= selected($k, $status) ?>><?= $l ?></option><?php endforeach; ?></select>
     <button class="btn">Suchen</button>
 </form>
 <div class="card">
     <table class="list">
-        <thead><tr><th>Rechnung</th><th>Empfänger/in</th><th>Datum</th><th>Fällig</th><th class="right">Betrag</th><th>Status</th></tr></thead>
+        <thead><tr><th>Nummer</th><th>Empfänger/in</th><th>Datum</th><th>Fällig</th><th class="right">Betrag</th><th>Status</th></tr></thead>
         <tbody>
         <?php foreach ($rows as $r): $overdue = $r['pay_status'] !== 'paid' && $r['due'] < date('Y-m-d'); ?>
             <tr onclick="location.href='<?= e(url('document', ['id' => $r['id']])) ?>'">
@@ -57,12 +57,12 @@ ob_start(); ?>
                 <td><?= pay_status_badge($r) ?></td>
             </tr>
         <?php endforeach; ?>
-        <?php if (!$rows): ?><tr><td colspan="6" class="muted">Keine Rechnungen gefunden.</td></tr><?php endif; ?>
+        <?php if (!$rows): ?><tr><td colspan="6" class="muted">Keine Einträge gefunden.</td></tr><?php endif; ?>
         </tbody>
         <?php if ($rows): ?><tfoot><tr><td colspan="4" class="right"><strong>Summe (<?= count($rows) ?>)</strong></td><td class="right"><strong><?= e(money(array_sum(array_column($rows, 'amount_cents')) / 100)) ?></strong></td><td></td></tr></tfoot><?php endif; ?>
     </table>
 </div>
 <?php
 $content = ob_get_clean();
-$title = 'Rechnungen';
+$title = term('billing');
 require SAMS_ROOT . '/app/layout.php';

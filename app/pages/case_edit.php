@@ -5,12 +5,12 @@ $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
 $case = $id ? fone('cases', $id) : null;
 if ($id && !$case) {
-    not_found('Fall nicht gefunden.');
+    not_found(term('case') . ' nicht gefunden.');
 }
 $patientId = $case ? (int) $case['patient_id'] : (int) ($_GET['patient'] ?? 0);
 $patient = fone('patients', (int) $patientId);
 if (!$patient) {
-    not_found('Patientenakte nicht gefunden.');
+    not_found(term('record') . ' nicht gefunden.');
 }
 require_active_patient($patient);
 $departments = all('SELECT * FROM departments WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name');
@@ -44,14 +44,14 @@ if (is_post()) {
             audit('case.create', 'case', $id, $row['number'] . ' ' . $row['title']);
         }
         q('UPDATE patients SET updated_at = ? WHERE id = ?', [now(), $patientId]);
-        flash('success', 'Fall gespeichert.');
+        flash('success', term('case') . ' gespeichert.');
         redirect(url('case', ['id' => $id]));
     }
 }
 
 ob_start(); ?>
 <div class="page-head">
-    <h1><?= $case ? 'Fall bearbeiten' : 'Neuer Fall' ?> <small class="muted">· <?= e(patient_name($patient)) ?></small></h1>
+    <h1><?= e(term('case')) ?> <?= $case ? 'bearbeiten' : 'anlegen' ?> <small class="muted">· <?= e(patient_name($patient)) ?></small></h1>
     <a class="btn" href="<?= e($case ? url('case', ['id' => $id]) : url('patient', ['id' => $patientId])) ?>">Zurück</a>
 </div>
 <?php foreach ($errors as $err): ?><div class="flash error"><?= e($err) ?></div><?php endforeach; ?>
@@ -65,13 +65,13 @@ ob_start(); ?>
         <select name="department_id"><option value="">– keine –</option>
             <?php foreach ($departments as $d): ?><option value="<?= (int) $d['id'] ?>"<?= selected($d['id'], $data['department_id'] ?? '') ?>><?= e($d['name']) ?></option><?php endforeach; ?></select></div>
     <div class="field w-full"><label>Einsatz-/Behandlungsort</label><input name="location" value="<?= e($data['location']) ?>" placeholder="z. B. Route 68 / Höhe Harmony, oder Pillbox Hill Medical Center"></div>
-    <div class="field w-full"><label>Hergang / Anlass</label><textarea name="incident" rows="4" placeholder="Was ist passiert? Wie wurde der Patient vorgefunden?"><?= e($data['incident']) ?></textarea></div>
-    <div class="field w-full"><label>Diagnose(n)</label><textarea name="diagnosis" rows="3" placeholder="Eine Diagnose pro Zeile, gern mit ICD-10 (z. B. S52.5 Distale Radiusfraktur)"><?= e($data['diagnosis']) ?></textarea>
+    <div class="field w-full"><label><?= e(case_labels()['incident']) ?></label><textarea name="incident" rows="4" placeholder="<?= e(case_labels()['incident_ph']) ?>"><?= e($data['incident']) ?></textarea></div>
+    <div class="field w-full"><label><?= e(case_labels()['diagnosis']) ?></label><textarea name="diagnosis" rows="3" placeholder="<?= e(case_labels()['diagnosis_ph']) ?>"><?= e($data['diagnosis']) ?></textarea>
         <div class="hint">Wird beim Ausstellen von Dokumenten aus diesem Fall automatisch übernommen.</div></div>
     <div class="field w-full"><label>Zusammenfassung / Epikrise</label><textarea name="summary" rows="5" placeholder="Verlauf, Therapie, Entlassung, Empfehlungen"><?= e($data['summary']) ?></textarea></div>
     <div class="form-actions"><button class="btn primary">Speichern</button></div>
 </form>
 <?php
 $content = ob_get_clean();
-$title = $case ? 'Fall bearbeiten' : 'Neuer Fall';
+$title = term('case') . ($case ? ' bearbeiten' : ' anlegen');
 require SAMS_ROOT . '/app/layout.php';

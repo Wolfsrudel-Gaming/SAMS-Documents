@@ -23,13 +23,43 @@ function document_types(?int $factionId = null): array
 {
     $factionId ??= fid();
     $kind = faction_kind($factionId);
-    return array_filter(document_types_all(), function ($t) use ($kind, $factionId) {
+    $billing = module_enabled('billing', $factionId);
+    $types = array_filter(document_types_all(), function ($t, $key) use ($kind, $factionId, $billing) {
         if (isset($t['faction_id'])) {
             return (int) $t['faction_id'] === $factionId;
         }
+        if ($key === 'rechnung' && !$billing) {
+            return false;
+        }
         $kinds = $t['kinds'] ?? ['medical'];
         return $kinds === '*' || in_array($kind, (array) $kinds, true);
-    });
+    }, ARRAY_FILTER_USE_BOTH);
+    // Abrechnung: Bezeichnungen der Fraktionsart (Bußgeldbescheid, Kostenrechnung, Gebührenbescheid)
+    if (isset($types['rechnung']) && $kind !== 'medical') {
+        $types['rechnung'] = billing_type_for($types['rechnung'], $factionId);
+    }
+    return $types;
+}
+
+/** Dokumentart „rechnung“ mit den Bezeichnungen der Fraktionsart. */
+function billing_type_for(array $t, ?int $factionId = null): array
+{
+    $l = billing_labels($factionId);
+    $t['title'] = $t['short'] = $l['title'];
+    foreach ($t['fields'] as &$f) {
+        if (($f['name'] ?? '') === 'recipient') {
+            $f['label'] = 'Empfänger (falls abweichend von der Person)';
+        } elseif (($f['name'] ?? '') === 'service_date') {
+            $f['label'] = $l['date'];
+        } elseif (($f['name'] ?? '') === 'items') {
+            $f['label'] = $l['items'];
+            $f['columns']['text']['label'] = $l['item'];
+            if (catalog_has_jail($factionId)) {
+                $f['columns'] = array_slice($f['columns'], 0, 3, true) + ['jail' => ['label' => 'Haft (Einh.)', 'type' => 'number']] + array_slice($f['columns'], 3, null, true);
+            }
+        }
+    }
+    return $t;
 }
 
 /** Alle Dokumentarten aller Fraktionen (zum Anzeigen bestehender Dokumente). */
@@ -417,6 +447,7 @@ function document_types_all(): array
             'role'     => 'medic',
             'patient'  => 'optional',
             'template' => 'rechnung',
+            'kinds'    => '*',
             'fields'   => [
                 ['name' => 'recipient', 'label' => 'Rechnungsempfänger (falls abweichend vom Patienten)', 'type' => 'textarea', 'rows' => 3],
                 ['name' => 'service_date', 'label' => 'Leistungsdatum', 'type' => 'date', 'default' => 'today', 'required' => true, 'width' => 'half'],
@@ -456,7 +487,7 @@ function document_types_all(): array
         ],
     ];
 
-    $types = array_merge($types, document_types_extra());
+    $types = array_merge($types, document_types_extra(), document_types_factions());
     foreach (custom_doc_types() as $row) {
         $types[$row['type_key']] = custom_type_definition($row);
     }
@@ -466,6 +497,9 @@ function document_types_all(): array
 function doc_type(string $key): ?array
 {
     $types = document_types_all();
+    if ($key === 'rechnung' && faction_kind() !== 'medical') {
+        $types['rechnung'] = billing_type_for($types['rechnung']);
+    }
     return isset($types[$key]) ? ['key' => $key] + $types[$key] : null;
 }
 

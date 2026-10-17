@@ -24,7 +24,7 @@ $count = fn(int $pid) => array_sum(array_map(fn($t) => (int) scalar("SELECT COUN
 ob_start(); ?>
 <div class="page-head">
     <div><h1>Akten zusammenführen</h1><p class="muted">Doppelt angelegte Personen in eine Akte übernehmen. Die doppelte Akte wird archiviert und leitet auf die verbleibende um.</p></div>
-    <a class="btn" href="<?= e(url('patients')) ?>">Patientenakten</a>
+    <a class="btn" href="<?= e(url('patients')) ?>"><?= e(term('records')) ?></a>
 </div>
 <?php if ($a && $b && $a['id'] !== $b['id']): ?>
     <form method="post" class="card">

@@ -17,7 +17,7 @@ $others = can('documents.drafts_all')
 $table = function (array $rows, string $empty, string $who = 'owner') {
     ob_start(); ?>
     <table class="list">
-        <thead><tr><th>Dokument</th><th>Patient/in</th><th><?= $who === 'submitter' ? 'Eingereicht von' : 'Bei' ?></th><th>Stand</th><th>Status</th></tr></thead>
+        <thead><tr><th>Dokument</th><th><?= e(term('person')) ?></th><th><?= $who === 'submitter' ? 'Eingereicht von' : 'Bei' ?></th><th>Stand</th><th>Status</th></tr></thead>
         <tbody>
         <?php foreach ($rows as $d): $t = doc_type($d['type']); ?>
             <tr onclick="location.href='<?= e(url('draft', ['id' => $d['id']])) ?>'">

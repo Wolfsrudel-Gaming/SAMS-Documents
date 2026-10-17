@@ -3,7 +3,7 @@ defined('SAMS_ROOT') || exit;
 $id = (int) ($_GET['id'] ?? 0);
 $p = fone('patients', $id);
 if (!$p) {
-    not_found('Patientenakte nicht gefunden.');
+    not_found(term('record') . ' nicht gefunden.');
 }
 if ($p['merged_into']) {
     flash('warn', 'Diese Akte wurde mit Akte ' . str_pad((string) $p['merged_into'], 6, '0', STR_PAD_LEFT) . ' zusammengeführt.');
@@ -41,7 +41,7 @@ if (is_post()) {
         q('DELETE FROM patients WHERE id = ?', [$id]);
         db()->commit();
         audit('patient.delete', 'patient', $id, patient_name($p));
-        flash('success', 'Patientenakte endgültig gelöscht. Ausgestellte Dokumente bleiben erhalten.');
+        flash('success', term('record') . ' endgültig gelöscht. Ausgestellte Dokumente bleiben erhalten.');
         redirect(url('patients', ['view' => 'archive']));
     }
     require_perm('patients.archive');
@@ -84,6 +84,9 @@ foreach ($docs as $d) {
 usort($timeline, fn($a, $b) => strcmp($b['at'], $a['at']));
 
 
+$medical = faction_kind() === 'medical';
+$extraFields = record_extra_fields();
+$extra = record_extra($p);
 ob_start(); ?>
 <?php if ($archived): ?>
 <div class="flash warn archived-banner">
@@ -102,14 +105,15 @@ ob_start(); ?>
             <span><b>geb.</b><?= e(fmt_date($p['dob']) ?: '–') ?><?= $p['dob'] ? ' (' . e(age($p['dob'])) . ' J.)' : '' ?></span>
             <span><b>Geschl.</b><?= e(['m' => 'männlich', 'w' => 'weiblich', 'd' => 'divers'][$p['gender']] ?? '–') ?></span>
             <span><b>Bürger-ID</b><span class="mono"><?= e($p['citizen_id'] ?: '–') ?></span></span>
-            <span><b>Blutgruppe</b><?= e($p['blood_type'] ?: '–') ?></span>
+            <?php if ($medical): ?><span><b>Blutgruppe</b><?= e($p['blood_type'] ?: '–') ?></span><?php endif; ?>
+            <?php foreach (['license_driver' => 'Führerschein', 'license_weapon' => 'Waffenschein'] as $lk => $ll): if (($extra[$lk] ?? '') !== ''): ?><span><b><?= e($ll) ?></b><?= e(LICENSE_STATES[$extra[$lk]] ?? $extra[$lk]) ?></span><?php endif; endforeach; ?>
             <span><b>Akte</b><span class="mono"><?= str_pad((string) $p['id'], 6, '0', STR_PAD_LEFT) ?></span></span>
         </div>
     </div>
     <div class="btn-row">
         <?php if (!$archived): ?>
             <?php if (can('patients.edit')): ?><a class="btn" href="<?= e(url('patient_edit', ['id' => $id])) ?>"><?= icon('edit') ?>Stammdaten</a><?php endif; ?>
-            <?php if (can('cases.manage')): ?><a class="btn" href="<?= e(url('case_edit', ['patient' => $id])) ?>"><?= icon('plus') ?>Fall</a><?php endif; ?>
+            <?php if (can('cases.manage')): ?><a class="btn" href="<?= e(url('case_edit', ['patient' => $id])) ?>"><?= icon('plus') ?><?= e(term('case')) ?></a><?php endif; ?>
             <?php if (can('entries.create')): ?><a class="btn" href="<?= e(url('entry_edit', ['patient' => $id])) ?>"><?= icon('plus') ?>Akteneintrag</a><?php endif; ?>
         <?php endif; ?>
         <a class="btn" href="<?= e(url('patient_print', ['id' => $id])) ?>" target="_blank"><?= icon('print') ?>Drucken</a>
@@ -118,8 +122,9 @@ ob_start(); ?>
     </div>
 </div>
 
-<?php if (trim((string) $p['allergies']) !== '' || trim((string) $p['flags']) !== ''): ?>
+<?php if (trim((string) $p['allergies']) !== '' || trim((string) $p['flags']) !== '' || !empty($extra['danger'])): ?>
 <div class="alertbar">
+    <?php if (!empty($extra['danger'])): ?><div><strong><?= icon('warn') ?> Gefährdungshinweise:</strong> <?php foreach ((array) $extra['danger'] as $dk): ?><span class="badge red"><?= e(DANGER_FLAGS[$dk] ?? $dk) ?></span> <?php endforeach; ?></div><?php endif; ?>
     <?php if (trim((string) $p['allergies']) !== ''): ?><div><strong><?= icon('warn') ?> Allergien:</strong> <?= e($p['allergies']) ?></div><?php endif; ?>
     <?php if (trim((string) $p['flags']) !== ''): ?><div><strong>Hinweise:</strong> <?php foreach (array_filter(array_map('trim', explode(',', $p['flags']))) as $f): ?><span class="badge orange"><?= e($f) ?></span> <?php endforeach; ?></div><?php endif; ?>
 </div>
@@ -135,8 +140,15 @@ ob_start(); ?>
             <dt>Telefon</dt><dd><?= e($p['phone'] ?: '–') ?></dd>
             <dt>Anschrift</dt><dd><?= nl($p['address'] ?: '–') ?></dd>
             <dt>Beruf / Arbeitgeber</dt><dd><?= e(trim($p['occupation'] . ($p['employer'] ? ' · ' . $p['employer'] : '')) ?: '–') ?></dd>
-            <dt>Versicherung</dt><dd><?= e($p['insurance'] ?: '–') ?><?= $p['insurance_number'] ? '<br><span class="mono">' . e($p['insurance_number']) . '</span>' : '' ?></dd>
+            <?php if ($medical): ?><dt>Versicherung</dt><dd><?= e($p['insurance'] ?: '–') ?><?= $p['insurance_number'] ? '<br><span class="mono">' . e($p['insurance_number']) . '</span>' : '' ?></dd><?php endif; ?>
         </dl>
+        <?php if ($extraFields): ?>
+        <h2>Angaben der <?= e(current_faction()['short'] ?: current_faction()['name']) ?></h2>
+        <dl>
+            <?php foreach ($extraFields as $f): if ($f['name'] === 'danger') continue; ?><dt><?= e($f['label']) ?></dt><dd><?= nl(record_extra_value($f, $extra[$f['name']] ?? '') ?: '–') ?></dd><?php endforeach; ?>
+        </dl>
+        <?php endif; ?>
+        <?php if ($medical): ?>
         <h2>Medizinisch</h2>
         <dl>
             <dt>Blutgruppe</dt><dd><?= e($p['blood_type'] ?: 'unbekannt') ?></dd>
@@ -147,6 +159,7 @@ ob_start(); ?>
             <dt>Patientenverfügung</dt><dd><?= $p['living_will'] ? 'liegt vor' : 'nein' ?></dd>
             <dt>Notfallkontakt</dt><dd><?= nl($p['emergency_contact'] ?: '–') ?></dd>
         </dl>
+        <?php endif; ?>
         <?php if (trim((string) $p['notes']) !== ''): ?>
             <h2>Notizen</h2><p><?= nl($p['notes']) ?></p>
         <?php endif; ?>
@@ -170,8 +183,8 @@ ob_start(); ?>
 
     <section>
         <div class="card">
-            <div class="card-head"><h2>Fälle</h2>
-                <?php if (!$archived && can('cases.manage')): ?><a class="btn small" href="<?= e(url('case_edit', ['patient' => $id])) ?>">+ Neuer Fall</a><?php endif; ?></div>
+            <div class="card-head"><h2><?= e(term('cases')) ?></h2>
+                <?php if (!$archived && can('cases.manage')): ?><a class="btn small" href="<?= e(url('case_edit', ['patient' => $id])) ?>">+ <?= e(term('case')) ?></a><?php endif; ?></div>
             <table class="list compact case-list">
                 <tbody>
                 <?php foreach ($cases as $c): ?>
@@ -182,7 +195,7 @@ ob_start(); ?>
                         <td class="right"><?= case_status_badge($c) ?></td>
                     </tr>
                 <?php endforeach; ?>
-                <?php if (!$cases): ?><tr><td class="muted">Noch keine Fälle. Ein Fall bündelt Einträge und Dokumente zu einem Einsatz oder einer Behandlung.</td></tr><?php endif; ?>
+                <?php if (!$cases): ?><tr><td class="muted">Noch keine <?= e(term('cases')) ?>. Ein <?= e(term('case')) ?> bündelt Einträge und Dokumente zu einem Ereignis.</td></tr><?php endif; ?>
                 </tbody>
             </table>
         </div>

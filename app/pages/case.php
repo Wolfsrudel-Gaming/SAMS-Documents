@@ -7,7 +7,7 @@ $case = one('SELECT c.*, d.name AS department, u.name AS author, cu.name AS clos
     LEFT JOIN departments d ON d.id = c.department_id LEFT JOIN users u ON u.id = c.created_by LEFT JOIN users cu ON cu.id = c.closed_by
     WHERE c.id = ? AND ' . fw('c'), [$id]);
 if (!$case) {
-    not_found('Fall nicht gefunden.');
+    not_found(term('case') . ' nicht gefunden.');
 }
 $p = one('SELECT * FROM patients WHERE id = ?', [$case['patient_id']]);
 $archived = patient_archived($p);
@@ -22,11 +22,11 @@ if (is_post()) {
     if ($action === 'close' && $case['status'] === 'open') {
         update('cases', $id, ['status' => 'closed', 'closed_at' => now(), 'closed_by' => $me['id'], 'updated_at' => now()]);
         audit('case.close', 'case', $id, $case['number']);
-        flash('success', 'Fall abgeschlossen.');
+        flash('success', term('case') . ' abgeschlossen.');
     } elseif ($action === 'reopen' && $case['status'] === 'closed' && !$archived) {
         update('cases', $id, ['status' => 'open', 'closed_at' => null, 'closed_by' => null, 'updated_at' => now()]);
         audit('case.reopen', 'case', $id, $case['number']);
-        flash('success', 'Fall wieder geöffnet.');
+        flash('success', term('case') . ' wieder geöffnet.');
     }
     redirect(url('case', ['id' => $id]));
 }
@@ -47,7 +47,7 @@ ob_start(); ?>
     <div class="btn-row">
         <?php if ($open): ?>
             <a class="btn" href="<?= e(url('entry_edit', ['patient' => $p['id'], 'case' => $id])) ?>"><?= icon('plus') ?>Eintrag</a>
-            <?php if (can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new', ['patient' => $p['id'], 'case' => $id])) ?>"><?= icon('doc-plus') ?>Dokument aus Fall</a><?php endif; ?>
+            <?php if (can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new', ['patient' => $p['id'], 'case' => $id])) ?>"><?= icon('doc-plus') ?>Dokument aus <?= e(term('case')) ?></a><?php endif; ?>
         <?php endif; ?>
         <?php if (can('cases.manage') && !$archived): ?>
             <a class="btn" href="<?= e(url('case_edit', ['id' => $id])) ?>"><?= icon('edit') ?>Bearbeiten</a>
@@ -61,7 +61,7 @@ ob_start(); ?>
         <?php endif; ?>
     </div>
 </div>
-<?php if ($archived): ?><div class="flash warn">Die Patientenakte ist archiviert. Der Fall ist schreibgeschützt.</div><?php endif; ?>
+<?php if ($archived): ?><div class="flash warn">Die Akte ist archiviert. Der Vorgang ist schreibgeschützt.</div><?php endif; ?>
 
 <div class="grid-side">
     <section class="card facts">
@@ -76,7 +76,7 @@ ob_start(); ?>
             <?php if ($case['status'] === 'closed'): ?><dt>Abgeschlossen</dt><dd><?= e(fmt_datetime($case['closed_at'])) ?><br><small class="muted"><?= e($case['closer']) ?></small></dd><?php endif; ?>
         </dl>
         <h2>Hergang / Anlass</h2><p><?= nl($case['incident'] ?: '–') ?></p>
-        <h2>Diagnose(n)</h2><p><?= nl($case['diagnosis'] ?: '–') ?></p>
+        <h2><?= e(case_labels()['diagnosis']) ?></h2><p><?= nl($case['diagnosis'] ?: '–') ?></p>
         <?php if (trim((string) $case['summary']) !== ''): ?><h2>Zusammenfassung</h2><p><?= nl($case['summary']) ?></p><?php endif; ?>
     </section>
 

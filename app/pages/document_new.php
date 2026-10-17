@@ -29,7 +29,7 @@ require_active_patient($patient);
 if (!$type) {
     ob_start(); ?>
     <div class="page-head">
-        <div><h1>Neues Dokument</h1><?php if ($patient): ?><p class="muted">für <?= e(patient_name($patient)) ?><?= $case ? ' · Fall ' . e($case['number']) : '' ?></p><?php endif; ?></div>
+        <div><h1>Neues Dokument</h1><?php if ($patient): ?><p class="muted">für <?= e(patient_name($patient)) ?><?= $case ? ' · ' . e(term('case')) . ' ' . e($case['number']) : '' ?></p><?php endif; ?></div>
         <a class="btn" href="<?= e(url('drafts')) ?>">Meine Entwürfe</a>
     </div>
     <?php
@@ -162,7 +162,7 @@ if (is_post()) {
 
     if (in_array($action, ['issue', 'submit'], true)) {
         if ($type['patient'] === 'required' && !$patient) {
-            $errors[] = 'Bitte eine Patientenakte auswählen.';
+            $errors[] = 'Bitte eine ' . term('record') . ' auswählen.';
         }
         if ($isEmployee && empty($data['_employee'])) {
             $errors[] = 'Bitte die betroffene Person aus dem Personal auswählen.';
@@ -253,7 +253,7 @@ ob_start(); ?>
     <input type="hidden" name="type" value="<?= e($type['key']) ?>">
     <?php if ($draft): ?><input type="hidden" name="draft_id" value="<?= (int) $draft['id'] ?>"><?php endif; ?>
     <?php if ($case): ?><input type="hidden" name="case_id" value="<?= (int) $case['id'] ?>">
-        <div class="field w-full keep"><div class="flash success">Aus Fall <strong><?= e($case['number']) ?></strong> · <?= e($case['title']) ?><?= $draft ? '' : ' – Diagnose, Ort und Hergang wurden übernommen.' ?></div></div><?php endif; ?>
+        <div class="field w-full keep"><div class="flash success">Aus <?= e(term('case')) ?> <strong><?= e($case['number']) ?></strong> · <?= e($case['title']) ?><?= $draft ? '' : ' – Angaben aus dem ' . e(term('case')) . ' wurden übernommen.' ?></div></div><?php endif; ?>
     <?php if ($isEmployee): ?>
     <h3 class="form-heading keep">Mitarbeiter/in <span class="req">*</span></h3>
     <div class="field w-full keep">
@@ -263,7 +263,7 @@ ob_start(); ?>
         </select>
     </div>
     <?php else: ?>
-    <h3 class="form-heading keep">Patient/in<?= $type['patient'] === 'required' ? ' <span class="req">*</span>' : ' (optional)' ?></h3>
+    <h3 class="form-heading keep"><?= e(term('person')) ?><?= $type['patient'] === 'required' ? ' <span class="req">*</span>' : ' (optional)' ?></h3>
     <div class="field w-full keep">
         <select name="patient_id" class="patient-select"<?= $type['patient'] === 'required' ? ' required' : '' ?>>
             <option value="">– <?= $type['patient'] === 'required' ? 'bitte wählen' : 'keine Akte' ?> –</option>
@@ -320,7 +320,7 @@ ob_start(); ?>
     </details>
 </form>
 
-<?php if ($type['key'] === 'rechnung'): ?><script>window.SAMS_PRICES = <?= price_list_json() ?>;</script><?php endif; ?>
+<?php if ($type['key'] === 'rechnung'): ?><script>window.SAMS_PRICES = <?= price_list_json() ?>; window.SAMS_JAIL = <?= price_jail_json() ?>;</script><?php endif; ?>
 <?php if ($preview): ?>
 <section class="preview" id="preview">
     <h2>Vorschau</h2>

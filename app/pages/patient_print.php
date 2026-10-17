@@ -4,14 +4,14 @@ defined('SAMS_ROOT') || exit;
 $id = (int) ($_GET['id'] ?? 0);
 $p = fone('patients', $id);
 if (!$p) {
-    not_found('Patientenakte nicht gefunden.');
+    not_found(term('record') . ' nicht gefunden.');
 }
 audit('patient.print', 'patient', $id, patient_name($p));
 $me = current_user();
 $entries = all('SELECT e.*, u.name AS author, u.title AS author_title FROM entries e LEFT JOIN users u ON u.id = e.created_by WHERE e.patient_id = ? ORDER BY e.occurred_at', [$id]);
 $docs = all('SELECT * FROM documents WHERE patient_id = ? ORDER BY issued_at', [$id]);
 $doc = ['number' => 'AKTE-' . str_pad((string) $id, 6, '0', STR_PAD_LEFT), 'verify_code' => '', 'issuer_snapshot' => issuer_snapshot($me), 'issued_at' => now()];
-$protoTitle = 'Patientenakte';
+$protoTitle = term('record');
 $protoSub = 'Auszug · vertraulich · ärztliche Schweigepflicht';
 ob_start(); ?>
 <div class="page-head no-print"><h1>Akte drucken: <?= e(patient_name($p)) ?></h1><button class="btn primary" onclick="window.print()">Drucken / PDF</button></div>

@@ -5,7 +5,7 @@ $me = current_user();
 $stats = [];
 if (can('patients.view')) {
     $stats['Aktive Akten'] = (int) scalar('SELECT COUNT(*) FROM patients WHERE archived_at IS NULL AND ' . fw());
-    $stats['Offene Fälle'] = (int) scalar("SELECT COUNT(*) FROM cases WHERE status = 'open' AND " . fw());
+    $stats['Offene ' . term('cases')] = (int) scalar("SELECT COUNT(*) FROM cases WHERE status = 'open' AND " . fw());
 }
 if (can('documents.view')) {
     $stats['Dokumente heute'] = (int) scalar('SELECT COUNT(*) FROM documents WHERE issued_at >= ? AND ' . fw(), [date('Y-m-d 00:00:00')]);

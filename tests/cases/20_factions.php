@@ -61,6 +61,34 @@ $admin->post('/index.php?p=factions', ['action' => 'switch', 'faction_id' => '1'
 check($admin->has('Tester'), 'Zurück zum Rettungsdienst');
 // Deaktivierte Fraktion
 $admin->get('/index.php?p=factions&edit=' . $pd);
-$admin->post('/index.php?p=factions', ['action' => 'save', 'id' => (string) $pd, 'name' => 'Los Santos Police Department', 'short' => 'LSPD', 'color' => '#1d3a6e', 'modules' => ['records', 'billing', 'wanted', 'requests']]);
+$admin->post('/index.php?p=factions', ['action' => 'save', 'id' => (string) $pd, 'name' => 'Los Santos Police Department', 'short' => 'LSPD', 'color' => '#1d3a6e', 'modules[]' => ['records', 'billing', 'wanted', 'requests']]);
 check($chief->get('/index.php?p=dashboard')->has('derzeit deaktiviert'), 'Deaktivierte Fraktion kann sich nicht anmelden');
 texec('UPDATE factions SET active = 1 WHERE id = ?', [$pd]);
+$chief = (new Client(TEST_BASE))->login('chief.miller');
+// Inhalte der Polizei: Dokumentarten, Bußgeldbescheid mit Strafkatalog, Aktenfelder, Eintragsarten
+check((int) tval('SELECT COUNT(*) FROM price_list WHERE faction_id = ? AND jail > 0', [$pd]) > 5, 'Strafkatalog mit Haft-Einheiten angelegt');
+$chief->get('/index.php?p=document_new');
+check($chief->has('Festnahmeprotokoll') && $chief->has('Bußgeldbescheid') && !$chief->has('Arbeitsunfähigkeitsbescheinigung'), 'Dokumentarten der Polizei');
+$chief->get('/index.php?p=document_new&type=pd_festnahme&patient=' . $pp);
+$chief->post('/index.php?p=document_new&type=pd_festnahme', ['type' => 'pd_festnahme', 'patient_id' => (string) $pp, 'action' => 'issue', 'sig_mode' => 'live', 'live_signature' => TEST_SIGNATURE,
+    'd[datum]' => date('Y-m-d'), 'd[uhrzeit]' => '21:15', 'd[ort]' => 'Grove Street', 'd[delikte]' => 'S05 Raub', 'd[grund]' => 'Auf frischer Tat', 'd[belehrt]' => '1', 'd[haft]' => '30', 'd[verbleib]' => 'Gewahrsam / Zelle']);
+check(str_contains($chief->url, 'p=document&id=') && $chief->has('Festnahmeprotokoll') && $chief->has('Auf frischer Tat') && $chief->has('LSPD Mission Row'), 'Festnahmeprotokoll ausgestellt');
+$chief->get('/index.php?p=document_new&type=rechnung&patient=' . $pp);
+check($chief->has('Tatbestände') && $chief->has('Haft (Einh.)') && $chief->has('window.SAMS_JAIL'), 'Bußgeldformular mit Haft-Einheiten');
+$chief->post('/index.php?p=document_new&type=rechnung', ['type' => 'rechnung', 'patient_id' => (string) $pp, 'action' => 'issue', 'sig_mode' => 'live', 'live_signature' => TEST_SIGNATURE,
+    'd[service_date]' => date('Y-m-d'), 'd[due_days]' => '14', 'd[tax]' => '0', 'd[items][0][text]' => 'V05 Fahren ohne Fahrerlaubnis', 'd[items][0][qty]' => '1', 'd[items][0][jail]' => '5', 'd[items][0][price]' => '1500.00']);
+check($chief->has('Bußgeldbescheid') && $chief->has('Haft-Einheiten gesamt') && $chief->has('Bußgeldstelle'), 'Bußgeldbescheid statt Rechnung');
+check($chief->get('/index.php?p=invoices')->status === 200 && $chief->has('LSPD-RE-'), 'Bußgeldübersicht zeigt den Bescheid');
+$chief->get('/index.php?p=patient_edit&id=' . $pp);
+check($chief->has('Gefährdungshinweise') && !$chief->has('Blutgruppe'), 'Aktenfelder der Polizei statt medizinischer Felder');
+$chief->post('/index.php?p=patient_edit&id=' . $pp, ['first_name' => 'Vinnie', 'last_name' => 'Verdacht', 'dob' => '1985-05-05', 'gender' => 'm', 'citizen_id' => 'TST001',
+    'x[aliases]' => 'V-Man', 'x[danger][]' => ['bewaffnet', 'flucht'], 'x[license_driver]' => 'entzogen']);
+check($chief->has('V-Man') && $chief->has('Fluchtgefahr') && $chief->has('entzogen'), 'Gefährdungshinweise und Führerscheinstatus in der Akte');
+check($chief->get('/index.php?p=entry_edit&patient=' . $pp)->has('<option>Festnahme</option>') && $chief->has('Vernehmung'), 'Eintragsarten und Vorlagen der Polizei');
+// Justiz anlegen
+$admin->get('/index.php?p=factions');
+$admin->post('/index.php?p=factions', ['action' => 'create', 'name' => 'Department of Justice', 'short' => 'DOJ', 'kind' => 'justice', 'color' => '#5b3a1e']);
+$doj = (int) tval("SELECT id FROM factions WHERE short = 'DOJ'");
+$judgeRank = (int) tval("SELECT id FROM ranks WHERE faction_id = ? AND short = 'RI'", [$doj]);
+check($judgeRank && (bool) tval("SELECT 1 FROM rank_permissions WHERE rank_id = ? AND permission = 'documents.issue.doj_haftbefehl'", [$judgeRank])
+    && !tval("SELECT 1 FROM rank_permissions WHERE rank_id = (SELECT id FROM ranks WHERE faction_id = ? AND short = 'RA') AND permission = 'documents.issue.doj_haftbefehl'", [$doj]), 'Richter/in darf Haftbefehle erlassen, Anwalt nicht');

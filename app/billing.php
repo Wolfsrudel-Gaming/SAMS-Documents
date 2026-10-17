@@ -120,3 +120,15 @@ function price_list_json(): string
     }
     return json_encode($out, JSON_UNESCAPED_UNICODE);
 }
+
+/** Haft-Einheiten je Katalogposition (Polizei/Justiz). */
+function price_jail_json(): string
+{
+    $out = [];
+    foreach (price_list() as $p) {
+        if ((int) ($p['jail'] ?? 0) > 0) {
+            $out[price_label($p)] = (int) $p['jail'];
+        }
+    }
+    return json_encode((object) $out, JSON_UNESCAPED_UNICODE);
+}

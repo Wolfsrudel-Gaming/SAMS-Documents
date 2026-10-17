@@ -299,6 +299,10 @@
         var price = window.SAMS_PRICES[input.value.trim()];
         var row = input.closest('tr');
         var priceInput = row && row.querySelector('input[name$="[price]"]');
+        var jailInput = row && row.querySelector('input[name$="[jail]"]');
+        if (jailInput && window.SAMS_JAIL && window.SAMS_JAIL[input.value.trim()] !== undefined && jailInput.value === '') {
+            jailInput.value = window.SAMS_JAIL[input.value.trim()];
+        }
         if (price === undefined || !priceInput) { return; }
         // Nur überschreiben, wenn leer oder zuvor automatisch gesetzt
         if (priceInput.value === '' || priceInput.dataset.auto === priceInput.value) {
