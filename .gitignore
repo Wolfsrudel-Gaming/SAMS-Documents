@@ -1,0 +1,6 @@
+/.env
+/config.php
+/storage/*
+!/storage/.gitkeep
+/vendor/
+/node_modules/

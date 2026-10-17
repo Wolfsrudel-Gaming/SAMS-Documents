@@ -1,0 +1,292 @@
+/* SAMS Dokumentensystem – Druckvorlagen (A4/A5/A6, mm-genau) */
+@font-face {
+    font-family: "SAMS Signature";
+    src: url("../fonts/signature.woff2") format("woff2");
+    font-display: block;
+}
+
+.doc-stage { display: flex; flex-direction: column; align-items: center; gap: 10mm; padding: 8mm 0 12mm; overflow-x: auto; }
+.doc-wrap { display: flex; flex-direction: column; align-items: center; gap: 10mm; }
+
+.paper {
+    box-sizing: border-box;
+    --ink: #111;
+    --form: #c8102e;
+    --form-bg: #fff;
+    position: relative;
+    background: #fff;
+    color: var(--ink);
+    font-family: Arial, "Helvetica Neue", Helvetica, "Liberation Sans", sans-serif;
+    font-size: 9.6pt;
+    line-height: 1.36;
+    box-shadow: 0 1px 3px rgba(0,0,0,.18), 0 8px 26px rgba(0,0,0,.12);
+    overflow: hidden;
+    flex: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+.paper.a4 { width: 210mm; min-height: 297mm; padding: 12mm 18mm 0 24mm; display: flex; flex-direction: column; }
+.paper.a5 { width: 148mm; min-height: 210mm; padding: 7mm 7mm 6mm 9mm; display: flex; flex-direction: column; gap: 2mm; }
+.paper.a6l { width: 148mm; min-height: 105mm; padding: 4mm 6mm 3mm 7mm; display: flex; flex-direction: column; gap: 1.5mm; }
+.paper * { box-sizing: border-box; }
+.paper .mono, .paper .printed { font-family: "Courier New", Courier, "Liberation Mono", monospace; }
+.paper .printed { color: #151515; letter-spacing: .01em; }
+.paper .small { font-size: 8pt; }
+.paper p { margin: 0 0 2.4mm; }
+
+/* Falz- und Lochmarken nach DIN 5008 */
+.fold { position: absolute; left: 0; height: 0; border-top: .25mm solid #9a9a9a; }
+.fold.f1 { top: 105mm; width: 5mm; }
+.fold.f2 { top: 210mm; width: 5mm; }
+.fold.punch { top: 148.5mm; width: 8mm; }
+
+/* Wasserzeichen */
+.watermark {
+    position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 50;
+    font: 900 86pt/1 Arial, sans-serif; color: rgba(120, 120, 120, .16); transform: rotate(-32deg); letter-spacing: .1em;
+}
+.watermark.red { color: rgba(200, 16, 46, .22); border: 0; }
+.paper.a5 .watermark, .paper.a6l .watermark { font-size: 48pt; }
+
+/* Briefkopf */
+.lh { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 3mm; border-bottom: .6mm solid #0b4f9c; }
+.lh-brand { display: flex; gap: 4mm; align-items: center; }
+.doc-logo { width: 16mm; height: 16mm; object-fit: contain; }
+.lh-name { font-size: 15pt; font-weight: 700; color: #0b4f9c; letter-spacing: .01em; line-height: 1.15; }
+.lh-sub { font-size: 9.5pt; color: #333; }
+.lh-dept { font-size: 9pt; color: #0b4f9c; font-weight: 700; margin-top: .6mm; }
+.lh-contact { font-size: 7.6pt; line-height: 1.45; text-align: right; color: #444; }
+.lh-row { display: flex; justify-content: space-between; gap: 8mm; margin-top: 4mm; min-height: 32mm; }
+.lh-address { width: 85mm; }
+.lh-sender { font-size: 6.8pt; color: #555; border-bottom: .2mm solid #777; padding-bottom: .6mm; margin-bottom: 2.5mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lh-recipient { font-size: 10.5pt; line-height: 1.4; }
+.lh-info { font-size: 7.8pt; border-collapse: collapse; align-self: flex-start; width: 68mm; }
+.lh-info th { text-align: left; font-weight: 400; color: #666; padding: .25mm 3mm .25mm 0; vertical-align: top; white-space: nowrap; }
+.lh-info td { padding: .25mm 0; font-weight: 600; }
+
+.doc-body { flex: 1; display: flex; flex-direction: column; }
+.doc-title { font-size: 14.5pt; margin: 0 0 3mm; font-weight: 700; letter-spacing: .01em; }
+.doc-title small { display: block; font-size: 10.5pt; font-weight: 400; color: #444; margin-top: 1mm; }
+.doc-subject { font-size: 11.5pt; font-weight: 700; margin: 0 0 5mm; }
+.doc-h { font-size: 9.6pt; font-weight: 700; margin: 3mm 0 1mm; text-transform: uppercase; letter-spacing: .04em; color: #0b4f9c; }
+.prose { margin-bottom: 3mm; text-align: justify; hyphens: auto; }
+.prose.strong { font-weight: 700; }
+.lead-in { font-size: 9.5pt; color: #333; }
+.muted-print { color: #666; }
+.empty { color: #999; }
+
+.pbox { width: 100%; border-collapse: collapse; margin: 1mm 0 3mm; font-size: 8.8pt; border: .3mm solid #222; }
+.pbox th { text-align: left; font-weight: 400; font-size: 7pt; color: #555; background: #f3f3f3; padding: 1mm 2mm; width: 23mm; border: .2mm solid #bbb; }
+.pbox td { padding: 1mm 2mm; border: .2mm solid #bbb; }
+
+/* Unterschrift & Stempel */
+.sigblock { display: flex; gap: 10mm; align-items: flex-end; margin-top: 5mm; break-inside: avoid; }
+.sig-place { flex: 0 0 55mm; display: flex; flex-direction: column; }
+.hand-filled { font-family: "Courier New", monospace; padding-bottom: 1mm; border-bottom: .25mm solid #222; min-height: 7mm; display: flex; align-items: flex-end; }
+.sig-cap { font-size: 7pt; color: #555; margin-top: .8mm; display: block; }
+.sig-sign { flex: 1; display: flex; flex-direction: column; min-width: 60mm; }
+.sig-area { position: relative; height: 19mm; border-bottom: .25mm solid #222; display: flex; align-items: flex-end; justify-content: flex-start; }
+.sig-name { font-size: 8.5pt; font-weight: 600; margin-top: .3mm; }
+.sig-stamp { position: absolute; left: 6mm; bottom: 1mm; opacity: .88; z-index: 1; mix-blend-mode: multiply; }
+.sig-stamp.rect { width: 62mm; }
+.sig-stamp.round { width: 34mm; left: auto; right: 4mm; bottom: -2mm; }
+.stamp-svg, .seal-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.sig-img { position: relative; z-index: 2; max-height: 19mm; max-width: 72mm; mix-blend-mode: multiply; margin: 0 0 -1.5mm 14mm; filter: saturate(1.1); }
+.sig-font { position: relative; z-index: 2; font-family: "SAMS Signature", "Brush Script MT", cursive; font-size: 25pt; color: #1b2d78; margin: 0 0 -1mm 16mm; white-space: nowrap; display: inline-block; }
+
+/* Fußzeile */
+.df { margin-top: auto; padding: 3mm 0 5mm; }
+.df-verify { display: flex; gap: 4mm; align-items: center; font-size: 7.2pt; color: #333; border-top: .2mm solid #bbb; padding-top: 2mm; }
+.qr { width: 16mm; height: 16mm; flex: none; }
+.qr svg, .qr img { width: 100%; height: 100%; display: block; }
+.qr-small { width: 14mm; height: 14mm; }
+.df-barcode { display: inline-flex; flex-direction: column; align-items: flex-start; margin-top: 1mm; }
+.barcode { width: 52mm; height: 7mm; display: block; }
+.df-barcode span { font-size: 6.5pt; letter-spacing: .12em; }
+.df-cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; font-size: 6.4pt; line-height: 1.3; color: #555; border-top: .4mm solid #0b4f9c; margin-top: 2mm; padding-top: 1.5mm; }
+.df-extra { font-size: 6.5pt; color: #666; margin-top: 1.5mm; }
+
+/* Formular-Kästchen */
+.xbox { display: inline-grid; place-items: center; width: 3.4mm; height: 3.4mm; border: .25mm solid var(--form, #333); font: 700 8pt/1 "Courier New", monospace; color: #111; vertical-align: -0.6mm; background: #fff; margin-right: .5mm; }
+.dboxes { display: inline-flex; gap: 1mm; margin-top: .6mm; }
+.dboxes span { display: inline-grid; place-items: center; width: 8mm; height: 5.5mm; border: .25mm solid var(--form); background: #fff; font: 600 10pt/1 "Courier New", monospace; }
+
+/* --- Vordrucke (Formularfarben) --- */
+.paper.form { background: var(--form-bg); }
+.form-red { --form: #d0283f; --form-bg: #fdf1f2; }
+.form-blue { --form: #1f5fae; --form-bg: #f2f6fc; }
+.form-yellow { --form: #8a6d00; --form-bg: #fffbe0; }
+.form-green { --form: #2e7d4f; --form-bg: #f2f9f4; }
+.form .fl { display: block; font-size: 5.8pt; line-height: 1.15; color: var(--form); font-family: Arial, sans-serif; letter-spacing: .01em; }
+.form .fv { display: block; font-family: "Courier New", monospace; font-size: 9pt; line-height: 1.25; color: #151515; min-height: 3.6mm; }
+.form .fv.small { font-size: 7.5pt; }
+.form .fv.big { font-size: 11pt; font-weight: 700; }
+.fcell { border: .25mm solid var(--form); background: #fff; padding: .8mm 1.4mm; }
+.fcell.grow { flex: 1; }
+.form-grid2 { display: grid; grid-template-columns: 1fr 50mm; gap: 2mm; }
+.form-title { font-weight: 700; font-size: 11.5pt; color: var(--form); line-height: 1.15; margin-bottom: 2mm; }
+.form-right { display: flex; flex-direction: column; gap: 1.5mm; font-size: 7.5pt; }
+
+.fh { border: .3mm solid var(--form); background: #fff; display: grid; }
+.fh-cell { padding: .6mm 1.4mm; border-bottom: .25mm solid var(--form); position: relative; min-width: 0; }
+.fh-cell:last-child { border-right: 0; }
+.fh-name { min-height: 15mm; }
+.fh-dob { position: absolute; right: 1.4mm; top: .6mm; }
+.fh-dobv { position: absolute; right: 1.4mm; top: 3.1mm; min-height: 0 !important; }
+.fh-row { display: grid; grid-template-columns: repeat(3, 1fr); }
+.fh-row .fh-cell { border-right: .25mm solid var(--form); }
+.fh-row .fh-cell:last-child { border-right: 0; }
+.fh-row:last-child .fh-cell { border-bottom: 0; }
+.fh .fv { font-size: 8.4pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* AU */
+.au-kind { display: grid; gap: 1mm; font-size: 8.5pt; font-weight: 700; color: var(--form); }
+.au-kind > div, .au-flags > div, .au-misc > div, .uw-kinds > div { color: #222; }
+.au-flags { display: grid; gap: 1mm; font-size: 7pt; }
+.au-dates { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 2mm; }
+.au-diag { min-height: 28mm; flex: 1; }
+.au-diag .fv { font-size: 9.5pt; }
+.au-diag.hatched { background: repeating-linear-gradient(-45deg, #fff, #fff 1.6mm, var(--form-bg) 1.6mm, var(--form-bg) 3.2mm); }
+.au-bottom { display: grid; grid-template-columns: 1fr 64mm; gap: 3mm; align-items: end; margin-top: auto; }
+.au-misc { display: grid; gap: 1.2mm; font-size: 7.2pt; }
+.au-sign { display: flex; flex-direction: column; }
+.au-sign .sig-area, .rx-sign .sig-area { height: 25mm; border: .25mm solid var(--form); border-bottom-width: .25mm; background: #fff; }
+.au-sign .sig-stamp.rect { width: 56mm; left: 2.5mm; bottom: 3mm; }
+.rx-sign .sig-stamp.rect { width: 49mm; left: 2mm; bottom: 2mm; }
+.au-sign .sig-img, .rx-sign .sig-img { margin-left: 10mm; max-height: 17mm; max-width: 48mm; margin-bottom: 1mm; }
+.au-sign .sig-font, .rx-sign .sig-font { font-size: 20pt; margin-left: 12mm; }
+.form-foot { display: flex; align-items: center; gap: 3mm; font-size: 6.5pt; color: var(--form); border-top: .25mm solid var(--form); padding-top: 1.2mm; }
+.form-copy { font-weight: 700; font-size: 7.5pt; }
+.form-num { margin-left: auto; color: #333; font-size: 6.5pt; }
+.form-foot .qr { width: 11mm; height: 11mm; }
+.form-note { font-size: 6.6pt; color: #555; margin: 0 !important; }
+
+/* Rezept */
+.rx-grid { display: grid; grid-template-columns: 12mm 1fr 30mm; gap: 1.5mm; }
+.rx-flags { display: grid; grid-template-rows: repeat(6, 1fr); border: .25mm solid var(--form); background: #fff; }
+.rx-flag { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 5pt; color: var(--form); text-align: center; line-height: 1; border-bottom: .2mm solid var(--form); gap: .4mm; padding: .5mm 0; }
+.rx-flag:last-child { border-bottom: 0; }
+.rx-flag .xbox { margin: 0; width: 3mm; height: 3mm; }
+.rx-head .fh-name { min-height: 9mm; }
+.rx-side { display: flex; flex-direction: column; gap: 1mm; }
+.rx-title { font-weight: 700; color: var(--form); font-size: 8pt; text-transform: uppercase; line-height: 1.1; }
+.rx-box { border: .25mm solid var(--form); background: #fff; padding: .5mm 1mm; flex: 1; }
+.rx-body { display: grid; grid-template-columns: 12mm 1fr 56mm; gap: 1.5mm; flex: 1; }
+.rx-autidem { display: flex; flex-direction: column; align-items: center; gap: 4.6mm; border: .25mm solid var(--form); background: #fff; padding: 1mm 0; }
+.rx-autidem .fl { font-size: 5pt; text-align: center; }
+.rx-items { border: .25mm solid var(--form); background: #fff; padding: 1mm 2mm; display: flex; flex-direction: column; }
+.rx-rp { font-family: "Times New Roman", serif; font-style: italic; font-size: 11pt; color: var(--form); }
+.rx-rp small { font-size: 5.5pt; font-style: normal; font-family: Arial, sans-serif; }
+.rx-line { font-size: 8.6pt; min-height: 6.2mm; border-bottom: .15mm dotted #bbb; padding-top: 1.5mm; }
+.rx-dose { white-space: nowrap; }
+.rx-strike { display: block; height: 4mm; background: linear-gradient(to top right, transparent calc(50% - .2mm), #222 50%, transparent calc(50% + .2mm)); margin: 0 6mm; }
+.rx-note { font-size: 7.5pt; margin-top: 1mm; }
+.rx-sign { display: flex; flex-direction: column; justify-content: flex-end; }
+
+/* Überweisung */
+.uw-kinds { display: grid; gap: .8mm; font-size: 7.5pt; }
+
+/* --- Protokolle (A4-Formulare) --- */
+.paper.proto { padding: 7mm 11mm 0 17mm; font-size: 8.8pt; }
+.ph { display: grid; grid-template-columns: 66mm 1fr 50mm; align-items: center; gap: 4mm; border-bottom: .7mm solid #c8102e; padding-bottom: 2mm; margin-bottom: 2.5mm; }
+.ph-brand { display: flex; gap: 2.5mm; align-items: center; }
+.ph-brand .doc-logo { width: 13mm; height: 13mm; }
+.ph-brand .lh-name { font-size: 9.6pt; white-space: nowrap; }
+.ph-brand .lh-sub { white-space: nowrap; }
+.ph-brand .lh-sub { font-size: 7.5pt; }
+.ph-title { font-size: 13.5pt; font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: .03em; line-height: 1.15; }
+.ph-title small { display: block; font-size: 7.5pt; font-weight: 400; text-transform: none; letter-spacing: 0; color: #444; }
+.ph-num { text-align: right; font-size: 8pt; }
+.ph-num .fl { font-size: 6pt; color: #666; display: block; }
+.ph-num .barcode { width: 100%; height: 6mm; margin-top: .6mm; }
+.psec { font-size: 7.8pt; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; background: #c8102e; color: #fff; padding: .5mm 2mm; margin: 1.6mm 0 0; }
+.pgrid { display: grid; grid-template-columns: repeat(12, 1fr); border-left: .25mm solid #444; border-top: .25mm solid #444; }
+.pc { border-right: .25mm solid #444; border-bottom: .25mm solid #444; padding: .5mm 1.3mm; min-height: 7.4mm; position: relative; }
+.pc .fl { display: block; font-size: 5.8pt; color: #555; line-height: 1.1; }
+.pc .fv { display: block; font-family: "Courier New", monospace; font-size: 8.6pt; line-height: 1.3; }
+.pc .fv.chk { font-family: Arial, sans-serif; font-size: 7.6pt; display: flex; flex-wrap: wrap; gap: .8mm 2.5mm; }
+.pc .fv.big { font-size: 12pt; font-weight: 700; }
+.pc .unit { position: absolute; right: 1.2mm; bottom: .6mm; font-size: 6pt; color: #777; }
+.pc.tall { min-height: 9mm; }
+.pc.boxed { border: .25mm solid #444; margin: 2mm 0; }
+.pc.w1 { grid-column: span 1; } .pc.w2 { grid-column: span 2; } .pc.w3 { grid-column: span 3; } .pc.w4 { grid-column: span 4; }
+.pc.w5 { grid-column: span 5; } .pc.w6 { grid-column: span 6; } .pc.w7 { grid-column: span 7; } .pc.w8 { grid-column: span 8; }
+.pc.w12 { grid-column: span 12; }
+.pgrid:has(.w15) { grid-template-columns: repeat(24, 1fr); }
+.pgrid:has(.w15) .pc.w1 { grid-column: span 2; } .pgrid:has(.w15) .pc.w2 { grid-column: span 4; } .pgrid:has(.w15) .pc.w3 { grid-column: span 6; }
+.pgrid:has(.w15) .pc.w4 { grid-column: span 8; } .pgrid:has(.w15) .pc.w6 { grid-column: span 12; } .pgrid:has(.w15) .pc.w12 { grid-column: span 24; }
+.pgrid:has(.w15) .pc.w15 { grid-column: span 3; } .pgrid:has(.w15) .pc.w45 { grid-column: span 9; }
+.pc.bm { padding: 1mm; display: flex; align-items: center; justify-content: center; }
+.pc.bm .bodymap { max-width: 100%; max-height: 33mm; }
+.chkgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .4mm 2mm; font-size: 7.6pt; padding: .6mm 0; }
+.proto-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; align-items: start; }
+.proto-sign.three { grid-template-columns: 1fr 1fr 1fr; gap: 5mm; }
+.proto-sign .sigblock { margin-top: 2mm; }
+.proto-sign .sig-sign { min-width: 0; }
+.proto-sign .sig-area { height: 14mm; }
+.proto-sign .sig-img { margin-left: 4mm; max-width: 100%; max-height: 15mm; }
+.proto-sign .sig-font { margin-left: 4mm; font-size: 20pt; }
+.proto-sign .sig-stamp.rect { width: 50mm; left: 0; }
+.proto .df { padding-bottom: 4mm; }
+.proto .df-cols { font-size: 5.8pt; line-height: 1.25; }
+.proto .qr { width: 13mm; height: 13mm; }
+.refused { font-size: 8pt; color: #a00; }
+.revers-text { font-size: 9.2pt; margin-top: 3mm; flex: none; }
+.revers-text p { margin-bottom: 2mm; }
+.chklist { list-style: none; padding: 0 0 0 6mm; margin: 0 0 2mm; display: grid; gap: 1mm; }
+.tox.pos { background: #fde7e9; }
+.tox.pos .fv { font-weight: 700; color: #a00; }
+
+.tbl { width: 100%; border-collapse: collapse; font-size: 8.8pt; margin: 1mm 0 3mm; }
+.tbl th, .tbl td { border: .25mm solid #555; padding: 1mm 1.6mm; text-align: left; vertical-align: top; }
+.tbl thead th { background: #eee; font-size: 7.5pt; }
+.tbl.two th { width: 30mm; background: #f4f4f4; font-weight: 400; font-size: 7.6pt; }
+.tbl.be-tbl th { width: 42mm; background: #f4f4f4; font-weight: 600; font-size: 7.6pt; }
+.tbl.be-tbl td { font-size: 8pt; }
+.tbl.cause th { width: 10mm; text-align: center; background: #f4f4f4; }
+.tbl.cause td:nth-child(2) { width: 62mm; font-size: 7.5pt; color: #444; }
+.tbl.cause td.printed { font-size: 9.5pt; font-weight: 600; }
+.tbl.invoice td, .tbl.invoice th { border-width: 0 0 .2mm; border-color: #bbb; }
+.tbl.invoice thead th { border-bottom: .4mm solid #222; background: none; }
+.tbl.invoice tfoot td { border: 0; padding-top: 1.2mm; }
+.tbl.invoice tfoot tr.sum td { font-weight: 700; font-size: 10.5pt; border-top: .4mm solid #222; }
+.tbl .right, .tbl td.right, .tbl th.right { text-align: right; }
+
+.vb-grid { display: grid; grid-template-columns: 1fr 44mm; gap: 4mm; align-items: start; }
+.vb-grid:not(:has(.bm-box)) { grid-template-columns: 1fr; }
+.bm-box { border: .25mm solid #555; padding: 1mm; }
+.result-box { border: .5mm solid #333; padding: 3mm 4mm; display: grid; gap: 1mm; margin-bottom: 3mm; }
+.result-box strong { font-size: 13pt; letter-spacing: .05em; }
+.result-box.r-geeignet { border-color: #1e6b3a; } .result-box.r-geeignet strong { color: #1e6b3a; }
+.result-box.r-nicht strong, .result-box.r-befristet strong { color: #a00; }
+.result-box.r-nicht, .result-box.r-befristet { border-color: #a00; }
+.result-box.r-bedingt strong { color: #8a5a00; }
+
+.death-part { font-size: 7.6pt; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; padding: .8mm 2mm; background: #222; color: #fff; margin-top: 2mm; }
+.death-part.conf { background: #555; margin-top: 4mm; }
+.paper.death .psec, .paper.death .ph { border-color: #222; }
+.pc.manner .fv.chk { font-size: 8.2pt; }
+
+.paid-stamp {
+    align-self: flex-start; margin: 2mm 0 4mm 30mm; transform: rotate(-9deg);
+    border: .9mm solid #b0102a; color: #b0102a; border-radius: 2mm; padding: 1mm 5mm; font: 900 20pt/1 Arial, sans-serif; letter-spacing: .15em;
+    opacity: .78; mix-blend-mode: multiply; text-align: center;
+}
+.paid-stamp small { display: block; font-size: 7.5pt; letter-spacing: .05em; font-weight: 700; }
+
+/* Druck */
+@page { size: A4; margin: 0; }
+@page a5 { size: 148mm 210mm; margin: 0; }
+@page a6l { size: 148mm 105mm; margin: 0; }
+@media print {
+    html, body { background: #fff !important; }
+    body.has-nav { padding: 0 !important; }
+    .sidebar, .topbar, .sidenav, .statusbar, .nav-toggle, .no-print, .page-head, .flash, .tabs, details, .card, .preview > h2 { display: none !important; }
+    .main { padding: 0 !important; max-width: none !important; }
+    .doc-stage, .doc-wrap { display: block; padding: 0; gap: 0; overflow: visible; }
+    .paper { box-shadow: none !important; break-after: page; page-break-after: always; margin: 0; }
+    .paper:last-child { break-after: auto; page-break-after: auto; }
+    .paper.a4 { width: 210mm; min-height: 296.5mm; }
+    .paper.a5 { page: a5; min-height: 209.5mm; }
+    .paper.a6l { page: a6l; min-height: 104.5mm; }
+}

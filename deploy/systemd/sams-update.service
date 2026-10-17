@@ -1,0 +1,15 @@
+[Unit]
+Description=SAMS Auto-Update (git pull + Migrationen)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Benutzer, dem der Projektordner gehört (NICHT root, wenn vermeidbar)
+User=sams
+Group=www-data
+# Neue Dateien in storage/ für PHP-FPM (Gruppe www-data) beschreibbar anlegen
+UMask=0002
+WorkingDirectory=/var/www/sams
+ExecStart=/var/www/sams/bin/update.sh
+Nice=10

@@ -1,0 +1,14 @@
+[Unit]
+Description=SAMS tägliches Datenbank-Backup
+
+[Service]
+Type=oneshot
+User=sams
+Group=www-data
+# Neue Dateien in storage/ für PHP-FPM (Gruppe www-data) beschreibbar anlegen
+UMask=0002
+WorkingDirectory=/var/www/sams
+# Ohne Docker:
+ExecStart=/usr/bin/php /var/www/sams/bin/sams backup daily
+# Mit Docker stattdessen:
+# ExecStart=/usr/bin/docker compose -f /var/www/sams/docker-compose.yml exec -T app php bin/sams backup daily

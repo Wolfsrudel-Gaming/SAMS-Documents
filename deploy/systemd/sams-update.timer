@@ -1,0 +1,11 @@
+[Unit]
+Description=SAMS Auto-Update alle 2 Minuten
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=2min
+AccuracySec=15s
+Unit=sams-update.service
+
+[Install]
+WantedBy=timers.target

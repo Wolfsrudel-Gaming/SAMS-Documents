@@ -1,0 +1,9 @@
+[Unit]
+Description=SAMS sofortiges Update bei Anforderung (GitHub-Webhook / Button im Admin)
+
+[Path]
+PathExists=/var/www/sams/storage/update/request
+Unit=sams-update.service
+
+[Install]
+WantedBy=multi-user.target
