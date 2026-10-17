@@ -35,6 +35,7 @@ require __DIR__ . '/printing.php';
 require __DIR__ . '/cases.php';
 require __DIR__ . '/workflow.php';
 require __DIR__ . '/billing.php';
+require __DIR__ . '/shares.php';
 
 set_exception_handler('handle_exception');
 set_error_handler(function (int $no, string $msg, string $file, int $line): bool {

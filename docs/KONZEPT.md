@@ -107,7 +107,7 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - Neue Rechte: `patients.archive`, `cases.manage`, `entries.all_departments`
 - *Offen für später:* Verknüpfung mit dem Bürgerportal (Etappe 6)
 
-### Etappe 3 – Dokumente *(Workflow v1.6.0, Abrechnung v1.7.0)*
+### Etappe 3 – Dokumente *(Workflow v1.6.0, Abrechnung v1.7.0, Behördenfreigabe v1.8.0)*
 - Neue Dokumentarten: psychologisches Gutachten, Unterbringungsantrag, Impfnachweis, OP-Bericht,
   OP-Aufklärung/Einwilligung, Dienstausweis, Ausbildungsnachweis, Beförderungsurkunde, Abmahnung,
   Kündigung, Arbeitsvertrag, weitere nach Bedarf
@@ -117,7 +117,7 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - ✅ **Unterschrift:** hinterlegt oder live, beim Ausstellen wählbar
 - ✅ **Schnell- und Vollmodus** pro Dokumentart (Standard einstellbar, im Formular umschaltbar)
 - ✅ **Preisliste** (Gebührenordnung) im Admin-Panel, Preis wird in Rechnungen automatisch übernommen, Abweichungen und freie Positionen nur mit Begründung (steht auf der Rechnung). **Rechnungsstatus** offen/bezahlt/gemahnt (bis 3. Mahnung, die Rechnung wird dann als Mahnschreiben gedruckt), Rechnungsübersicht mit Summen und Überfälligkeit *(v1.7.0)*
-- **Freigabe für Behörden:** einzelne Dokumente für LSPD/Justiz per Link oder Konto freischalten
+- ✅ **Freigabe für Behörden:** einzelne Dokumente für LSPD/BCSO/Justiz per geheimem Link (24 h / 7 / 30 Tage / bis Widerruf) oder an ein Behördenkonto (eigener Rang mit nur „Freigegebene Dokumente ansehen“) freischalten; Abrufe werden gezählt und protokolliert, jederzeit widerrufbar *(v1.8.0)*
 - **Vorlagen-Editor:** Leitung legt neue Dokumentarten im Browser an (Felder, Layout-Grundtyp Brief/Formular/Protokoll, Text mit Platzhaltern)
 - Logo, Farben und Briefkopf im Admin-Panel
 

@@ -47,6 +47,37 @@ if (is_post() && post('action') === 'pay_status') {
     redirect(url('document', ['id' => $id]));
 }
 
+if (is_post() && in_array(post('action'), ['share', 'share_revoke'], true)) {
+    csrf_check();
+    require_perm('documents.share');
+    if (post('action') === 'share_revoke') {
+        $sh = one('SELECT * FROM document_shares WHERE id = ? AND document_id = ?', [(int) post('share_id'), $id]);
+        if ($sh && !$sh['revoked']) {
+            q('UPDATE document_shares SET revoked = 1 WHERE id = ?', [$sh['id']]);
+            audit('document.share_revoke', 'document', $id, $doc['number'] . ' Freigabe #' . $sh['id']);
+            flash('success', 'Freigabe widerrufen.');
+        }
+        redirect(url('document', ['id' => $id]) . '#shares');
+    }
+    $kind = post('kind') === 'user' ? 'user' : 'link';
+    $agency = array_key_exists((string) post('agency'), SHARE_AGENCIES) ? (string) post('agency') : 'other';
+    $hours = array_key_exists((string) post('hours'), SHARE_DURATIONS) ? (int) post('hours') : 168;
+    $target = $kind === 'user' ? one('SELECT * FROM users WHERE id = ? AND active = 1', [(int) post('user_id')]) : null;
+    if ($doc['status'] === 'revoked') {
+        flash('error', 'Stornierte Dokumente können nicht freigegeben werden.');
+    } elseif ($kind === 'user' && (!$target || !in_array('documents.shared_view', user_permissions($target), true))) {
+        flash('error', 'Bitte ein Konto wählen, das freigegebene Dokumente ansehen darf.');
+    } else {
+        $recipient = trim((string) post('recipient')) ?: ($target ? user_display($target) : '');
+        $token = create_share($doc, $kind, $target ? (int) $target['id'] : null, $agency, $recipient, trim((string) post('purpose')), $hours);
+        if ($token) {
+            $_SESSION['new_share_url'] = share_url($token);
+        }
+        flash('success', $kind === 'link' ? 'Freigabe-Link erstellt. Er wird nur jetzt angezeigt – bitte kopieren.' : 'Dokument für ' . $recipient . ' freigegeben.');
+    }
+    redirect(url('document', ['id' => $id]) . '#shares');
+}
+
 if (is_post() && post('action') === 'addendum') {
     csrf_check();
     if (!can_add_addendum($doc)) {
@@ -229,6 +260,55 @@ ob_start(); ?>
                 <div class="hint">Ausgestellte Dokumente werden nie verändert. Ein Nachtrag wird als zusätzliches Blatt angehängt und kann nicht gelöscht werden.</div></div>
             <div class="form-actions"><button class="btn" onclick="return confirm('Nachtrag verbindlich hinzufügen?')">Nachtrag hinzufügen</button></div>
         </form>
+    <?php endif; ?>
+</section>
+<?php endif; ?>
+
+<?php if (can('documents.share')):
+    $shares = all('SELECT s.*, u.name AS user_name, c.name AS creator FROM document_shares s LEFT JOIN users u ON u.id = s.user_id
+        LEFT JOIN users c ON c.id = s.created_by WHERE s.document_id = ? ORDER BY s.id DESC', [$id]);
+    $shareAccounts = array_values(array_filter(all('SELECT * FROM users WHERE active = 1 ORDER BY name'), fn($u) => in_array('documents.shared_view', user_permissions($u), true)));
+    $newShareUrl = $_SESSION['new_share_url'] ?? null;
+    unset($_SESSION['new_share_url']); ?>
+<section class="card no-print" id="shares">
+    <h2>Freigabe für Behörden</h2>
+    <?php if ($newShareUrl): ?>
+        <div class="flash success share-new"><strong>Freigabe-Link:</strong>
+            <input readonly value="<?= e($newShareUrl) ?>" onclick="this.select()"> <button type="button" class="btn small" data-copy="<?= e($newShareUrl) ?>">Kopieren</button></div>
+    <?php endif; ?>
+    <?php if ($shares): ?>
+    <table class="list compact">
+        <thead><tr><th>Empfänger</th><th>Art</th><th>Gültig bis</th><th class="right">Abrufe</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        <?php foreach ($shares as $sh): $active = share_active($sh); ?>
+            <tr><td><strong><?= e(SHARE_AGENCIES[$sh['agency']] ?? $sh['agency']) ?></strong><?= $sh['recipient'] ? '<br><small>' . e($sh['recipient']) . '</small>' : '' ?><?= $sh['purpose'] ? '<br><small class="muted">' . e($sh['purpose']) . '</small>' : '' ?></td>
+                <td class="small"><?= $sh['kind'] === 'user' ? 'Konto ' . e($sh['user_name']) : 'Link' ?><br><span class="muted">von <?= e($sh['creator']) ?>, <?= e(fmt_datetime($sh['created_at'])) ?></span></td>
+                <td class="small"><?= $sh['expires_at'] ? e(fmt_datetime($sh['expires_at'])) : 'unbegrenzt' ?></td>
+                <td class="right small"><?= (int) $sh['views'] ?><?= $sh['last_viewed_at'] ? '<br><span class="muted">' . e(fmt_datetime($sh['last_viewed_at'])) . '</span>' : '' ?></td>
+                <td><?= $active ? '<span class="badge green">aktiv</span>' : '<span class="badge grey">' . ($sh['revoked'] ? 'widerrufen' : 'abgelaufen') . '</span>' ?></td>
+                <td class="right"><?php if ($active): ?><form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="share_revoke"><input type="hidden" name="share_id" value="<?= (int) $sh['id'] ?>"><button class="btn small">Widerrufen</button></form><?php endif; ?></td></tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php endif; ?>
+    <?php if ($doc['status'] !== 'revoked'): ?>
+    <details<?= $shares ? '' : ' open' ?>>
+        <summary>Neue Freigabe</summary>
+        <form method="post" class="form-grid">
+            <?= csrf_field() ?><input type="hidden" name="action" value="share">
+            <div class="field w-full"><div class="choices">
+                <label class="choice"><input type="radio" name="kind" value="link" checked> Geheimer Link (z. B. für Ermittlungsakte)</label>
+                <label class="choice"><input type="radio" name="kind" value="user"<?= $shareAccounts ? '' : ' disabled' ?>> An ein Behördenkonto<?= $shareAccounts ? '' : ' (keine Konten mit dem Recht „Freigegebene Dokumente ansehen“)' ?></label>
+            </div></div>
+            <div class="field w-half"><label>Stelle</label><select name="agency"><?php foreach (SHARE_AGENCIES as $k => $l): ?><option value="<?= e($k) ?>"><?= e($l) ?></option><?php endforeach; ?></select></div>
+            <div class="field w-half"><label>Gültigkeit</label><select name="hours"><?php foreach (SHARE_DURATIONS as $k => $l): ?><option value="<?= e($k) ?>"<?= selected($k, '168') ?>><?= e($l) ?></option><?php endforeach; ?></select></div>
+            <?php if ($shareAccounts): ?><div class="field w-half"><label>Konto (nur bei „An ein Behördenkonto“)</label><select name="user_id"><option value="">–</option><?php foreach ($shareAccounts as $u): ?><option value="<?= (int) $u['id'] ?>"><?= e(user_display($u)) ?></option><?php endforeach; ?></select></div><?php endif; ?>
+            <div class="field w-half"><label>Empfänger/in</label><input name="recipient" maxlength="190" placeholder="z. B. Detective J. Ramirez, Badge 4521"></div>
+            <div class="field w-full"><label>Zweck / Aktenzeichen</label><input name="purpose" maxlength="190" placeholder="z. B. Ermittlungsverfahren LSPD-2026-0815, Schweigepflichtentbindung liegt vor"></div>
+            <p class="hint w-full">Der Empfänger sieht das vollständige Dokument inkl. medizinischer Angaben. Nur mit Schweigepflichtentbindung oder richterlicher Anordnung freigeben. Jeder Abruf wird protokolliert.</p>
+            <div class="form-actions"><button class="btn primary">Freigeben</button></div>
+        </form>
+    </details>
     <?php endif; ?>
 </section>
 <?php endif; ?>

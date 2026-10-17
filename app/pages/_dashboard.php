@@ -5,7 +5,7 @@
         <p class="muted"><?= e(setting('org_name', 'San Andreas Medical Services')) ?> · <?= e(fmt_date(date('Y-m-d'), 'l, d.m.Y')) ?></p>
     </div>
     <div class="btn-row">
-        <a class="btn" href="<?= e(url('patient_edit')) ?>"><?= icon('plus') ?>Neue Patientenakte</a>
+        <?php if (can('patients.edit')): ?><a class="btn" href="<?= e(url('patient_edit')) ?>"><?= icon('plus') ?>Neue Patientenakte</a><?php endif; ?>
         <?php if (can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new')) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
     </div>
 </div>
@@ -14,11 +14,11 @@
 <div class="flash warn">Sie haben noch keine Unterschrift hinterlegt. <a href="<?= e(url('profile')) ?>">Jetzt im Profil unterschreiben</a> – sie wird auf allen Dokumenten gedruckt.</div>
 <?php endif; ?>
 
-<div class="stats">
+<?php if ($stats): ?><div class="stats">
     <?php foreach ($stats as $label => $n): ?>
         <div class="stat"><strong><?= $n ?></strong><span><?= e($label) ?></span></div>
     <?php endforeach; ?>
-</div>
+</div><?php endif; ?>
 
 <?php if (can_issue_any()): ?>
 <section class="card">
@@ -36,6 +36,7 @@
 <?php endif; ?>
 
 <div class="grid-2">
+    <?php if ($recentDocs !== null): ?>
     <section class="card">
         <div class="card-head"><h2>Zuletzt ausgestellt</h2><a href="<?= e(url('documents')) ?>">Alle</a></div>
         <table class="list">
@@ -51,6 +52,8 @@
             </tbody>
         </table>
     </section>
+    <?php endif; ?>
+    <?php if ($recentPatients !== null): ?>
     <section class="card">
         <div class="card-head"><h2>Zuletzt bearbeitete Akten</h2><a href="<?= e(url('patient_edit')) ?>">+ Neue Akte</a></div>
         <table class="list">
@@ -66,4 +69,5 @@
             </tbody>
         </table>
     </section>
+    <?php endif; ?>
 </div>

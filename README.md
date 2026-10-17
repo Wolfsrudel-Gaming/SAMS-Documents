@@ -43,6 +43,7 @@ Ausgestellte Dokumente sind **unveränderlich** (Patienten- und Ausstellerdaten 
   (Warnhinweis), Vorerkrankungen, Medikation, Notfallkontakt, Organspende, Patientenverfügung, Kennzeichnungen
 - **Dokument-Workflow**: Entwürfe speichern und an Kolleg/innen übergeben, Freigabe/Gegenzeichnung je Dokumentart (z. B. Azubis), Nachträge statt Änderungen, Unterschrift hinterlegt oder live, Schnell- und Vollmodus
 - **Abrechnung**: Gebührenordnung mit festen Preisen (Abweichung nur mit Begründung), Rechnungsstatus offen/bezahlt/gemahnt mit bis zu drei Mahnstufen, Rechnungsübersicht
+- **Freigabe für Behörden**: einzelne Dokumente per geheimem Link mit Ablaufzeit oder an ein LSPD-/Justiz-Konto freigeben, jeder Abruf wird protokolliert, jederzeit widerrufbar
 - **Fallakten**: ein Fall (z. B. Verkehrsunfall, stationärer Aufenthalt) bündelt Einträge und Dokumente; „Dokument aus Fall“ übernimmt Diagnose, Ort und Hergang
 - **Archiv**: Akten werden archiviert statt gelöscht (schreibgeschützt, reaktivierbar, eigene Suche)
 - **Akteneinträge** (Behandlung, Einsatz, Psychologisches Gespräch …) mit SOAP-/ABCDE-Vorlagen, optional **vertraulich**

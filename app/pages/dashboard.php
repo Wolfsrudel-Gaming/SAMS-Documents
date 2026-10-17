@@ -1,15 +1,25 @@
 <?php
 defined('SAMS_ROOT') || exit;
 $me = current_user();
-$stats = [
-    'Aktive Akten'          => (int) scalar('SELECT COUNT(*) FROM patients WHERE archived_at IS NULL'),
-    'Offene Fälle'          => (int) scalar("SELECT COUNT(*) FROM cases WHERE status = 'open'"),
-    'Dokumente heute'       => (int) scalar('SELECT COUNT(*) FROM documents WHERE issued_at >= ?', [date('Y-m-d 00:00:00')]),
-    'Meine Dokumente'       => (int) scalar('SELECT COUNT(*) FROM documents WHERE issued_by = ?', [$me['id']]),
-];
-$recentDocs = all('SELECT d.*, p.first_name, p.last_name, u.name AS issuer_name FROM documents d
+// Inhalte nur zeigen, wenn die Rechte dazu vorhanden sind (z. B. nicht für Behördenkonten)
+$stats = [];
+if (can('patients.view')) {
+    $stats['Aktive Akten'] = (int) scalar('SELECT COUNT(*) FROM patients WHERE archived_at IS NULL');
+    $stats['Offene Fälle'] = (int) scalar("SELECT COUNT(*) FROM cases WHERE status = 'open'");
+}
+if (can('documents.view')) {
+    $stats['Dokumente heute'] = (int) scalar('SELECT COUNT(*) FROM documents WHERE issued_at >= ?', [date('Y-m-d 00:00:00')]);
+    $stats['Meine Dokumente'] = (int) scalar('SELECT COUNT(*) FROM documents WHERE issued_by = ?', [$me['id']]);
+}
+if (can('documents.issue.*|documents.approve')) {
+    $stats['Entwürfe & Freigaben'] = draft_inbox_count();
+}
+if (can('documents.shared_view')) {
+    $stats['Für mich freigegeben'] = count(array_filter(all("SELECT * FROM document_shares WHERE kind = 'user' AND user_id = ?", [$me['id']]), 'share_active'));
+}
+$recentDocs = can('documents.view') ? all('SELECT d.*, p.first_name, p.last_name, u.name AS issuer_name FROM documents d
     LEFT JOIN patients p ON p.id = d.patient_id LEFT JOIN users u ON u.id = d.issued_by
-    ORDER BY d.id DESC LIMIT 10');
-$recentPatients = all('SELECT * FROM patients WHERE archived_at IS NULL ORDER BY updated_at DESC LIMIT 8');
+    ORDER BY d.id DESC LIMIT 10') : null;
+$recentPatients = can('patients.view') ? all('SELECT * FROM patients WHERE archived_at IS NULL ORDER BY updated_at DESC LIMIT 8') : null;
 
 render('_dashboard', compact('stats', 'recentDocs', 'recentPatients', 'me') + ['title' => 'Übersicht']);

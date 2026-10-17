@@ -39,6 +39,8 @@ function permission_catalog(): array
             'documents.approve'     => 'Dokumente freigeben (Gegenzeichnung)',
             'documents.addendum'    => 'Nachträge zu fremden Dokumenten schreiben',
             'documents.drafts_all'  => 'Alle Entwürfe einsehen',
+            'documents.share'       => 'Dokumente für Behörden freigeben (Link oder Konto)',
+            'documents.shared_view' => 'Für das eigene Konto freigegebene Dokumente ansehen (z. B. LSPD-Konten)',
         ],
         'Abrechnung' => [
             'invoices.manage' => 'Rechnungen verwalten (bezahlt, mahnen)',

@@ -30,6 +30,7 @@ $routes = [
     'draft'           => 'documents.issue.*|documents.approve|documents.drafts_all',
     'doc_types'       => 'settings.manage',
     'invoices'        => 'invoices.manage',
+    'shared'          => 'documents.shared_view',
     'prices'          => 'prices.manage',
     'users'           => 'users.view',
     'user_edit'       => 'users.view',

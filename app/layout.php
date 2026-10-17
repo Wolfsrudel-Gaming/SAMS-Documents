@@ -12,6 +12,7 @@ $navGroups = [
         'document_new' => ['Neues Dokument', 'documents.issue.*', 'doc-plus'],
         'drafts'       => ['Entwürfe & Freigaben', 'documents.issue.*|documents.approve|documents.drafts_all', 'edit'],
         'invoices'     => ['Rechnungen', 'invoices.manage', 'docs'],
+        'shared'       => ['Für mich freigegeben', 'documents.shared_view', 'external'],
     ],
     'Verwaltung' => [
         'users'    => ['Personal', 'users.view', 'users'],

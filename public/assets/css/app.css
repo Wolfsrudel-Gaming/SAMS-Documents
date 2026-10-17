@@ -444,3 +444,9 @@ html.in-tablet .topbar-right { display: none; }
 .nav-count { display: inline-block; min-width: 1.3em; padding: 0 .35em; margin-left: .35em; border-radius: 9px; background: var(--accent); color: #fff; font-size: .72rem; font-weight: 700; text-align: center; line-height: 1.35em; }
 .text-danger { color: var(--danger); font-weight: 600; }
 .pay-card .inline-form { flex-wrap: wrap; } .pay-card .inline-form input { max-width: 260px; }
+.share-new { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; } .share-new input { flex: 1; min-width: 260px; font-family: monospace; }
+.share-banner { display: flex; gap: 1rem; align-items: center; max-width: 900px; margin: 0 auto 1rem; }
+.share-banner img { width: 56px; height: 56px; }
+.share-banner > div { flex: 1; }
+.share-banner h1 { margin: 0 0 .2rem; font-size: 1.25rem; }
+.share-banner p { margin: 0; }
