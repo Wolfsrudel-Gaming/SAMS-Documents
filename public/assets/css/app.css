@@ -243,3 +243,9 @@ table.items td:last-child { width: 30px; }
 .preview { margin-top: 2rem; }
 details.revoke summary { cursor: pointer; color: var(--danger); font-weight: 600; }
 details.revoke[open] summary { margin-bottom: 1rem; }
+
+/* System */
+dl.kv { display: grid; grid-template-columns: 140px 1fr; gap: .45rem 1rem; margin: 0; font-size: .92rem; }
+dl.kv dt { color: var(--muted); }
+dl.kv dd { margin: 0; }
+pre.logbox { background: #0f1e2e; color: #c3dcf5; padding: 1rem; border-radius: 6px; font-size: .8rem; max-height: 340px; overflow: auto; white-space: pre-wrap; margin: 0; }

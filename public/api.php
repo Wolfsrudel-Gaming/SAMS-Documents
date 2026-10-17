@@ -1,14 +1,14 @@
 <?php
 /**
  * Kleine JSON-API, z.B. für eine FiveM-Resource (Tablet, /checkdoc-Befehl …).
- * Authentifizierung per Header "X-API-Key" oder Parameter "key" (siehe config.php).
+ * Authentifizierung per Header "X-API-Key" oder Parameter "key" (siehe .env, API_KEY).
  *
  *   GET api.php?action=verify&code=XXXX          Dokument prüfen
  *   GET api.php?action=patient&citizen_id=ABC123  Notfalldaten eines Patienten
  *   GET api.php?action=documents&citizen_id=ABC123 Dokumentliste eines Patienten
  */
 declare(strict_types=1);
-require __DIR__ . '/app/bootstrap.php';
+require dirname(__DIR__) . '/app/bootstrap.php';
 
 header('Content-Type: application/json; charset=utf-8');
 

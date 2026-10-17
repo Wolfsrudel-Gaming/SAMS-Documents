@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/app/bootstrap.php';
+require dirname(__DIR__) . '/app/bootstrap.php';
 start_session();
 
 $routes = [
@@ -21,6 +21,7 @@ $routes = [
     'user_edit'         => 'admin',
     'settings'          => 'admin',
     'audit'             => 'admin',
+    'system'            => 'admin',
     'profile'           => 'trainee',
 ];
 
@@ -33,4 +34,4 @@ if ($routes[$page] !== null) {
     require_role($routes[$page]);
 }
 
-require __DIR__ . '/app/pages/' . $page . '.php';
+require SAMS_ROOT . '/app/pages/' . $page . '.php';

@@ -1,4 +1,6 @@
+/.env
 /config.php
-/data/*
-!/data/.htaccess
-!/data/index.html
+/storage/*
+!/storage/.gitkeep
+/vendor/
+/node_modules/

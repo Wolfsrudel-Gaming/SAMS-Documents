@@ -1,0 +1,5 @@
+# Alternative zu systemd: crontab -e (als Benutzer, dem /var/www/sams gehört)
+# Auto-Update jede Minute prüfen (holt Updates spätestens nach ~1 Minute)
+* * * * * /var/www/sams/bin/update.sh >/dev/null 2>&1
+# Tägliches Backup um 04:30
+30 4 * * * cd /var/www/sams && php bin/sams backup daily >/dev/null 2>&1

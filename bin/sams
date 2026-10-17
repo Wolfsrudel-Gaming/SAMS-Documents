@@ -1,0 +1,126 @@
+#!/usr/bin/env php
+<?php
+/**
+ * SAMS Kommandozeile
+ *
+ *   php bin/sams status                     Version, Datenbank, offene Migrationen
+ *   php bin/sams migrate                    Offene Datenbank-Migrationen ausführen
+ *   php bin/sams create-admin [benutzer]    Admin-Konto anlegen (fragt Name und Passwort ab)
+ *   php bin/sams backup [tag]               Datenbank-Backup erstellen
+ *   php bin/sams backups                    Vorhandene Backups auflisten
+ *   php bin/sams restore <datei>            Backup einspielen (überschreibt die Datenbank!)
+ *   php bin/sams maintenance on|off         Wartungsmodus ein-/ausschalten
+ *   php bin/sams update:request             Sofortige Update-Prüfung anfordern
+ */
+declare(strict_types=1);
+
+if (PHP_SAPI !== 'cli') {
+    exit(1);
+}
+
+require dirname(__DIR__) . '/app/bootstrap.php';
+require SAMS_ROOT . '/app/backup.php';
+
+$cmd = $argv[1] ?? 'help';
+$args = array_slice($argv, 2);
+$out = fn(string $m) => fwrite(STDOUT, $m . PHP_EOL);
+
+function ask(string $question, bool $hidden = false): string
+{
+    fwrite(STDOUT, $question);
+    if ($hidden && DIRECTORY_SEPARATOR === '/' && stream_isatty(STDIN)) {
+        system('stty -echo');
+        $value = trim((string) fgets(STDIN));
+        system('stty echo');
+        fwrite(STDOUT, PHP_EOL);
+        return $value;
+    }
+    return trim((string) fgets(STDIN));
+}
+
+switch ($cmd) {
+    case 'status':
+        $g = git_version();
+        $out('SAMS ' . version_label() . ($g['branch'] ? ' · Branch ' . $g['branch'] : ''));
+        try {
+            db()->query('SELECT 1');
+            $out('Datenbank: ' . db_driver() . ' – verbunden');
+            $pending = pending_migrations();
+            $out('Migrationen: ' . (count($pending) ? count($pending) . ' offen (' . implode(', ', $pending) . ')' : 'aktuell'));
+            $out('Benutzer: ' . (int) scalar('SELECT COUNT(*) FROM users'));
+        } catch (Throwable $e) {
+            $out('Datenbank: FEHLER – ' . $e->getMessage());
+        }
+        $out('Wartungsmodus: ' . (in_maintenance() ? 'AN' : 'aus'));
+        $last = update_status();
+        if ($last) {
+            $out('Letztes Update: ' . ($last['finished_at'] ?? '?') . ' – ' . ($last['status'] ?? '?') . ' ' . ($last['to'] ?? ''));
+        }
+        break;
+
+    case 'migrate':
+        run_migrations($out);
+        break;
+
+    case 'create-admin':
+        run_migrations(fn() => null);
+        $username = $args[0] ?? ask('Benutzername: ');
+        if (!preg_match('/^[A-Za-z0-9._\-]{3,40}$/', $username)) {
+            $out('Ungültiger Benutzername.');
+            exit(1);
+        }
+        if (scalar('SELECT id FROM users WHERE username = ?', [$username])) {
+            $out('Benutzername existiert bereits.');
+            exit(1);
+        }
+        $name = ask('Name (Vorname Nachname): ');
+        $password = ask('Passwort (min. 8 Zeichen): ', true);
+        if (strlen($password) < 8 || $name === '') {
+            $out('Name fehlt oder Passwort zu kurz.');
+            exit(1);
+        }
+        insert('users', [
+            'username' => $username, 'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+            'name' => $name, 'title' => '', 'role' => 'admin', 'rank_name' => 'Administrator', 'created_at' => now(),
+        ]);
+        $out("Admin-Konto \"$username\" angelegt.");
+        break;
+
+    case 'backup':
+        $file = create_backup($args[0] ?? '');
+        $out('Backup erstellt: ' . $file);
+        break;
+
+    case 'backups':
+        foreach (list_backups() as $b) {
+            $out(sprintf('%s  %s  %8.1f KB', date('Y-m-d H:i', $b['time']), $b['file'], $b['size'] / 1024));
+        }
+        break;
+
+    case 'restore':
+        if (empty($args[0])) {
+            $out('Bitte Backup-Datei angeben (siehe: php bin/sams backups).');
+            exit(1);
+        }
+        if (!in_array('--force', $args, true) && strtolower(ask('Datenbank wird überschrieben. Fortfahren? (ja/nein) ')) !== 'ja') {
+            exit(1);
+        }
+        restore_backup($args[0]);
+        $out('Backup eingespielt.');
+        break;
+
+    case 'maintenance':
+        set_maintenance(($args[0] ?? '') === 'on', 'manuell');
+        $out('Wartungsmodus: ' . (in_maintenance() ? 'AN' : 'aus'));
+        break;
+
+    case 'update:request':
+        request_update('cli');
+        $out('Update-Prüfung angefordert. Der Update-Timer übernimmt beim nächsten Lauf.');
+        break;
+
+    default:
+        $doc = file_get_contents(__FILE__);
+        preg_match('#/\*\*(.*?)\*/#s', $doc, $m);
+        $out(trim(preg_replace('/^\s*\* ?/m', '', $m[1] ?? '')));
+}

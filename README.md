@@ -5,9 +5,10 @@ Medics und Ärzt/innen führen Patientenakten und stellen Dokumente aus, die wie
 aussehen: Vordrucke in Originalfarben, Briefkopf nach DIN 5008 mit Falz- und Lochmarken, Arztstempel und Dienstsiegel
 mit Tinteneffekt, handschriftliche Unterschrift, Barcode und QR-Code zur Echtheitsprüfung.
 
-- **PHP 8.1+**, keine Frameworks, kein Composer, kein Node – einfach hochladen
-- **SQLite** (ohne Einrichtung) oder **MySQL/MariaDB**
-- Läuft auf jedem normalen Webspace, als Unterseite der Community-Website oder im Spiel (NUI/iframe)
+- **PHP 8.2+** und **MySQL/MariaDB**, keine Frameworks, keine Build-Schritte
+- Betrieb auf einem Linux-Server, wahlweise mit **Docker** oder klassisch mit nginx + PHP-FPM
+- **Auto-Update:** Ein neuer Stand auf GitHub ist nach spätestens ~2 Minuten auf dem Server aktiv (inkl. Backup, Datenbank-Migration und automatischem Zurücksetzen bei Fehlern)
+- Konzept und Etappenplan: [`docs/KONZEPT.md`](docs/KONZEPT.md)
 
 ## Dokumentarten
 
@@ -52,36 +53,113 @@ Ausgestellte Dokumente sind **unveränderlich** (Patienten- und Ausstellerdaten 
 
 ## Installation
 
-1. Alle Dateien auf den Webspace hochladen (z. B. nach `https://deine-community.de/sams/`).
-2. Sicherstellen, dass das Verzeichnis `data/` vom Webserver beschreibbar ist (bei SQLite) – bzw. dass PHP
-   `config.php` im Hauptverzeichnis anlegen darf.
-3. `install.php` im Browser aufrufen, Datenbank wählen und das erste Leitungs-Konto anlegen.
-4. `install.php` danach vom Server löschen.
-5. Einloggen → **Einstellungen** (Name, Adresse, Logo …) → **Personal** anlegen → jede/r Mitarbeitende hinterlegt im
-   **Profil** Titel, Fachrichtung, Arzt-Nr. und die Unterschrift.
+Voraussetzungen: Linux-Server mit Git und entweder **Docker** (empfohlen) oder **nginx + PHP 8.2+ (php-fpm, pdo_mysql, gd) + MariaDB**.
 
-Lokal testen: `php -S localhost:8080` im Projektordner, dann `http://localhost:8080` öffnen.
+### 1. Code holen
 
-### Webserver-Hinweise
+Das Repository ist privat, der Server braucht daher einen **Deploy-Key** (nur Lesezugriff):
 
-- **Apache**: Die mitgelieferten `.htaccess`-Dateien sperren `app/`, `data/` und `config.php`.
-- **nginx**: diese Regeln ergänzen:
-  ```nginx
-  location ~ ^/(app|data)/ { deny all; }
-  location ~ /(config|config\.sample)\.php$ { deny all; }
-  ```
-  (Zusätzlich erhält die SQLite-Datei bei der Installation einen zufälligen Namen.)
-- **HTTPS** wird dringend empfohlen.
+```bash
+sudo adduser --system --group --shell /bin/bash --home /home/sams sams   # eigener Benutzer für die Anwendung
+sudo -u sams ssh-keygen -t ed25519 -N "" -f /home/sams/.ssh/id_ed25519
+sudo cat /home/sams/.ssh/id_ed25519.pub
+```
+
+Den angezeigten Schlüssel in GitHub unter **Repository → Settings → Deploy keys → Add deploy key** eintragen (ohne Schreibrecht). Dann:
+
+```bash
+sudo mkdir -p /var/www/sams && sudo chown sams:www-data /var/www/sams
+sudo -u sams git clone git@github.com:Wolfsrudel-Gaming/SAMS-Documents.git /var/www/sams
+cd /var/www/sams
+sudo -u sams cp .env.example .env
+sudo -u sams nano .env        # Passwörter, APP_URL, UPDATE_BRANCH setzen
+```
+
+> Die Vorlagen in `deploy/` gehen von `/var/www/sams` und dem Benutzer `sams` aus.
+
+### 2a. Start mit Docker (empfohlen)
+
+```bash
+docker compose up -d --build
+docker compose exec -T app php bin/sams migrate
+docker compose exec app php bin/sams create-admin admin
+```
+
+In der `.env` für Docker: `DB_HOST=db` und `UPDATE_PHP_CMD=docker compose exec -T app php`.
+Der Web-Container lauscht auf `127.0.0.1:8080` – davor gehört ein Reverse-Proxy mit HTTPS (z. B. nginx mit certbot oder Caddy) für eure Domain. Der Benutzer `sams` muss Docker benutzen dürfen (`sudo usermod -aG docker sams`).
+
+### 2b. Start ohne Docker
+
+- Datenbank und Benutzer in MariaDB anlegen, Zugangsdaten in `.env` eintragen (`DB_HOST=127.0.0.1`)
+- nginx: Vorlage [`deploy/nginx.conf`](deploy/nginx.conf) – **Webroot ist ausschließlich `public/`**
+- `storage/` muss für PHP-FPM beschreibbar sein: `sudo chgrp -R www-data storage && sudo chmod -R g+rwX storage`
+- Datenbank anlegen und Admin-Konto erstellen:
+
+```bash
+php bin/sams migrate
+php bin/sams create-admin admin
+```
+
+(Alternativ führt `https://eure-domain/install.php` im Browser durch die Einrichtung.)
+
+### 3. Auto-Update einrichten
+
+`bin/update.sh` prüft per `git fetch`, ob es auf dem eingestellten Branch (`UPDATE_BRANCH`) einen neuen Commit gibt. Wenn ja:
+
+1. Datenbank-Backup (`storage/backups/…-pre-update…`)
+2. Wartungsmodus an (Nutzer sehen „Update wird eingespielt“)
+3. Code auf den neuen Stand bringen – versehentliche lokale Änderungen werden vorher als Patch in `storage/update/` gesichert
+4. Datenbank-Migrationen ausführen
+5. Wartungsmodus aus, optional Meldung nach Discord (`UPDATE_DISCORD_WEBHOOK`)
+
+**Schlägt eine Migration fehl,** werden Code und Datenbank automatisch auf den vorherigen Stand zurückgesetzt. Der fehlerhafte Commit wird nicht erneut versucht, bis ein neuer Commit kommt oder im Admin-Bereich „Jetzt auf Updates prüfen“ geklickt wird.
+
+**Timer (systemd, empfohlen)** – prüft alle 2 Minuten:
+
+```bash
+sudo cp deploy/systemd/sams-update.* deploy/systemd/sams-backup.* /etc/systemd/system/
+sudo nano /etc/systemd/system/sams-update.service   # User und Pfade prüfen
+sudo systemctl daemon-reload
+sudo systemctl enable --now sams-update.timer sams-update.path sams-backup.timer
+```
+
+Alternativ per Cron: [`deploy/crontab.example`](deploy/crontab.example).
+
+**Sofort-Update per GitHub-Webhook (optional):** In GitHub unter *Settings → Webhooks* eintragen:
+Payload-URL `https://eure-domain/hooks/github.php`, Content type `application/json`, Secret = `UPDATE_WEBHOOK_SECRET` aus der `.env`, Event „push“.
+Der Webhook legt nur eine Anforderung ab; `sams-update.path` startet das Update dann sofort.
+
+**Kontrolle:** Admin-Bereich → *System & Updates* zeigt Version, ob der Timer läuft, das letzte Update, das Update-Protokoll und die Backups. Für Monitoring gibt es `https://eure-domain/health.php`.
+
+> Wichtig: Auf dem Server nie direkt Code ändern – alle Änderungen kommen über GitHub. Konfiguration (`.env`) und Daten (`storage/`) werden vom Update nicht angefasst.
+
+### Kommandozeile
+
+```
+php bin/sams status                  Version, Datenbank, offene Migrationen, letztes Update
+php bin/sams migrate                 Datenbank-Migrationen ausführen
+php bin/sams create-admin [name]     Admin-Konto anlegen
+php bin/sams backup [tag]            Backup erstellen        php bin/sams backups   Backups auflisten
+php bin/sams restore <datei>         Backup einspielen
+php bin/sams maintenance on|off      Wartungsmodus
+bin/update.sh [--force]              Update sofort ausführen
+```
+
+Mit Docker jeweils `docker compose exec -T app php bin/sams …` voranstellen.
+
+### Backups
+
+Täglich um 04:30 (`sams-backup.timer`) und vor jedem Update. Aufbewahrung: `BACKUP_KEEP_DAYS` (Standard 14 Tage), Ablage in `storage/backups/`. Für echte Ausfallsicherheit den Ordner zusätzlich auf einen anderen Server kopieren.
 
 ### Einbindung im Spiel (FiveM NUI / Tablet-Resource)
 
 Das System kann direkt per URL in einer NUI-Seite oder einem iframe geladen werden. Läuft die Einbindung über eine
-andere Domain, in `config.php` `'cookie_samesite' => 'None'` setzen (erfordert HTTPS), damit die Anmeldung im iframe
+andere Domain, in der `.env` `SESSION_SAMESITE=None` setzen (erfordert HTTPS), damit die Anmeldung im iframe
 funktioniert.
 
 ### API für FiveM-Resourcen
 
-In `config.php` steht ein `api_key` (wird bei der Installation erzeugt; leer = API deaktiviert).
+In der `.env` steht `API_KEY` (leer = API deaktiviert).
 Den Schlüssel nur serverseitig verwenden (server.lua), nie im Client.
 
 ```
@@ -113,14 +191,23 @@ Validierung, Speicherung, Nummerierung und Echtheitsprüfung funktionieren autom
 ## Projektstruktur
 
 ```
-index.php            Router (alle internen Seiten)
-verify.php           Öffentliche Echtheitsprüfung
-api.php              JSON-API
-install.php          Einrichtung
-app/                 Logik, Seiten (pages/), Druckvorlagen (templates/)
-assets/              CSS, JS, Logo, Unterschrift-Schrift, Bibliotheken
-data/                SQLite-Datenbank (nicht öffentlich)
+public/              Webroot (einziger öffentlich erreichbarer Ordner)
+  index.php          Router für alle internen Seiten
+  verify.php         Öffentliche Echtheitsprüfung
+  api.php            JSON-API für FiveM
+  health.php         Statusabfrage für Monitoring
+  hooks/github.php   GitHub-Webhook für Sofort-Updates
+  assets/            CSS, JS, Logo, Schriften
+app/                 Anwendungslogik, Seiten (pages/), Druckvorlagen (templates/)
+database/migrations/ Datenbank-Migrationen (laufen automatisch beim Update)
+bin/                 sams (Kommandozeile), update.sh (Auto-Update)
+deploy/              systemd-Units, Cron, nginx-Vorlage
+docker/, Dockerfile, docker-compose.yml
+storage/             Datenbank (SQLite), Logs, Backups, Update-Status – nicht im Git
+docs/                Konzept
 ```
+
+**Neue Datenbank-Änderungen** immer als neue Datei in `database/migrations/` (z. B. `0003_ranks.php`) anlegen, nie eine bestehende Migration ändern.
 
 ## Hinweis
 

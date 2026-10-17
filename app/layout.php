@@ -14,6 +14,7 @@ $adminNav = [
     'users'    => ['Personal', 'admin'],
     'settings' => ['Einstellungen', 'admin'],
     'audit'    => ['Zugriffsprotokoll', 'admin'],
+    'system'   => ['System & Updates', 'admin'],
 ];
 ?><!doctype html>
 <html lang="de">

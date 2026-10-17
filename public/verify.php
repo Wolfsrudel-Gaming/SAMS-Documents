@@ -4,7 +4,7 @@
  * Zeigt nur Metadaten, keine medizinischen Inhalte.
  */
 declare(strict_types=1);
-require __DIR__ . '/app/bootstrap.php';
+require dirname(__DIR__) . '/app/bootstrap.php';
 
 $code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) ($_GET['c'] ?? '')));
 $doc = null;
