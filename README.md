@@ -61,6 +61,10 @@ Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt au
 - **Ausbildung**: Lehrgänge mit Lernmodulen und Online-Prüfung, bei Bestehen automatisch Qualifikation und Zertifikat
 - **Personalakte**: Laufbahn mit automatischen Einträgen (Rang, Qualifikationen, Beförderung, Abmahnung …), Notizen, Personaldokumente, Dienstzeiten; eigene Akte für alle einsehbar
 - **Dienstzeiten**: Ein-/Ausstempeln im Spiel (`/dienst`) oder im Browser, „Jetzt im Dienst“, Wochenstunden, Korrekturen durch die Leitung
+- **Dienstplan**: Schichten mit Mindest-/Höchstbesetzung, selbst eintragen oder einteilen lassen, Tausch („zur Übernahme anbieten“), Erinnerung 1 Stunde vorher, Warnung bei Unterbesetzung, Abgleich mit der gestempelten Dienstzeit, Vorwoche übernehmen
+- **Medikamentenbestand & BtM-Buch**: Artikel mit Mindestbestand, Zugang/Entnahme/Verwurf/Korrektur mit lückenlosem Protokoll; Betäubungsmittel nur mit Patient bzw. Zeuge, Karteikarte je BtM mit Monatsübertrag, Bestandsprüfung und Druckansicht
+- **Rezepte einlösen**: in der Klinik oder in der **Apotheke im Spiel** gegen ox_inventory-Items; BtM nur auf BtM-Rezept, Gültigkeit (28 bzw. 7 Tage), jede Position nur einmal
+- **Anhänge, Benachrichtigungen, Suche**: Fotos/Scans/PDF an Akten und Fällen, Glocke mit persönlichen Benachrichtigungen (optional per Discord-DM), Volltextsuche über alle Bereiche, doppelte Akten zusammenführen
 - **Vorlagen-Editor**: eigene Dokumentarten ohne Programmierung (Felder, Layout Brief/Formular/Protokoll, Text mit Platzhaltern, Stempel, Ausstellrechte)
 - **Dokument-Workflow**: Entwürfe speichern und an Kolleg/innen übergeben, Freigabe/Gegenzeichnung je Dokumentart (z. B. Azubis), Nachträge statt Änderungen, Unterschrift hinterlegt oder live, Schnell- und Vollmodus
 - **Abrechnung**: Gebührenordnung mit festen Preisen (Abweichung nur mit Begründung), Rechnungsstatus offen/bezahlt/gemahnt mit bis zu drei Mahnstufen, Rechnungsübersicht
@@ -228,6 +232,7 @@ GET  api.php?action=documents&citizen_id=ABC12345 → Dokumente eines Bürgers
 GET  api.php?action=printers                      → Drucker in der Spielwelt
 POST api.php?action=tablet_login | tablet_session | tablet_launch | tablet_logout
 POST api.php?action=printer_jobs | job_pickup | jobs_since | document_item
+POST api.php?action=duty_set | duty_status | rx_check | rx_redeem
 Header: X-API-Key: <api_key>
 ```
 

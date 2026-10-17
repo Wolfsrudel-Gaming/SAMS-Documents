@@ -21,6 +21,8 @@
  *   document_item  {token}                                         → Ansichts-URL eines Dokument-Items
  *   duty_set       {token, on}                                     → Dienst beginnen/beenden
  *   duty_status    {token}                                         → im Dienst? seit wann?
+ *   rx_check       {tokens: [sams_token, …]}                       → Rezepte mit Positionen und Einlösbarkeit
+ *   rx_redeem      {token, license, player}                        → Rezept einlösen, Items für ox_inventory
  */
 declare(strict_types=1);
 define('SAMS_IGNORE_MAINTENANCE', true);
@@ -203,6 +205,42 @@ switch ($action) {
         }
         $open = duty_open_session((int) $tu[1]['id']);
         respond(['ok' => true, 'on_duty' => (bool) $open, 'since' => $open['started_at'] ?? null, 'seconds' => $open ? duty_seconds($open) : 0]);
+        // no break
+
+    // --------------------------------------------------------- Apotheke
+    case 'rx_check':
+        $tokens = array_slice(array_values(array_filter((array) ($body['tokens'] ?? []), fn($t) => is_string($t) && strlen($t) >= 32)), 0, 20);
+        $out = [];
+        foreach ($tokens as $t) {
+            $doc = one("SELECT * FROM documents WHERE view_token = ? AND type = 'rezept'", [$t]);
+            if (!$doc) {
+                continue;
+            }
+            $p = json_decode((string) $doc['patient_snapshot'], true) ?: [];
+            $out[] = [
+                'token' => $t, 'number' => $doc['number'], 'issued_at' => fmt_date($doc['issued_at']),
+                'patient' => trim(mb_substr((string) ($p['first_name'] ?? ''), 0, 1) . '. ' . ($p['last_name'] ?? '')),
+                'problem' => rx_problem($doc),
+                'lines' => array_map(fn($l) => ['text' => $l['text'], 'status' => $l['status'], 'label' => RX_STATUS[$l['status']],
+                    'item' => $l['med']['item_name'] ?? '', 'count' => $l['qty'] * max(1, (int) ($l['med']['item_count'] ?? 1))], rx_lines($doc, true)),
+            ];
+        }
+        respond(['ok' => true, 'prescriptions' => $out]);
+        // no break
+    case 'rx_redeem':
+        $doc = $in('token') !== '' ? one("SELECT * FROM documents WHERE view_token = ? AND type = 'rezept'", [$in('token')]) : null;
+        if (!$doc) {
+            respond(['ok' => false, 'error' => 'Rezept nicht gefunden.'], 404);
+        }
+        if ($problem = rx_problem($doc)) {
+            respond(['ok' => false, 'error' => $problem], 409);
+        }
+        [$given, $notes] = rx_redeem($doc, 'game', null, $in('player'), $in('license'));
+        if (!$given) {
+            respond(['ok' => false, 'error' => $notes ? implode(' · ', $notes) : 'Alle Positionen sind bereits eingelöst.', 'notes' => $notes], 409);
+        }
+        respond(['ok' => true, 'number' => $doc['number'], 'notes' => $notes,
+            'items' => array_map(fn($g) => ['item' => $g['item'], 'count' => $g['count'], 'name' => $g['name']], $given)]);
         // no break
 
     default:

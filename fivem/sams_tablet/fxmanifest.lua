@@ -5,7 +5,7 @@ lua54 'yes'
 name 'sams_tablet'
 description 'SAMS Tablet – Dokumentensystem im Spiel, Drucker und Dokument-Items'
 author 'SAMS'
-version '1.1.0'
+version '1.2.0'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -18,11 +18,13 @@ client_scripts {
     'client/printers.lua',
     'client/document.lua',
     'client/duty.lua',
+    'client/pharmacy.lua',
 }
 
 server_scripts {
     'server/api.lua',
     'server/main.lua',
+    'server/pharmacy.lua',
 }
 
 ui_page 'web/index.html'

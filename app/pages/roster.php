@@ -185,7 +185,7 @@ ob_start(); ?>
             <div class="shift <?= $state ?><?= $mine ? ' mine' : '' ?><?= $past ? ' past' : '' ?>" id="shift-<?= (int) $s['id'] ?>">
                 <div class="shift-head">
                     <strong><?= e(fmt_date($s['starts_at'], 'H:i')) ?>–<?= e(fmt_date($s['ends_at'], 'H:i')) ?></strong>
-                    <span class="badge <?= $state === 'under' ? 'red' : ($state === 'full' ? 'grey' : 'green') ?>" title="besetzt / Mindestbesetzung"><?= $count ?>/<?= (int) $s['min_staff'] ?><?= (int) $s['max_staff'] ? ' (max. ' . (int) $s['max_staff'] . ')' : '' ?></span>
+                    <span class="badge <?= $state === 'under' ? 'red' : ($state === 'full' ? 'grey' : 'green') ?>" title="besetzt / Mindestbesetzung<?= (int) $s['max_staff'] ? ' (höchstens ' . (int) $s['max_staff'] . ')' : '' ?>"><?= $count ?>/<?= (int) $s['min_staff'] ?><?= (int) $s['max_staff'] ? ' · max ' . (int) $s['max_staff'] : '' ?></span>
                 </div>
                 <div class="shift-title"><?= e($s['title'] ?: 'Schicht') ?><?= $s['department'] ? ' <small class="muted">· ' . e($s['department']) . '</small>' : '' ?><?= $running ? ' <span class="badge green">läuft</span>' : '' ?></div>
                 <?php if ($s['note']): ?><div class="small muted"><?= e($s['note']) ?></div><?php endif; ?>

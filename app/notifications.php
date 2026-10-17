@@ -15,6 +15,7 @@ const NOTIFY_KINDS = [
     'share'     => 'Freigegebene Dokumente',
     'personnel' => 'Personalakte',
     'roster'    => 'Dienstplan',
+    'stock'     => 'Medikamentenbestand',
 ];
 
 /** Benachrichtigung an ein Konto (nicht an sich selbst). */

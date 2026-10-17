@@ -83,6 +83,26 @@ if (is_post() && in_array(post('action'), ['share', 'share_revoke'], true)) {
     redirect(url('document', ['id' => $id]) . '#shares');
 }
 
+if (is_post() && post('action') === 'rx_redeem' && $doc['type'] === 'rezept') {
+    csrf_check();
+    require_perm('stock.dispense');
+    if ($problem = rx_problem($doc)) {
+        flash('error', $problem);
+    } else {
+        [$given, $notes] = rx_redeem($doc, 'web', (int) $me['id']);
+        if ($given) {
+            flash('success', 'Ausgegeben: ' . implode(', ', array_map(fn($g) => $g['qty'] . '× ' . $g['name'], $given)) . '.');
+        }
+        foreach ($notes as $n) {
+            flash('warn', $n);
+        }
+        if (!$given && !$notes) {
+            flash('warn', 'Alle Positionen sind bereits eingelöst.');
+        }
+    }
+    redirect(url('document', ['id' => $id]));
+}
+
 if (is_post() && post('action') === 'addendum') {
     csrf_check();
     if (!can_add_addendum($doc)) {
@@ -199,6 +219,26 @@ ob_start(); ?>
             <button class="btn small" name="to" value="open">Zahlung zurücknehmen</button>
         <?php endif; ?>
     </form>
+</section>
+<?php endif; ?>
+
+<?php if ($doc['type'] === 'rezept' && (can('stock.view') || can('stock.dispense'))): $rxLines = rx_lines($doc); $rxProblem = rx_problem($doc); ?>
+<section class="card no-print rx-card">
+    <div class="card-head"><h2>Einlösung</h2><?= $rxProblem ? '<span class="badge red">' . e($rxProblem) . '</span>' : '<span class="muted small">gültig bis ' . e(fmt_date(date('Y-m-d', strtotime($doc['issued_at'] . ' +' . rx_valid_days(($doc['data']['form'] ?? '') === 'btm') . ' days')))) . '</span>' ?></div>
+    <table class="list compact">
+        <tbody>
+        <?php foreach ($rxLines as $l): ?>
+            <tr><td><?= e($l['text']) ?><?= $l['qty'] > 1 ? ' <small class="muted">(' . $l['qty'] . ' Einheiten)</small>' : '' ?><br><small class="muted"><?= $l['med'] ? 'Sortiment: ' . e($l['med']['name']) . ' · Bestand ' . (int) $l['med']['stock'] : 'kein passender Artikel im Bestand' ?></small></td>
+                <td class="right"><?php if ($l['redemption']): $r = $l['redemption']; ?><span class="badge green">eingelöst</span><br><small class="muted"><?= e(fmt_datetime($r['created_at'])) ?> · <?= $r['source'] === 'game' ? 'Apotheke (' . e($r['player']) . ')' : e((string) $r['user_name']) ?></small>
+                    <?php else: ?><span class="badge <?= $l['status'] === 'ok' ? 'blue' : 'orange' ?>"><?= e(RX_STATUS[$l['status']]) ?></span><?php endif; ?></td></tr>
+        <?php endforeach; ?>
+        <?php if (!$rxLines): ?><tr><td class="muted">Keine Positionen.</td></tr><?php endif; ?>
+        </tbody>
+    </table>
+    <?php if (!$rxProblem && can('stock.dispense') && array_filter($rxLines, fn($l) => $l['status'] === 'ok')): ?>
+        <form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="rx_redeem"><button class="btn primary">In der Klinik ausgeben</button>
+            <span class="hint">bucht die einlösbaren Positionen aus dem Bestand aus</span></form>
+    <?php endif; ?>
 </section>
 <?php endif; ?>
 

@@ -459,6 +459,8 @@ function datalists(): array
             $lists[$key] = $custom;
         }
     }
+    // Artikel aus dem Medikamentenbestand immer vorschlagen (sichere Zuordnung beim Einlösen)
+    $lists['meds'] = array_values(array_unique(array_merge(db_column_list('SELECT name FROM medications WHERE active = 1 ORDER BY name'), $lists['meds'] ?? [])));
     return $lists;
 }
 

@@ -620,7 +620,8 @@ ul.plain li:last-child { border-bottom: 0; }
 .shift.full { border-left-color: #98a6b4; }
 .shift.mine { background: #eef6ff; }
 .shift.past { opacity: .7; }
-.shift-head { display: flex; justify-content: space-between; align-items: center; gap: .3rem; }
+.shift-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .2rem .3rem; }
+.shift-head .badge { white-space: nowrap; font-size: .72rem; }
 .shift-title { margin: .1rem 0; }
 .shift-staff { list-style: none; margin: .3rem 0; padding: 0; }
 .shift-staff li { display: flex; justify-content: space-between; align-items: center; gap: .3rem; padding: .1rem 0; }
@@ -631,3 +632,18 @@ ul.plain li:last-child { border-bottom: 0; }
 .shift-actions select { max-width: 100%; font-size: .8rem; }
 @media (max-width: 1100px) { .roster-week { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .roster-week { grid-template-columns: 1fr; } }
+
+/* BtM-Buch */
+.btm-head { display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 12px; margin-bottom: .6rem; }
+.btm-head small { display: block; }
+.btm-head h2 { margin: 0; }
+.btm-table tfoot th { border-top: 2px solid var(--line-soft); }
+.btm-sign { margin-top: 2.5rem; width: 50%; border-top: 1px solid #000; padding-top: .2rem; font-size: .8rem; }
+.print-only { display: none; }
+@media (max-width: 760px) { .btm-head { grid-template-columns: 1fr 1fr; } }
+@media print {
+    .topbar, .sidenav, .no-print, .flash { display: none !important; }
+    .print-only { display: block; }
+    body.has-nav .main { margin: 0; padding: 0; }
+    .card { border: 0; box-shadow: none; }
+}

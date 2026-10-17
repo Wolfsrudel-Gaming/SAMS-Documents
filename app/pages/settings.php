@@ -43,6 +43,10 @@ $keys = [
         'session_idle_minutes' => ['Automatisch abmelden nach … Minuten ohne Aktivität (0 = aus)', '0'],
         'attachment_max_mb'    => ['Maximale Größe von Anhängen in MB (begrenzt zusätzlich durch PHP/Webserver)', '10'],
     ],
+    'Apotheke' => [
+        'rx_valid_days'     => ['Rezepte gültig (Tage ab Ausstellung)', '28'],
+        'rx_valid_days_btm' => ['BtM-Rezepte gültig (Tage ab Ausstellung)', '7'],
+    ],
     'Dienstzeiten' => [
         'duty_max_hours' => ['Vergessene Schichten automatisch beenden nach (Stunden)', '12'],
         'duty_command'   => ['Befehl im Spiel (Hinweistext, ohne /)', 'dienst'],
@@ -67,6 +71,8 @@ if (is_post()) {
             }
             if ($k === 'duty_max_hours') {
                 $v = (string) max(1, min(48, (int) $v ?: 12));
+            } elseif (in_array($k, ['rx_valid_days', 'rx_valid_days_btm'], true)) {
+                $v = (string) max(1, min(365, (int) $v ?: 28));
             } elseif ($k === 'roster_lock_hours') {
                 $v = (string) max(0, min(168, (int) $v));
             } elseif ($k === 'duty_command') {

@@ -32,6 +32,14 @@ Config.PrinterBlip = { sprite = 184, color = 1, scale = 0.7, label = 'SAMS Druck
 Config.DutyCommand = 'dienst'
 Config.DutyEndOnDisconnect = true
 
+-- Apotheke: Rezepte (Dokument-Items) gegen Medikamenten-Items einlösen.
+-- Welche ox_inventory-Items es gibt, wird im Websystem unter „Medikamente & BtM“ je Artikel eingetragen.
+Config.Pharmacies = {
+    { name = 'Apotheke Pillbox Hill', coords = vec4(318.6, -585.4, 43.28, 160.0), ped = 's_m_m_doctor_01', blip = true },
+}
+Config.PharmacyBlip = { sprite = 51, color = 2, scale = 0.7 }
+Config.PharmacyDuration = 3000         -- ms Fortschrittsbalken beim Einlösen
+
 -- Dokument zeigen: maximale Entfernung zum anderen Spieler
 Config.ShowDistance = 3.0
 
@@ -65,4 +73,9 @@ Config.Text = {
     dutyOn = 'Du bist jetzt im Dienst.',
     dutyOff = 'Du bist jetzt außer Dienst (%s).',
     dutyLogin = 'Melde dich zuerst im Tablet an, um zu stempeln.',
+    pharmacyTarget = 'Rezept einlösen',
+    pharmacyHelp = '[E] Rezept einlösen',
+    noPrescription = 'Du hast kein Rezept dabei.',
+    redeeming = 'Rezept wird eingelöst …',
+    redeemed = 'Erhalten: %s',
 }

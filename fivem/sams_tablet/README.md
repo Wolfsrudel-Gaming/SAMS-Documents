@@ -40,6 +40,7 @@ Den API-Schlüssel zeigt das Einrichtungsskript des Websystems am Ende an. Alter
 | `Config.PrinterBlip` | Kartensymbol für Drucker (nur für angemeldete Mitarbeitende, wenn im Websystem aktiviert) |
 | `Config.DutyCommand` | Befehl zum Stempeln (Standard `/dienst`, `nil` = aus) |
 | `Config.DutyEndOnDisconnect` | Beim Verlassen des Servers automatisch ausstempeln |
+| `Config.Pharmacies` | Apotheken (Position, optional Ped und Kartensymbol), an denen Rezepte eingelöst werden |
 | `Config.Anim` | Animationen und Requisiten (Tablet, Klemmbrett, Drucker) |
 | `Config.Text` | Alle Texte |
 
@@ -64,6 +65,14 @@ local imDienst = exports.sams_tablet:IsOnDuty(source)
 exports.sams_tablet:SetOnDuty(source, true)
 AddEventHandler('sams:dutyChanged', function(src, onDuty) ... end)
 ```
+
+## Apotheke
+
+- Ein ausgedrucktes Rezept (Dokument-Item) wird an einer Apotheke aus `Config.Pharmacies` eingelöst – per ox_target am Apotheken-Ped oder mit Taste E.
+- Das Websystem ordnet jede Rezeptzeile einem Artikel aus *Medikamente & BtM* zu und gibt die dort eingetragenen **ox_inventory-Items** aus (Feld „ox_inventory-Item“ und „Items je Einheit“). Artikel ohne Item gibt es nur in der Klinik.
+- „2x Ibuprofen …“ in der Rezeptzeile = zwei Einheiten. Betäubungsmittel gibt es nur auf dem BtM-Rezept. Rezepte gelten 28 Tage (BtM 7 Tage, einstellbar).
+- Der Bestand wird ausgebucht (bei BtM im BtM-Buch). Jede Position lässt sich nur einmal einlösen; das Rezept bleibt als Beleg im Inventar und ist als „eingelöst“ gekennzeichnet.
+- Die Medikamenten-Items selbst (z. B. `painkillers`) müssen in `ox_inventory/data/items.lua` existieren – ihre Wirkung regelt dein Medizin-Script.
 
 ## Exports
 
