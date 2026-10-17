@@ -152,16 +152,21 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - Discord-Login für Mitarbeitende (2FA bleibt Pflicht), Verknüpfung im Profil, **Rollen-Sync** (höchste zugeordnete Rolle → Rang) stündlich und bei jeder Anmeldung
 - Versand über eine Warteschlange (nach der Seitenauslieferung bzw. per `php bin/sams cron`, läuft mit dem Update-Timer mit) – Discord bremst das System nie aus
 
-### Ausbau nach Etappe 7 ✅ *v1.18.0 – v1.19.0*
+### Ausbau nach Etappe 7 ✅ *v1.18.0 – v1.20.0*
 - Absicherung: Testsuite im Repo (`php tests/run.php`) und in GitHub Actions, Selbsttest und Erreichbarkeitsprüfung nach jedem Auto-Update mit Rollback, automatische Abmeldung (Opt-in), Ratenbremse für öffentliche Seiten
 - Anhänge an Akten und Fällen, doppelte Akten zusammenführen, Volltextsuche, persönliche Benachrichtigungen (Glocke, optional Discord-DM)
 - Dienstplan mit Mindest-/Höchstbesetzung, Tausch, Erinnerungen, Unterbesetzungs-Warnung und Abgleich mit der Dienstzeit
 - Medikamentenbestand mit BtM-Buch (Patient bzw. Zeuge Pflicht, Bestandsprüfung, Druckansicht)
 - Rezepte einlösen: in der Klinik oder in der Apotheke im Spiel gegen ox_inventory-Items
 
+- Mehrere **Standorte** mit eigenem Briefkopf (wird beim Ausstellen ins Dokument eingefroren), **Handbuch** im Wiki, **Mehrsprachigkeit** der Oberfläche (Deutsch/Englisch, erweiterbar über `lang/<sprache>.php`) *(v1.20.0)*
+
+### Fraktionen (vorbereitet)
+- Tabelle `factions` und `faction_id` an Konten, Akten, Einträgen, Dokumenten, Wiki-Seiten und Standorten – heute gilt überall Fraktion 1 (SAMS).
+- Für LSPD/DOJ/Feuerwehr als eigene Bereiche fehlt noch: Fraktion je Konto wählen, alle Listen und Suchen nach `faction_id` filtern, eigene Dokumentarten und Briefköpfe je Fraktion. Behörden lesen bis dahin über Freigaben und Behördenkonten mit.
+
 ### Später
 - Leitstelle: als eigenes Addon (Notrufe aus dem Spiel, Live-Karte, Fahrzeugstatus, Disponent und Selbstdisposition)
-- Mehrere Standorte mit eigenem Briefkopf
 - Weitere Fraktionen (LSPD, DOJ, Feuerwehr)
 - Verkaufsfähigkeit: Mehrsprachigkeit, Installer, Lizenzierung, neutrale Standardtexte
 

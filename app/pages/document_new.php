@@ -137,6 +137,9 @@ if (is_post()) {
         $patient = post('patient_id') ? one('SELECT * FROM patients WHERE id = ?', [(int) post('patient_id')]) : null;
         require_active_patient($patient);
     }
+    if (locations()) {
+        $data['_location'] = location_snapshot((int) post('_location')) ? (int) post('_location') : user_location_id($me);
+    }
     $sigMode = post('sig_mode') === 'live' ? 'live' : 'stored';
     $liveSignature = $sigMode === 'live' ? clean_signature(post('live_signature')) : '';
 
@@ -270,6 +273,11 @@ ob_start(); ?>
         </select>
         <div class="hint">Nicht dabei? <a href="<?= e(url('patient_edit')) ?>" target="_blank">Neue Akte anlegen</a> und Seite neu laden.</div>
     </div>
+    <?php endif; ?>
+    <?php if (count(locations()) > 1): ?>
+    <div class="field w-full keep"><label>Standort (Briefkopf)</label>
+        <select name="_location"><?php foreach (locations() as $l): ?><option value="<?= (int) $l['id'] ?>"<?= selected($l['id'], $data['_location'] ?? user_location_id($me)) ?>><?= e($l['name']) ?></option><?php endforeach; ?></select></div>
+    <?php elseif (locations()): ?><input type="hidden" name="_location" value="<?= (int) locations()[0]['id'] ?>">
     <?php endif; ?>
     <?php foreach ($type['fields'] as $f): ?>
         <?= render_field($f, isset($f['name']) ? ($data[$f['name']] ?? '') : null) ?>

@@ -27,6 +27,7 @@ $navGroups = [
         'ranks'    => ['Ränge & Rechte', 'ranks.manage', 'shield'],
         'org'      => ['Abteilungen & Qualifikationen', 'departments.manage|qualifications.manage', 'folder'],
         'settings' => ['Einstellungen', 'settings.manage', 'settings'],
+        'locations' => ['Standorte', 'settings.manage', 'folder'],
         'doc_types' => ['Dokumentarten', 'settings.manage', 'docs'],
         'templates' => ['Vorlagen-Editor', 'templates.manage', 'edit'],
         'prices'   => ['Gebührenordnung', 'prices.manage', 'settings'],
@@ -42,7 +43,7 @@ $activeMap = ['patient' => 'patients', 'patient_edit' => 'patients', 'patient_pr
     'document' => 'documents', 'draft' => 'drafts', 'user_edit' => 'users', 'personnel' => 'users', 'course' => 'training', 'exam' => 'training', 'course_edit' => 'training', 'wiki_page' => 'wiki', 'wiki_edit' => 'wiki', 'wiki_lists' => 'wiki', 'rank_edit' => 'ranks', 'password_change' => 'profile', 'twofa' => 'profile'];
 $active = $activeMap[$current] ?? $current;
 ?><!doctype html>
-<html lang="de">
+<html lang="<?= e(ui_lang()) ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -57,7 +58,7 @@ $active = $activeMap[$current] ?? $current;
 <body class="<?= $user ? 'has-nav' : 'no-nav' ?> page-<?= e($current) ?>"<?= $user && idle_minutes() > 0 ? ' data-idle="' . idle_minutes() . '"' : '' ?>>
 <?php if ($user): ?>
 <header class="topbar">
-    <button class="nav-toggle" type="button" aria-label="Menü"><?= icon('menu') ?></button>
+    <button class="nav-toggle" type="button" aria-label="<?= e(t('Menü')) ?>"><?= icon('menu') ?></button>
     <a class="brand" href="<?= e(url('dashboard')) ?>">
         <img src="<?= e(setting('logo', 'assets/img/logo.svg')) ?>" alt="">
         <span class="brand-name"><?= e($orgShort) ?></span>
@@ -66,45 +67,45 @@ $active = $activeMap[$current] ?? $current;
     <form class="quicksearch" action="index.php" role="search">
         <input type="hidden" name="p" value="search">
         <?= icon('search') ?>
-        <input name="q" id="quicksearch" placeholder="Suchen: Patient, Diagnose, Dokument-Nr., Wiki, Personal …" autocomplete="off">
+        <input name="q" id="quicksearch" placeholder="<?= e(t('Suchen: Patient, Diagnose, Dokument-Nr., Wiki, Personal …')) ?>" autocomplete="off">
         <kbd>F2</kbd>
     </form>
     <div class="topbar-right">
         <?php $unread = notifications_unread(); ?>
         <details class="bell">
-            <summary title="Benachrichtigungen"><?= icon('bell') ?><b class="bell-count"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></b></summary>
+            <summary title="<?= e(t('Benachrichtigungen')) ?>"><?= icon('bell') ?><b class="bell-count"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></b></summary>
             <div class="bell-menu">
-                <div class="bell-head"><strong>Benachrichtigungen</strong><a href="<?= e(url('notifications')) ?>">Alle</a></div>
+                <div class="bell-head"><strong><?= e(t('Benachrichtigungen')) ?></strong><a href="<?= e(url('notifications')) ?>"><?= e(t('Alle')) ?></a></div>
                 <?php foreach (notifications_recent() as $n): ?>
                     <a class="<?= $n['read_at'] ? '' : 'unread' ?>" href="<?= e(url('notifications', ['open' => $n['id']])) ?>"><?= e($n['title']) ?><small><?= e(time_ago($n['created_at'])) ?></small></a>
                 <?php endforeach; ?>
-                <?php if (!notifications_recent(1)): ?><p class="muted small">Keine Benachrichtigungen.</p><?php endif; ?>
+                <?php if (!notifications_recent(1)): ?><p class="muted small"><?= e(t('Keine Benachrichtigungen.')) ?></p><?php endif; ?>
             </div>
         </details>
         <?php if (can('duty.clock')): $dutyOpen = duty_open_session((int) $user['id']); ?>
             <form method="post" action="<?= e(url('duty')) ?>" class="duty-toggle<?= $dutyOpen ? ' on' : '' ?>">
                 <?= csrf_field() ?><input type="hidden" name="action" value="toggle"><input type="hidden" name="return" value="<?= e($current) ?>">
-                <button title="<?= $dutyOpen ? 'Dienst beenden' : 'Dienst beginnen' ?>"><span class="dot"></span><?= $dutyOpen ? 'Im Dienst <small data-elapsed="' . duty_seconds($dutyOpen) . '">' . e(duty_format(duty_seconds($dutyOpen))) . '</small>' : 'Außer Dienst' ?></button>
+                <button title="<?= e(t($dutyOpen ? 'Dienst beenden' : 'Dienst beginnen')) ?>"><span class="dot"></span><?= $dutyOpen ? e(t('Im Dienst')) . ' <small data-elapsed="' . duty_seconds($dutyOpen) . '">' . e(duty_format(duty_seconds($dutyOpen))) . '</small>' : e(t('Außer Dienst')) ?></button>
             </form>
         <?php endif; ?>
-        <a class="userchip" href="<?= e(url('profile')) ?>" title="Mein Profil">
+        <a class="userchip" href="<?= e(url('profile')) ?>" title="<?= e(t('Mein Profil')) ?>">
             <span class="avatar"><?= e(mb_strtoupper(mb_substr($user['name'], 0, 1))) ?></span>
             <span class="who"><strong><?= e(user_display($user)) ?></strong><small><?= e(user_rank_name($user)) ?></small></span>
         </a>
-        <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="iconbtn" title="Abmelden"><?= icon('logout') ?></button></form>
+        <form method="post" action="<?= e(url('logout')) ?>"><?= csrf_field() ?><button class="iconbtn" title="<?= e(t('Abmelden')) ?>"><?= icon('logout') ?></button></form>
     </div>
 </header>
 <nav class="sidenav">
     <?php foreach ($navGroups as $group => $items):
         $visible = array_filter($items, fn($i) => $i[1] === '' || can($i[1]));
         if (!$visible) continue; ?>
-        <div class="nav-group"><?= e($group) ?></div>
+        <div class="nav-group"><?= e(t($group)) ?></div>
         <?php foreach ($visible as $p => [$label, $role, $ic]): ?>
-            <a href="<?= e(url($p)) ?>" title="<?= e($label) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e($label) ?></span><?php $cnt = match ($p) { 'drafts' => draft_inbox_count(), 'board' => board_unread_count(), 'messages' => messages_unread_count(), 'portal_admin' => portal_open_count(), default => 0 }; if ($cnt): ?><b class="nav-count"><?= $cnt ?></b><?php endif; ?></a>
+            <a href="<?= e(url($p)) ?>" title="<?= e(t($label)) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e(t($label)) ?></span><?php $cnt = match ($p) { 'drafts' => draft_inbox_count(), 'board' => board_unread_count(), 'messages' => messages_unread_count(), 'portal_admin' => portal_open_count(), default => 0 }; if ($cnt): ?><b class="nav-count"><?= $cnt ?></b><?php endif; ?></a>
         <?php endforeach; ?>
     <?php endforeach; ?>
-    <div class="nav-group">Extern</div>
-    <a href="verify.php" target="_blank"><?= icon('shield') ?><span>Echtheitsprüfung</span></a>
+    <div class="nav-group"><?= e(t('Extern')) ?></div>
+    <a href="verify.php" target="_blank"><?= icon('shield') ?><span><?= e(t('Echtheitsprüfung')) ?></span></a>
 </nav>
 <?php endif; ?>
 <main class="main">
@@ -115,7 +116,7 @@ $active = $activeMap[$current] ?? $current;
 </main>
 <?php if ($user): ?>
 <footer class="statusbar">
-    <span class="sb-item"><span class="dot ok"></span>Verbunden</span>
+    <span class="sb-item"><span class="dot ok"></span><?= e(t('Verbunden')) ?></span>
     <span class="sb-item"><?= icon('user') ?><?= e($user['username']) ?> · <?= e(user_rank_name($user)) ?></span>
     <span class="sb-item hide-sm"><?= e(setting('org_name', 'San Andreas Medical Services')) ?></span>
     <span class="sb-spacer"></span>

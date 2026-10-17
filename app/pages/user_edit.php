@@ -113,6 +113,9 @@ if (is_post()) {
         $new[$f] = mb_substr(trim((string) post($f)), 0, 190);
     }
     $new['rank_id'] = (int) post('rank_id');
+    if (locations()) {
+        $new['location_id'] = location_snapshot((int) post('location_id')) ? (int) post('location_id') : null;
+    }
     $postedDeps = array_map('intval', (array) ($_POST['departments'] ?? []));
     // Nur zuweisbare Abteilungen ändern, andere bestehende Zuordnungen bleiben erhalten
     $newDeps = array_values(array_unique(array_merge(
@@ -241,7 +244,7 @@ ob_start(); ?>
     <input type="hidden" name="action" value="save">
     <h3 class="form-heading">Zugang &amp; Dienst</h3>
     <div class="field w-third"><label>Benutzername <span class="req">*</span></label><input name="username" value="<?= e($data['username']) ?>" required autocomplete="off"<?= $ro ? ' disabled' : '' ?>></div>
-    <div class="field w-third"><label>Dienstnummer</label><input name="badge_number" value="<?= e($data['badge_number']) ?>" placeholder="z. B. SAMS-104"<?= $ro ? ' disabled' : '' ?>></div>
+    <div class="field w-third"><label>Dienstnummer</label><input name="badge_number" value="<?= e($data['badge_number']) ?>" placeholder="z. B. <?= e(setting('org_short', 'SAMS')) ?>-104"<?= $ro ? ' disabled' : '' ?>></div>
     <div class="field w-third"><label>Rang <span class="req">*</span></label>
         <select name="rank_id"<?= $ro ? ' disabled' : '' ?>>
             <?php if ($user && $currentRank && !in_array((int) $currentRank['id'], $rankIds, true)): ?>
@@ -250,6 +253,11 @@ ob_start(); ?>
             <?php foreach ($ranks as $r): ?><option value="<?= (int) $r['id'] ?>"<?= selected($r['id'], $data['rank_id']) ?>><?= e($r['name']) ?> (Stufe <?= (int) $r['level'] ?>)</option><?php endforeach; ?>
         </select></div>
 
+    <?php if (count(locations()) > 1): ?>
+    <div class="field w-third"><label>Standort</label>
+        <select name="location_id"<?= $ro ? ' disabled' : '' ?>><option value="">– Standard –</option><?php foreach (locations() as $l): ?><option value="<?= (int) $l['id'] ?>"<?= selected($l['id'], $data['location_id'] ?? '') ?>><?= e($l['name']) ?></option><?php endforeach; ?></select>
+        <small class="hint">Briefkopf, der beim Ausstellen vorausgewählt ist</small></div>
+    <?php endif; ?>
     <div class="field w-half"><span class="label">Abteilungen</span>
         <div class="choices vertical">
             <?php foreach ($departments as $d): $allowed = in_array((int) $d['id'], $assignableDeps, true); ?>

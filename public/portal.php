@@ -75,7 +75,7 @@ if ($c && is_post()) {
             insert('appointments', ['citizen_id' => $c['id'], 'patient_id' => $c['patient_id'], 'kind' => $kind,
                 'preferred' => mb_substr(trim((string) post('preferred')), 0, 190), 'note' => mb_substr(trim((string) post('note')), 0, 2000), 'created_at' => now()]);
             notify_webhook('portal', log_embed('📅 Terminanfrage: ' . $kind, ($c['ic_name'] ?: $c['discord_name']) . ($c['patient_id'] ? '' : ' (nicht verknüpft)') . ' · Wunsch: ' . (trim((string) post('preferred')) ?: '–'), 0x0b4f9c));
-            flash('success', 'Terminanfrage gesendet. Du siehst hier, sobald der SAMS den Termin bestätigt.');
+            flash('success', 'Terminanfrage gesendet. Du siehst hier, sobald ' . setting('org_short', 'SAMS') . ' den Termin bestätigt.');
         }
         redirect($purl(['page' => 'appointments']));
     }

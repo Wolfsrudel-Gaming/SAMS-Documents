@@ -53,25 +53,25 @@ ob_start(); ?>
     <form method="post" class="card login">
         <div class="login-head">
             <img src="<?= e(setting('logo', 'assets/img/logo.svg')) ?>" alt="">
-            <div><strong><?= e(setting('org_name', 'San Andreas Medical Services')) ?></strong><small>Klinisches Informationssystem · Dienstzugang</small></div>
+            <div><strong><?= e(setting('org_name', 'San Andreas Medical Services')) ?></strong><small><?= e(t('Klinisches Informationssystem · Dienstzugang')) ?></small></div>
         </div>
         <div class="login-body">
             <?php if ($error): ?><div class="flash error"><?= e($error) ?></div><?php endif; ?>
             <?= csrf_field() ?>
             <?php if ($step === '2fa'): ?>
-                <p class="muted">Gib den 6-stelligen Code aus deiner Authenticator-App ein. Ohne Handy kannst du einen Wiederherstellungscode verwenden.</p>
-                <label>Bestätigungscode<input name="code" inputmode="numeric" autocomplete="one-time-code" required autofocus maxlength="12" class="mono code-input"></label>
-                <button class="btn primary block">Bestätigen</button>
-                <button class="link small" name="action" value="cancel" formnovalidate>Abbrechen</button>
+                <p class="muted"><?= e(t('Gib den 6-stelligen Code aus deiner Authenticator-App ein. Ohne Handy kannst du einen Wiederherstellungscode verwenden.')) ?></p>
+                <label><?= e(t('Bestätigungscode')) ?><input name="code" inputmode="numeric" autocomplete="one-time-code" required autofocus maxlength="12" class="mono code-input"></label>
+                <button class="btn primary block"><?= e(t('Bestätigen')) ?></button>
+                <button class="link small" name="action" value="cancel" formnovalidate><?= e(t('Abbrechen')) ?></button>
             <?php else: ?>
-                <label>Benutzername<input name="username" autocomplete="username" required autofocus value="<?= e(post('username')) ?>"></label>
-                <label>Passwort<input name="password" type="password" autocomplete="current-password" required></label>
-                <button class="btn primary block">Anmelden</button>
-                <?php if (discord_configured()): ?><a class="btn block discord-btn" href="<?= e(url('discord_login')) ?>">Mit Discord anmelden</a><?php endif; ?>
-                <p class="muted small">Passwort vergessen? Deine Leitung kann es zurücksetzen.</p>
+                <label><?= e(t('Benutzername')) ?><input name="username" autocomplete="username" required autofocus value="<?= e(post('username')) ?>"></label>
+                <label><?= e(t('Passwort')) ?><input name="password" type="password" autocomplete="current-password" required></label>
+                <button class="btn primary block"><?= e(t('Anmelden')) ?></button>
+                <?php if (discord_configured()): ?><a class="btn block discord-btn" href="<?= e(url('discord_login')) ?>"><?= e(t('Mit Discord anmelden')) ?></a><?php endif; ?>
+                <p class="muted small"><?= e(t('Passwort vergessen? Deine Leitung kann es zurücksetzen.')) ?></p>
             <?php endif; ?>
         </div>
-        <div class="login-foot"><span><a href="verify.php">Dokument prüfen</a></span><span><?= e(version_label()) ?></span></div>
+        <div class="login-foot"><span><a href="verify.php"><?= e(t('Dokument prüfen')) ?></a></span><span><?= e(version_label()) ?></span></div>
     </form>
 </div>
 <?php

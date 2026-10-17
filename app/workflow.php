@@ -130,6 +130,9 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
         $issuerSnap['signature'] = $liveSignature;
         $issuerSnap['signature_live'] = true;
     }
+    if (!empty($data['_location']) && ($loc = location_snapshot($data['_location']))) {
+        $issuerSnap['location'] = $loc;
+    }
     if ($cosigner) {
         $issuerSnap['cosigner'] = issuer_snapshot($cosigner) + ['at' => now()];
     }
@@ -154,6 +157,7 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
             'issued_at' => now(),
             'valid_until' => $validUntil,
             'employee_id' => !empty($data['_employee']['id']) ? (int) $data['_employee']['id'] : null,
+            'location_id' => $issuerSnap['location']['id'] ?? null,
         ]);
         personnel_event_for_document($id, $type, $data);
         if ($type['key'] === 'rechnung') {

@@ -40,6 +40,7 @@ $routes = [
     'duty'            => 'duty.clock|duty.view|duty.manage',
     'roster'          => 'roster.view|roster.manage',
     'stock'           => 'stock.view|stock.manage',
+    'locations'       => 'settings.manage',
     'btm'             => 'stock.view|btm.manage',
     'personnel'       => '',
     'training'        => 'training.view|training.manage',

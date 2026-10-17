@@ -23,6 +23,9 @@ $keys = [
         'iban'       => ['IBAN', 'SA21 0911 0000 0123 4567 89'],
         'bic'        => ['BIC', 'MAZESALSXXX'],
     ],
+    'Sprache' => [
+        'language' => ['Sprache der Oberfläche (Dokumente bleiben deutsch)', 'de', 'select', UI_LANGUAGES],
+    ],
     'Design' => [
         'theme_primary' => ['Primärfarbe (Schaltflächen, Markierungen)', '#0b4f9c', 'color'],
         'theme_accent'  => ['Akzentfarbe (Warnhinweise)', '#c8102e', 'color'],
@@ -66,6 +69,9 @@ if (is_post()) {
             } elseif ($k === 'portal_enabled') {
                 $v = $v === '0' ? '0' : '1';
             }
+            if ($k === 'language' && !isset(UI_LANGUAGES[$v])) {
+                $v = 'de';
+            }
             if ($k === 'session_idle_minutes') {
                 $v = (string) max(0, min(1440, (int) $v));
             }
@@ -104,7 +110,9 @@ ob_start(); ?>
     <?php foreach ($keys as $group => $items): ?>
         <h3 class="form-heading"><?= e($group) ?></h3>
         <?php foreach ($items as $k => $def): [$label, $placeholder] = $def; ?>
-            <?php if (($def[2] ?? '') === 'color'): $cv = hex_color((string) setting($k, ''), $placeholder); ?>
+            <?php if (($def[2] ?? '') === 'select'): ?>
+                <div class="field w-half"><label><?= e($label) ?></label><select name="<?= e($k) ?>"><?php foreach ($def[3] as $ov => $ol): ?><option value="<?= e($ov) ?>"<?= selected($ov, setting($k, $placeholder)) ?>><?= e($ol) ?></option><?php endforeach; ?></select></div>
+            <?php elseif (($def[2] ?? '') === 'color'): $cv = hex_color((string) setting($k, ''), $placeholder); ?>
                 <div class="field w-third"><label><?= e($label) ?></label>
                     <div class="color-row"><input type="color" value="<?= e($cv) ?>"><input type="text" name="<?= e($k) ?>" value="<?= e(setting($k, '')) ?>" placeholder="<?= e($placeholder) ?>"></div></div>
             <?php else: ?>

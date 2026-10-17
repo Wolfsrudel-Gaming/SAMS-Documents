@@ -25,9 +25,13 @@ function render_document(array $doc, array $opts = []): string
     $copy = $opts['copy'] ?? '';
     $uid = 'd' . ($doc['id'] ?? 'x') . substr(md5(($doc['verify_code'] ?? '') . $copy . mt_rand()), 0, 6);
 
-    ob_start();
-    require SAMS_ROOT . '/app/templates/' . $type['template'] . '.php';
-    $html = ob_get_clean();
+    // Briefkopf des Standorts: eingefroren im Dokument, bei Vorschauen aus der Auswahl im Formular
+    $loc = empty($doc['id']) && !empty($d['_location']) ? location_snapshot($d['_location']) : ($u['location'] ?? null);
+    $html = with_location($loc, function () use ($type, $doc, $d, $p, $u, $draft, $copy, $uid, $opts) {
+        ob_start();
+        require SAMS_ROOT . '/app/templates/' . $type['template'] . '.php';
+        return ob_get_clean();
+    });
 
     // Nachträge werden als eigenes Blatt angehängt (Original bleibt unverändert)
     if (empty($opts['no_addenda'])) {
@@ -101,6 +105,10 @@ function org(string $key): string
         'seal_text'   => 'SAN ANDREAS MEDICAL SERVICES',
         'currency'    => '$',
     ];
+    $loc = $GLOBALS['sams_location'] ?? null;
+    if ($loc && isset(LOCATION_FIELDS[$key]) && trim((string) ($loc[$key] ?? '')) !== '') {
+        return (string) $loc[$key];
+    }
     return (string) setting($key, $defaults[$key] ?? '');
 }
 

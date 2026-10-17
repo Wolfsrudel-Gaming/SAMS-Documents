@@ -795,6 +795,7 @@ function issuer_snapshot(array $u): array
         'badge_number'  => $u['badge_number'],
         'doctor_number' => $u['doctor_number'],
         'signature'     => $u['signature'],
+        'location'      => location_snapshot(user_location_id($u)),
     ];
 }
 

@@ -64,6 +64,8 @@ Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt au
 - **Dienstplan**: Schichten mit Mindest-/Höchstbesetzung, selbst eintragen oder einteilen lassen, Tausch („zur Übernahme anbieten“), Erinnerung 1 Stunde vorher, Warnung bei Unterbesetzung, Abgleich mit der gestempelten Dienstzeit, Vorwoche übernehmen
 - **Medikamentenbestand & BtM-Buch**: Artikel mit Mindestbestand, Zugang/Entnahme/Verwurf/Korrektur mit lückenlosem Protokoll; Betäubungsmittel nur mit Patient bzw. Zeuge, Karteikarte je BtM mit Monatsübertrag, Bestandsprüfung und Druckansicht
 - **Rezepte einlösen**: in der Klinik oder in der **Apotheke im Spiel** gegen ox_inventory-Items; BtM nur auf BtM-Rezept, Gültigkeit (28 bzw. 7 Tage), jede Position nur einmal
+- **Standorte**: mehrere Häuser (z. B. Sandy Shores, Paleto Bay) mit eigenem Briefkopf; beim Ausstellen wählbar, im Dokument eingefroren
+- **Handbuch** für Mitarbeitende im Wiki (Kategorie „Handbuch“, frei anpassbar) und **Oberfläche auf Deutsch oder Englisch** (*Einstellungen → Sprache*; weitere Sprachen über `lang/<sprache>.php`)
 - **Anhänge, Benachrichtigungen, Suche**: Fotos/Scans/PDF an Akten und Fällen, Glocke mit persönlichen Benachrichtigungen (optional per Discord-DM), Volltextsuche über alle Bereiche, doppelte Akten zusammenführen
 - **Vorlagen-Editor**: eigene Dokumentarten ohne Programmierung (Felder, Layout Brief/Formular/Protokoll, Text mit Platzhaltern, Stempel, Ausstellrechte)
 - **Dokument-Workflow**: Entwürfe speichern und an Kolleg/innen übergeben, Freigabe/Gegenzeichnung je Dokumentart (z. B. Azubis), Nachträge statt Änderungen, Unterschrift hinterlegt oder live, Schnell- und Vollmodus
