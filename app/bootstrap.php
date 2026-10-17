@@ -30,6 +30,7 @@ require __DIR__ . '/permissions.php';
 require __DIR__ . '/totp.php';
 require __DIR__ . '/documents.php';
 require __DIR__ . '/document_types_extra.php';
+require __DIR__ . '/custom_types.php';
 require __DIR__ . '/render.php';
 require __DIR__ . '/icons.php';
 require __DIR__ . '/printing.php';

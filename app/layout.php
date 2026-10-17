@@ -20,6 +20,7 @@ $navGroups = [
         'org'      => ['Abteilungen & Qualifikationen', 'departments.manage|qualifications.manage', 'folder'],
         'settings' => ['Einstellungen', 'settings.manage', 'settings'],
         'doc_types' => ['Dokumentarten', 'settings.manage', 'docs'],
+        'templates' => ['Vorlagen-Editor', 'templates.manage', 'edit'],
         'prices'   => ['Gebührenordnung', 'prices.manage', 'settings'],
         'printers' => ['Drucker', 'printers.manage', 'print'],
         'audit'    => ['Zugriffsprotokoll', 'audit.view', 'log'],

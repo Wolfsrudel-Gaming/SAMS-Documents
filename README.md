@@ -53,6 +53,7 @@ Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt au
 
 - **Patientenakten**: Personalien, Bürger-ID (z. B. `citizenid` aus ESX/QBCore), Versicherung, Blutgruppe, Allergien
   (Warnhinweis), Vorerkrankungen, Medikation, Notfallkontakt, Organspende, Patientenverfügung, Kennzeichnungen
+- **Vorlagen-Editor**: eigene Dokumentarten ohne Programmierung (Felder, Layout Brief/Formular/Protokoll, Text mit Platzhaltern, Stempel, Ausstellrechte)
 - **Dokument-Workflow**: Entwürfe speichern und an Kolleg/innen übergeben, Freigabe/Gegenzeichnung je Dokumentart (z. B. Azubis), Nachträge statt Änderungen, Unterschrift hinterlegt oder live, Schnell- und Vollmodus
 - **Abrechnung**: Gebührenordnung mit festen Preisen (Abweichung nur mit Begründung), Rechnungsstatus offen/bezahlt/gemahnt mit bis zu drei Mahnstufen, Rechnungsübersicht
 - **Freigabe für Behörden**: einzelne Dokumente per geheimem Link mit Ablaufzeit oder an ein LSPD-/Justiz-Konto freigeben, jeder Abruf wird protokolliert, jederzeit widerrufbar

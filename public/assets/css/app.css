@@ -450,3 +450,11 @@ html.in-tablet .topbar-right { display: none; }
 .share-banner > div { flex: 1; }
 .share-banner h1 { margin: 0 0 .2rem; font-size: 1.25rem; }
 .share-banner p { margin: 0; }
+
+/* Vorlagen-Editor */
+.fe-table td { vertical-align: top; }
+.fe-table input, .fe-table select, .fe-table textarea { width: 100%; margin-bottom: .25rem; }
+.fe-table .fe-name { font-size: .78rem; color: var(--muted); }
+.fe-move { width: 2.2rem; white-space: nowrap; }
+.fe-move .btn-icon { display: block; line-height: 1; padding: .1rem .3rem; }
+.tpl-editor code { background: var(--row-alt); padding: 0 .25rem; border-radius: 2px; font-size: .8rem; }

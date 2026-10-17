@@ -35,7 +35,9 @@ if (!$type) {
     <?php
     $byCat = [];
     foreach (document_types() as $k => $t) {
-        $byCat[$t['category']][$k] = $t;
+        if (empty($t['hidden'])) {
+            $byCat[$t['category']][$k] = $t;
+        }
     }
     foreach ($byCat as $cat => $types): ?>
         <section class="card">
@@ -58,6 +60,9 @@ if (!$type) {
     return;
 }
 
+if (!empty($type['hidden']) && !$draft) {
+    not_found('Diese Dokumentart ist deaktiviert.');
+}
 if (!can('documents.issue.' . $type['key'])) {
     forbidden('Dein Rang darf „' . $type['title'] . '“ nicht ausstellen.');
 }

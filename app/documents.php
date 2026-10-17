@@ -437,6 +437,9 @@ function document_types(): array
     ];
 
     $types = array_merge($types, document_types_extra());
+    foreach (custom_doc_types() as $row) {
+        $types[$row['type_key']] = custom_type_definition($row);
+    }
     return $types;
 }
 

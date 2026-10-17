@@ -14,7 +14,7 @@ defined('SAMS_ROOT') || exit;
  */
 function render_document(array $doc, array $opts = []): string
 {
-    $type = doc_type($doc['type']);
+    $type = doc_type($doc['type']) ?? custom_type_from_snapshot($doc);
     if (!$type) {
         return '<p>Unbekannte Dokumentart.</p>';
     }

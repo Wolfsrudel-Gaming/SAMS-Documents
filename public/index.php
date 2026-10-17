@@ -32,6 +32,7 @@ $routes = [
     'invoices'        => 'invoices.manage',
     'shared'          => 'documents.shared_view',
     'prices'          => 'prices.manage',
+    'templates'       => 'templates.manage',
     'users'           => 'users.view',
     'user_edit'       => 'users.view',
     'ranks'           => 'ranks.manage',

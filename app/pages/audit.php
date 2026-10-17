@@ -18,7 +18,7 @@ $labels = [
     'draft.submit' => 'Zur Freigabe eingereicht', 'draft.approve' => 'Freigegeben', 'draft.reject' => 'Freigabe abgelehnt', 'draft.withdraw' => 'Einreichung zurückgezogen',
     'document.addendum' => 'Nachtrag geschrieben', 'invoice.status' => 'Rechnungsstatus geändert',
     'document.share' => 'Dokument freigegeben', 'document.share_revoke' => 'Freigabe widerrufen', 'document.share_view' => 'Freigabe abgerufen',
-    'prices.create' => 'Leistung angelegt', 'prices.update' => 'Leistung geändert', 'prices.deactivate' => 'Leistung deaktiviert', 'settings.doc_types' => 'Dokumentarten geändert',
+    'prices.create' => 'Leistung angelegt', 'prices.update' => 'Leistung geändert', 'prices.deactivate' => 'Leistung deaktiviert', 'settings.doc_types' => 'Dokumentarten geändert', 'templates.create' => 'Vorlage angelegt', 'templates.update' => 'Vorlage geändert',
     'case.create' => 'Fall angelegt', 'case.update' => 'Fall geändert', 'case.view' => 'Fall geöffnet', 'case.close' => 'Fall abgeschlossen', 'case.reopen' => 'Fall wieder geöffnet', 'user.password_reset' => 'Passwort zurückgesetzt', 'user.sessions_ended' => 'Sitzungen beendet',
     'user.2fa_reset' => '2FA zurückgesetzt', 'user.2fa_enabled' => '2FA aktiviert', 'user.2fa_disabled' => '2FA abgeschaltet',
     'user.2fa_codes' => 'Neue 2FA-Codes', 'user.2fa_recovery_used' => '2FA-Wiederherstellungscode benutzt', 'user.deactivate' => 'Konto gesperrt',

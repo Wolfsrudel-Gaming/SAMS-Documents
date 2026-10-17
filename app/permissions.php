@@ -65,6 +65,7 @@ function permission_catalog(): array
         ],
         'System' => [
             'settings.manage' => 'Einstellungen (Briefkopf, Design, Logo)',
+            'templates.manage' => 'Vorlagen-Editor: eigene Dokumentarten anlegen',
             'audit.view'      => 'Zugriffsprotokoll ansehen',
             'system.manage'   => 'System, Updates und Backups',
         ],

@@ -1,6 +1,6 @@
 # SAMS Dokumenten- & Aktensystem – Konzept Version 1
 
-Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design, Etappe 1, 2 und Tablet/Drucker umgesetzt
+Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design, Etappe 1–3 und Tablet/Drucker umgesetzt
 
 Dieses Konzept fasst die Fragerunde (60 Fragen) und die anschließenden Festlegungen zusammen.
 Es beschreibt, was in Version 1 gebaut wird, in welcher Reihenfolge, und was bewusst später kommt.
@@ -107,7 +107,7 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - Neue Rechte: `patients.archive`, `cases.manage`, `entries.all_departments`
 - *Offen für später:* Verknüpfung mit dem Bürgerportal (Etappe 6)
 
-### Etappe 3 – Dokumente *(Workflow v1.6.0, Abrechnung v1.7.0, Behördenfreigabe v1.8.0, neue Dokumentarten v1.9.0)*
+### Etappe 3 – Dokumente ✅ *umgesetzt in v1.6.0 – v1.10.0*
 - ✅ Neue Dokumentarten *(v1.9.0)*: psychologisches Gutachten, Unterbringungsantrag (5150), Impfnachweis, OP-Bericht,
   OP-Aufklärung/Einwilligung, Dienstausweis, Ausbildungsnachweis, Beförderungsurkunde, Abmahnung,
   Kündigung, Arbeitsvertrag; Personaldokumente beziehen sich auf ein Personalkonto
@@ -118,8 +118,8 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - ✅ **Schnell- und Vollmodus** pro Dokumentart (Standard einstellbar, im Formular umschaltbar)
 - ✅ **Preisliste** (Gebührenordnung) im Admin-Panel, Preis wird in Rechnungen automatisch übernommen, Abweichungen und freie Positionen nur mit Begründung (steht auf der Rechnung). **Rechnungsstatus** offen/bezahlt/gemahnt (bis 3. Mahnung, die Rechnung wird dann als Mahnschreiben gedruckt), Rechnungsübersicht mit Summen und Überfälligkeit *(v1.7.0)*
 - ✅ **Freigabe für Behörden:** einzelne Dokumente für LSPD/BCSO/Justiz per geheimem Link (24 h / 7 / 30 Tage / bis Widerruf) oder an ein Behördenkonto (eigener Rang mit nur „Freigegebene Dokumente ansehen“) freischalten; Abrufe werden gezählt und protokolliert, jederzeit widerrufbar *(v1.8.0)*
-- **Vorlagen-Editor:** Leitung legt neue Dokumentarten im Browser an (Felder, Layout-Grundtyp Brief/Formular/Protokoll, Text mit Platzhaltern)
-- Logo, Farben und Briefkopf im Admin-Panel
+- ✅ **Vorlagen-Editor** *(v1.10.0)*: Leitung legt neue Dokumentarten im Browser an (Felder per Klick, Layout Brief/Formular/Protokoll, Text mit Platzhaltern wie `{{patient.name}}` und `**fett**`, Stempel, Bezug Patient oder Personal, Ausstellrechte je Rang). Die Vorlage wird beim Ausstellen eingefroren – spätere Änderungen verändern keine bestehenden Dokumente.
+- ✅ Logo, Farben und Briefkopf im Admin-Panel
 
 ### Etappe 4 – Tablet und FiveM-Resource ✅ *Tablet, Drucker und Dokument-Items umgesetzt in v1.4.0 (Dienstzeit folgt)*
 - Eigene Resource `sams_tablet`: Tablet-Item und Befehl, eigene NUI-Oberfläche mit Tablet-Rahmen und Animation

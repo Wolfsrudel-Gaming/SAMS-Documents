@@ -420,3 +420,4 @@
 .contract-signs .sig-sign { min-width: 0; }
 .contract-signs .sig-stamp.round { width: 28mm; right: 0; }
 .contract-place .hand-filled { display: inline-flex; min-width: 60mm; }
+.paper.custom-form .psec { background: #4a5563; }

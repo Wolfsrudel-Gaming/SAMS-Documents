@@ -122,6 +122,9 @@ function clean_signature($raw): string
  */
 function issue_document(array $type, ?array $patient, ?array $case, array $data, array $issuer, ?array $cosigner = null, string $liveSignature = ''): int
 {
+    if (($type['template'] ?? '') === 'custom') {
+        $data['_tpl'] = custom_template_snapshot($type); // Vorlage einfrieren
+    }
     $issuerSnap = issuer_snapshot($issuer);
     if ($liveSignature !== '') {
         $issuerSnap['signature'] = $liveSignature;

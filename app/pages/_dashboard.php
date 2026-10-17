@@ -24,7 +24,7 @@
 <section class="card">
     <h2>Dokument ausstellen</h2>
     <div class="tiles">
-        <?php foreach (document_types() as $key => $t): if (!can('documents.issue.' . $key)) continue; ?>
+        <?php foreach (document_types() as $key => $t): if (!empty($t['hidden']) || !can('documents.issue.' . $key)) continue; ?>
             <a class="tile" href="<?= e(url('document_new', ['type' => $key])) ?>">
                 <span class="tile-code"><?= e($t['code']) ?></span>
                 <strong><?= e($t['short']) ?></strong>
