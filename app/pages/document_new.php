@@ -34,7 +34,12 @@ if (!$type) {
     </div>
     <?php
     $byCat = [];
+    $forEmployee = (int) ($_GET['employee'] ?? 0);
     foreach (document_types() as $k => $t) {
+        // Aus der Personalakte heraus nur Personaldokumente anbieten
+        if ($forEmployee && ($t['subject'] ?? '') !== 'employee') {
+            continue;
+        }
         if (empty($t['hidden'])) {
             $byCat[$t['category']][$k] = $t;
         }
@@ -44,7 +49,7 @@ if (!$type) {
             <h2><?= e($cat) ?></h2>
             <div class="tiles">
             <?php foreach ($types as $k => $t): $allowed = can('documents.issue.' . $k); ?>
-                <a class="tile<?= $allowed ? '' : ' disabled' ?>" href="<?= $allowed ? e(url('document_new', ['type' => $k, 'patient' => $patientId ?: null, 'case' => $case['id'] ?? null])) : '#' ?>"
+                <a class="tile<?= $allowed ? '' : ' disabled' ?>" href="<?= $allowed ? e(url('document_new', ['type' => $k, 'patient' => $patientId ?: null, 'case' => $case['id'] ?? null, 'employee' => $forEmployee ?: null])) : '#' ?>"
                    title="<?= $allowed ? '' : 'Dein Rang darf dieses Dokument nicht ausstellen' ?>">
                     <span class="tile-code"><?= e($t['code']) ?></span>
                     <strong><?= e($t['title']) ?></strong>

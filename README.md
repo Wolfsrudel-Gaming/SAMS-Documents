@@ -53,6 +53,7 @@ Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt au
 
 - **Patientenakten**: Personalien, Bürger-ID (z. B. `citizenid` aus ESX/QBCore), Versicherung, Blutgruppe, Allergien
   (Warnhinweis), Vorerkrankungen, Medikation, Notfallkontakt, Organspende, Patientenverfügung, Kennzeichnungen
+- **Personalakte**: Laufbahn mit automatischen Einträgen (Rang, Qualifikationen, Beförderung, Abmahnung …), Notizen, Personaldokumente, Dienstzeiten; eigene Akte für alle einsehbar
 - **Dienstzeiten**: Ein-/Ausstempeln im Spiel (`/dienst`) oder im Browser, „Jetzt im Dienst“, Wochenstunden, Korrekturen durch die Leitung
 - **Vorlagen-Editor**: eigene Dokumentarten ohne Programmierung (Felder, Layout Brief/Formular/Protokoll, Text mit Platzhaltern, Stempel, Ausstellrechte)
 - **Dokument-Workflow**: Entwürfe speichern und an Kolleg/innen übergeben, Freigabe/Gegenzeichnung je Dokumentart (z. B. Azubis), Nachträge statt Änderungen, Unterschrift hinterlegt oder live, Schnell- und Vollmodus

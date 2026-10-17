@@ -153,7 +153,9 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
             'issued_by' => $issuer['id'],
             'issued_at' => now(),
             'valid_until' => $validUntil,
+            'employee_id' => !empty($data['_employee']['id']) ? (int) $data['_employee']['id'] : null,
         ]);
+        personnel_event_for_document($id, $type, $data);
         if ($type['key'] === 'rechnung') {
             $paid = !empty($data['paid']);
             update('documents', $id, ['pay_status' => $paid ? 'paid' : 'open', 'amount_cents' => (int) round(invoice_totals($data)[2] * 100), 'paid_at' => $paid ? now() : null]);

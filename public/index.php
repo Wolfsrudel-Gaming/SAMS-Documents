@@ -34,6 +34,7 @@ $routes = [
     'prices'          => 'prices.manage',
     'templates'       => 'templates.manage',
     'duty'            => 'duty.clock|duty.view|duty.manage',
+    'personnel'       => '',
     'users'           => 'users.view',
     'user_edit'       => 'users.view',
     'ranks'           => 'ranks.manage',

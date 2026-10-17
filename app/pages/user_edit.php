@@ -150,6 +150,15 @@ if (is_post()) {
         if ($user) {
             update('users', $id, $row);
             $summary = user_change_summary($user, $row, $userDeps, $newDeps, $userQuals, $newQuals);
+            // Laufbahn in der Personalakte fortschreiben
+            if ((int) $user['rank_id'] !== (int) $row['rank_id']) {
+                $oldLevel = (int) (rank_by_id((int) $user['rank_id'])['level'] ?? 0);
+                $newRank = rank_by_id((int) $row['rank_id']);
+                personnel_event($id, 'rank', ((int) ($newRank['level'] ?? 0) > $oldLevel ? 'Befördert zu ' : 'Rangänderung: ') . ($newRank['name'] ?? '–'));
+            }
+            if ($added = array_diff($newQuals, $userQuals)) {
+                personnel_event($id, 'qualification', 'Qualifikation erworben: ' . implode(', ', array_column(all('SELECT name FROM qualifications WHERE id IN (' . implode(',', array_map('intval', $added)) . ')'), 'name')));
+            }
             audit('user.update', 'user', $id, $user['username'] . ($summary !== '' ? ' – ' . $summary : ''));
             flash('success', 'Konto gespeichert.');
         } else {
@@ -159,6 +168,7 @@ if (is_post()) {
                 'role' => 'medic', 'active' => 1, 'created_by' => $me['id'], 'created_at' => now(),
             ];
             $id = insert('users', $row);
+            personnel_event($id, 'hire', 'Eintritt als ' . (rank_by_id($row['rank_id'])['name'] ?? '–'));
             audit('user.create', 'user', $id, $row['username'] . ' – Rang: ' . (rank_by_id($row['rank_id'])['name'] ?? '–'));
             $_SESSION['onetime'] = ['user_id' => $id, 'username' => $row['username'], 'password' => $pw, 'kind' => 'create'];
         }

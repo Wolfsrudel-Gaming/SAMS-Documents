@@ -475,3 +475,11 @@ html.in-tablet .topbar-right { display: none; }
 details.inline-edit summary { cursor: pointer; color: var(--primary); font-size: .85rem; }
 details.inline-edit[open] { min-width: 320px; text-align: left; }
 tr.selected td { background: var(--primary-soft); }
+
+/* Personalakte */
+.patient-banner.staff .pb-avatar { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+.weekbars { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; height: 70px; align-items: end; margin: .3rem 0 .2rem; }
+.weekbars div { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; text-align: center; }
+.weekbars span { display: block; background: var(--primary); border-radius: 2px 2px 0 0; min-height: 2px; }
+.weekbars small { font-size: .65rem; color: var(--muted); margin-top: 2px; }
+form.tl-edit { display: inline; }

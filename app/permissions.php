@@ -56,6 +56,9 @@ function permission_catalog(): array
             'users.sessions'       => 'Sitzungen anderer beenden',
             'users.2fa_reset'      => '2FA anderer zurücksetzen',
             'users.scope_department' => 'Einschränkung: nur Personal der eigenen Abteilungen verwalten',
+            'personnel.view'         => 'Personalakten ansehen',
+            'personnel.edit'         => 'Einträge in Personalakten schreiben',
+            'personnel.confidential' => 'Vertrauliche Personalakten-Einträge sehen (z. B. Abmahnungen)',
         ],
         'Dienstzeiten' => [
             'duty.clock'  => 'Dienst beginnen/beenden (stempeln)',

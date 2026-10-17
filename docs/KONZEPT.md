@@ -130,7 +130,7 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - Absicherung: Die Resource spricht serverseitig mit einem API-Schlüssel, nie aus dem Client
 
 ### Etappe 5 – Personal, Ausbildung, Wiki, Kommunikation
-- **Personalakte:** Lebenslauf im Dienst, Beförderungen, Abmahnungen, Notizen, Qualifikationen, Dienstzeiten
+- ✅ **Personalakte** *(v1.12.0)*: Laufbahn (Eintritt, Rangwechsel, Qualifikationen und ausgestellte Personaldokumente werden automatisch eingetragen), Belobigungen/Notizen/Abmahnungen von Hand, vertrauliche Einträge nur für die Leitung, Personaldokumente, Dienstzeit der letzten 8 Wochen; jede/r sieht die eigene Akte (ohne vertrauliche Notizen)
 - **Ausbildung:** Ausbildungspläne, Module, Online-Prüfungen, automatische Zertifikate/Urkunden
 - **Wiki:** SOPs, Medikamentenliste, Behandlungsabläufe. Pflegt auch die Vorschlagslisten in den Formularen.
 - **Schwarzes Brett** mit Lesebestätigung, **interne Nachrichten**

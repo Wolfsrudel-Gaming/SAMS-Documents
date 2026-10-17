@@ -60,6 +60,7 @@ ob_start(); ?>
             <dt>Qualifikationen</dt><dd><?php foreach ($quals as $qq): ?><?= tag_badge($qq) ?> <?= e($qq['name']) ?><br><?php endforeach; ?><?= $quals ? '' : '–' ?></dd>
         </dl>
         <p class="hint">Rang, Dienstnummer, Abteilungen und Qualifikationen werden von deiner Leitung gepflegt.</p>
+        <p><a class="btn small" href="<?= e(url('personnel')) ?>"><?= icon('folder') ?>Meine Personalakte</a></p>
     </section>
     <form method="post" class="card form-grid">
         <h2>Angaben auf Dokumenten</h2>
