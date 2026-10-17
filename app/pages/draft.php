@@ -27,6 +27,7 @@ if (is_post()) {
         $docId = issue_document($type, $patient, $case, $data, $author, $me, (string) $draft['signature']);
         q('DELETE FROM document_drafts WHERE id = ?', [$id]);
         audit('draft.approve', 'document', $docId, $type['short'] . ' von ' . user_display($author));
+        notify_user((int) $author['id'], 'approval', 'Freigegeben: ' . $type['title'] . ' (von ' . user_display($me) . ')', url('document', ['id' => $docId]));
         notify_webhook('approvals', log_embed('✅ Freigegeben: ' . $type['title'], 'Eingereicht von ' . user_display($author) . ', freigegeben von ' . user_display($me) . '.', 0x1e7a43));
         flash('success', 'Freigegeben und ausgestellt.');
         redirect(url('document', ['id' => $docId]));
@@ -39,6 +40,7 @@ if (is_post()) {
         }
         update('document_drafts', $id, ['status' => 'rejected', 'owner_id' => $draft['submitted_by'], 'reviewed_by' => $me['id'], 'note' => $note, 'updated_at' => now()]);
         audit('draft.reject', 'document', null, $type['short'] . ' Entwurf #' . $id . ': ' . $note);
+        notify_user((int) $draft['submitted_by'], 'approval', 'Zurückgewiesen: ' . $type['title'] . ' (von ' . user_display($me) . ')', url('document_new', ['draft' => $id]), $note);
         notify_webhook('approvals', log_embed('↩️ Zurückgewiesen: ' . $type['title'], 'Entwurf von ' . $draft['submitter_name'] . ' wurde von ' . user_display($me) . ' zurückgewiesen.', 0xb3261e));
         flash('success', 'Zurückgewiesen. Der Entwurf liegt wieder bei ' . $draft['submitter_name'] . '.');
         redirect(url('drafts'));

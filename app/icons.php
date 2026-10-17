@@ -27,6 +27,7 @@ function icon(string $name, string $class = 'ic'): string
         'user'     => '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>',
         'check'    => '<path d="m5 12 5 5 9-10"/>',
         'external' => '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v6H4V6h6"/>',
+        'bell'     => '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
         'clock'    => '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
         'warn'     => '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>',
         'menu'     => '<path d="M4 6h16M4 12h16M4 18h16"/>',

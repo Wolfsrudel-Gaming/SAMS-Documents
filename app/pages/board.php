@@ -47,6 +47,9 @@ if (is_post()) {
         $nid = insert('announcements', $row + ['created_by' => $me['id'], 'created_at' => now()]);
         mark_announcement_read($nid, (int) $me['id'], true);
         audit('board.create', 'announcement', $nid, $row['title']);
+        foreach (announcement_audience($row + ['id' => $nid]) as $u) {
+            notify_user((int) $u['id'], 'board', ($row['require_ack'] ? 'Bitte bestätigen: ' : 'Neuer Aushang: ') . $row['title'], url('board') . '#a' . $nid);
+        }
     }
     flash('success', 'Aushang veröffentlicht.');
     redirect(url('board'));

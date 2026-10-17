@@ -342,3 +342,29 @@
         }
     }, 15000);
 })();
+
+// Benachrichtigungen: Zähler regelmäßig aktualisieren (Titel und Glocke)
+(function () {
+    'use strict';
+    var badge = document.querySelector('.bell-count');
+    if (!badge) { return; }
+    var baseTitle = document.title.replace(/^\(\d+\) /, '');
+    function show(n) {
+        badge.textContent = n;
+        badge.hidden = !n;
+        document.title = (n ? '(' + n + ') ' : '') + baseTitle;
+    }
+    show(parseInt(badge.textContent, 10) || 0);
+    setInterval(function () {
+        if (document.hidden) { return; }
+        fetch('index.php?p=notifications&count=1', { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { if (d) { show(d.unread); } })
+            .catch(function () {});
+    }, 60000);
+    // Menü schließen beim Klick daneben
+    document.addEventListener('click', function (e) {
+        var bell = document.querySelector('.bell');
+        if (bell && bell.open && !bell.contains(e.target)) { bell.open = false; }
+    });
+})();

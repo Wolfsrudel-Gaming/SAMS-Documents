@@ -68,6 +68,17 @@ $active = $activeMap[$current] ?? $current;
         <kbd>F2</kbd>
     </form>
     <div class="topbar-right">
+        <?php $unread = notifications_unread(); ?>
+        <details class="bell">
+            <summary title="Benachrichtigungen"><?= icon('bell') ?><b class="bell-count"<?= $unread ? '' : ' hidden' ?>><?= $unread ?></b></summary>
+            <div class="bell-menu">
+                <div class="bell-head"><strong>Benachrichtigungen</strong><a href="<?= e(url('notifications')) ?>">Alle</a></div>
+                <?php foreach (notifications_recent() as $n): ?>
+                    <a class="<?= $n['read_at'] ? '' : 'unread' ?>" href="<?= e(url('notifications', ['open' => $n['id']])) ?>"><?= e($n['title']) ?><small><?= e(time_ago($n['created_at'])) ?></small></a>
+                <?php endforeach; ?>
+                <?php if (!notifications_recent(1)): ?><p class="muted small">Keine Benachrichtigungen.</p><?php endif; ?>
+            </div>
+        </details>
         <?php if (can('duty.clock')): $dutyOpen = duty_open_session((int) $user['id']); ?>
             <form method="post" action="<?= e(url('duty')) ?>" class="duty-toggle<?= $dutyOpen ? ' on' : '' ?>">
                 <?= csrf_field() ?><input type="hidden" name="action" value="toggle"><input type="hidden" name="return" value="<?= e($current) ?>">

@@ -72,6 +72,9 @@ if (is_post() && in_array(post('action'), ['share', 'share_revoke'], true)) {
     } else {
         $recipient = trim((string) post('recipient')) ?: ($target ? user_display($target) : '');
         $token = create_share($doc, $kind, $target ? (int) $target['id'] : null, $agency, $recipient, trim((string) post('purpose')), $hours);
+        if ($target) {
+            notify_user((int) $target['id'], 'share', 'Dokument für dich freigegeben: ' . ($type['title'] ?? 'Dokument') . ' ' . $doc['number'], url('shared', ['id' => $id]));
+        }
         if ($token) {
             $_SESSION['new_share_url'] = share_url($token);
         }

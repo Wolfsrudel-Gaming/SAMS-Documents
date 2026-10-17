@@ -26,6 +26,9 @@ if (is_post()) {
         }
         $tid = start_thread($subject, $body, $to, (int) $me['id']);
         audit('messages.send', 'thread', $tid, $subject . ' an ' . count($to) . ' Empfänger');
+        foreach ($to as $uid) {
+            notify_user((int) $uid, 'message', 'Neue Nachricht von ' . user_display($me) . ': ' . $subject, url('messages', ['id' => $tid]));
+        }
         redirect(url('messages', ['id' => $tid]));
     }
     $member = thread_member((int) post('thread_id'), (int) $me['id']);
@@ -39,6 +42,10 @@ if (is_post()) {
             q('UPDATE message_threads SET last_at = ? WHERE id = ?', [now(), $member['thread_id']]);
             q('UPDATE thread_members SET archived = 0 WHERE thread_id = ?', [$member['thread_id']]);
             update('thread_members', (int) $member['id'], ['last_read_id' => $mid]);
+            $subject = (string) scalar('SELECT subject FROM message_threads WHERE id = ?', [$member['thread_id']]);
+            foreach (all('SELECT user_id FROM thread_members WHERE thread_id = ? AND user_id <> ?', [$member['thread_id'], $me['id']]) as $m) {
+                notify_user((int) $m['user_id'], 'message', 'Antwort von ' . user_display($me) . ': ' . $subject, url('messages', ['id' => $member['thread_id']]));
+            }
         }
         redirect(url('messages', ['id' => $member['thread_id']]) . '#last');
     }

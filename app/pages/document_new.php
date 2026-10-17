@@ -202,12 +202,15 @@ if (is_post()) {
             $note = mb_substr(trim((string) post('handover_note')), 0, 1000);
             $id = $saveDraft('draft', (int) $target['id'], $note);
             audit('draft.handover', 'document', null, $type['short'] . ' Entwurf #' . $id . ' an ' . user_display($target));
+            notify_user((int) $target['id'], 'draft', user_display($me) . ' hat dir einen Entwurf übergeben: ' . $type['title'], url('document_new', ['draft' => $id]), $note);
             flash('success', 'Entwurf an ' . user_display($target) . ' übergeben.');
             redirect(url('drafts'));
         }
     } elseif ($action === 'submit' && $approval && !$errors) {
         $id = $saveDraft('pending', (int) $me['id'], mb_substr(trim((string) post('submit_note')), 0, 1000));
         audit('draft.submit', 'document', null, $type['short'] . ' Entwurf #' . $id . ' zur Freigabe');
+        notify_users_with('documents.approve', 'approval', 'Freigabe angefragt: ' . $type['title'] . ' von ' . user_display($me), url('draft', ['id' => $id]),
+            fn($u) => user_level($u) >= $cfg['approval_by'] && (int) $u['id'] !== (int) $me['id']);
         notify_webhook('approvals', log_embed('🕓 Freigabe angefragt: ' . $type['title'], user_display($me) . ' hat ein Dokument zur Gegenzeichnung eingereicht. ' . base_url() . '/index.php?p=draft&id=' . $id, 0x9a6200));
         flash('success', 'Zur Freigabe eingereicht. Das Dokument wird ausgestellt, sobald es freigegeben ist.');
         redirect(url('drafts'));
