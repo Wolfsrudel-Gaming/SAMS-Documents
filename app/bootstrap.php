@@ -91,4 +91,9 @@ function start_session(): void
 if (!SAMS_CLI) {
     header('X-Content-Type-Options: nosniff');
     header('Referrer-Policy: same-origin');
+    // Optional: Einbetten nur in erlaubten Quellen (z. B. eigene Domain + FiveM-NUI). Leer = keine Einschränkung,
+    // damit Browser und Ingame-Tablet ohne weitere Einstellung funktionieren.
+    if (($fa = (string) cfg('frame_ancestors', '')) !== '') {
+        header('Content-Security-Policy: frame-ancestors ' . preg_replace('/[^\w\s:\/\.\-\*\'_]/', '', $fa));
+    }
 }

@@ -13,6 +13,9 @@ $redirectUri = base_url() . '/portal.php?action=callback';
 $action = (string) ($_GET['action'] ?? '');
 $page = (string) ($_GET['page'] ?? 'home');
 $devLogin = (bool) cfg('portal_dev_login', false);
+if ((is_post() || in_array($action, ['login', 'callback'], true)) && !rate_limit('portal', 40)) {
+    rate_limited_exit();
+}
 
 if (!portal_enabled()) {
     http_response_code(503);

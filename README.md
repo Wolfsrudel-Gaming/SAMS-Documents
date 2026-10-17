@@ -280,3 +280,11 @@ Verwendete Bibliotheken: [qrcode-generator](https://github.com/kazuhikoarase/qrc
 
 Nachrichten werden über eine Warteschlange verschickt; `php bin/sams cron` läuft automatisch mit dem Update-Timer mit.
 
+
+## Tests und Absicherung der Auto-Updates
+
+- `php tests/run.php` startet das System mit einer frischen Testdatenbank auf einem eigenen Port und spielt alle wichtigen Abläufe durch (Anmeldung, Akten, Dokumente, Freigaben, Abrechnung, Dienstzeit, Tablet-API, Personal, Ausbildung, Wiki, Portal, Vorlagen, Discord-Warteschlange). Die echte `.env` und Datenbank bleiben unberührt. `php tests/run.php documents` testet nur einen Bereich.
+- Auf GitHub laufen die Tests bei jedem Push automatisch (`.github/workflows/tests.yml`), dazu die Migrationen auf MariaDB und die Lua-Syntax der FiveM-Resource. Erst zusammenführen, wenn alles grün ist.
+- Nach jedem Auto-Update läuft `php bin/sams selftest` (Syntax aller Dateien, Datenbank, jede Dokumentvorlage) und die Seite wird aufgerufen. Schlägt etwas fehl, werden Code und Datenbank automatisch zurückgesetzt. Optional `UPDATE_HEALTH_URL`, falls der Server sich nicht über `APP_URL` erreicht.
+- Optional unter *Einstellungen → Sicherheit*: automatische Abmeldung nach X Minuten ohne Aktivität (Standard: aus).
+- Öffentliche Seiten (Echtheitsprüfung, Freigabe-Links, Bürgerportal) bremsen automatisierte Massenabfragen; normale Nutzung ist davon nicht betroffen.

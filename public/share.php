@@ -7,6 +7,9 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/app/bootstrap.php';
 
 $token = (string) ($_GET['t'] ?? '');
+if (!rate_limit('share', 60)) {
+    rate_limited_exit();
+}
 $share = strlen($token) >= 32 ? one("SELECT * FROM document_shares WHERE token_hash = ? AND kind = 'link'", [hash('sha256', $token)]) : null;
 $doc = $share ? one('SELECT * FROM documents WHERE id = ?', [$share['document_id']]) : null;
 $error = !$share || !$doc ? 'Diese Freigabe existiert nicht.' : (!share_active($share) ? ($share['revoked'] ? 'Diese Freigabe wurde widerrufen.' : 'Diese Freigabe ist abgelaufen.') : '');

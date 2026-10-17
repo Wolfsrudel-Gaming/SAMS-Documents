@@ -12,6 +12,7 @@
  *   php bin/sams restore <datei>            Backup einspielen (überschreibt die Datenbank!)
  *   php bin/sams maintenance on|off         Wartungsmodus ein-/ausschalten
  *   php bin/sams update:request             Sofortige Update-Prüfung anfordern
+ *   php bin/sams selftest                   Selbsttest (Syntax, Datenbank, Dokumentvorlagen) – läuft nach jedem Update
  *   php bin/sams cron                       Regelmäßige Aufgaben (läuft mit dem Update-Timer mit):
  *                                           Discord-Nachrichten senden, Berichte, Rollen-Sync, Dienstzeiten
  *   php bin/sams report weekly|monthly      Bericht sofort nach Discord senden (letzte Woche / letzter Monat)
@@ -141,6 +142,54 @@ switch ($cmd) {
         request_update('cli');
         $out('Update-Prüfung angefordert. Der Update-Timer übernimmt beim nächsten Lauf.');
         break;
+
+    case 'selftest':
+        $errors = [];
+        // 1. Syntax aller PHP-Dateien
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(SAMS_ROOT, FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $file) {
+            $path = $file->getPathname();
+            if (!str_ends_with($path, '.php') || preg_match('#/(vendor|storage|node_modules|\.git)/#', $path)) {
+                continue;
+            }
+            exec(escapeshellarg(PHP_BINARY) . ' -l ' . escapeshellarg($path) . ' 2>&1', $o, $rc);
+            if ($rc !== 0) {
+                $errors[] = 'Syntaxfehler: ' . substr($path, strlen(SAMS_ROOT) + 1);
+            }
+        }
+        // 2. Datenbank und Migrationen
+        try {
+            scalar('SELECT COUNT(*) FROM users');
+            if ($p = pending_migrations()) {
+                $errors[] = 'Offene Migrationen: ' . implode(', ', $p);
+            }
+        } catch (Throwable $e) {
+            $errors[] = 'Datenbank: ' . $e->getMessage();
+        }
+        // 3. Jede Dokumentart einmal mit Standardwerten rendern
+        $u = ['id' => 0, 'name' => 'Selbsttest', 'title' => '', 'rank_name' => '', 'department' => '', 'badge_number' => '', 'doctor_number' => '', 'signature' => ''];
+        foreach (document_types() as $key => $t) {
+            $data = [];
+            foreach ($t['fields'] as $f) {
+                if (isset($f['name'])) {
+                    $data[$f['name']] = field_default($f);
+                }
+            }
+            try {
+                ob_start();
+                render_document(['id' => 0, 'type' => $key, 'number' => 'TEST', 'data' => $data, 'patient_snapshot' => [], 'issuer_snapshot' => $u,
+                    'verify_code' => 'TEST0000', 'status' => 'valid', 'issued_at' => now()], ['draft' => true]);
+                ob_end_clean();
+            } catch (Throwable $e) {
+                ob_end_clean();
+                $errors[] = "Vorlage $key: " . $e->getMessage();
+            }
+        }
+        foreach ($errors as $err) {
+            fwrite(STDERR, $err . PHP_EOL);
+        }
+        $out($errors ? 'Selbsttest FEHLGESCHLAGEN (' . count($errors) . ')' : 'Selbsttest ok');
+        exit($errors ? 1 : 0);
 
     case 'cron':
         duty_autoclose();

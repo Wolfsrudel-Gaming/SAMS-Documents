@@ -52,7 +52,7 @@ $active = $activeMap[$current] ?? $current;
 <?php endif; ?>
 <?= theme_style() ?>
 </head>
-<body class="<?= $user ? 'has-nav' : 'no-nav' ?> page-<?= e($current) ?>">
+<body class="<?= $user ? 'has-nav' : 'no-nav' ?> page-<?= e($current) ?>"<?= $user && idle_minutes() > 0 ? ' data-idle="' . idle_minutes() . '"' : '' ?>>
 <?php if ($user): ?>
 <header class="topbar">
     <button class="nav-toggle" type="button" aria-label="Menü"><?= icon('menu') ?></button>

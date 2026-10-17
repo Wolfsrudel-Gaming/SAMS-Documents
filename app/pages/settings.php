@@ -39,6 +39,9 @@ $keys = [
         'portal_appointment_kinds' => ['Terminarten (durch | getrennt)', 'Allgemeine Sprechstunde | Untersuchung Waffenschein | Untersuchung Führerschein / Fluglizenz | Einstellungsuntersuchung | Psychologisches Gespräch | Nachsorge / Fäden ziehen | Impfung'],
         'portal_hidden_types'      => ['Im Portal ausgeblendete Dokumentarten (Kürzel-Schlüssel, Komma)', 'psych_gutachten,unterbringung,blutentnahme,verletzung,todesbescheinigung'],
     ],
+    'Sicherheit' => [
+        'session_idle_minutes' => ['Automatisch abmelden nach … Minuten ohne Aktivität (0 = aus)', '0'],
+    ],
     'Dienstzeiten' => [
         'duty_max_hours' => ['Vergessene Schichten automatisch beenden nach (Stunden)', '12'],
         'duty_command'   => ['Befehl im Spiel (Hinweistext, ohne /)', 'dienst'],
@@ -56,6 +59,9 @@ if (is_post()) {
                 $v = implode("\n", array_filter(array_map('trim', explode('|', $v))));
             } elseif ($k === 'portal_enabled') {
                 $v = $v === '0' ? '0' : '1';
+            }
+            if ($k === 'session_idle_minutes') {
+                $v = (string) max(0, min(1440, (int) $v));
             }
             if ($k === 'duty_max_hours') {
                 $v = (string) max(1, min(48, (int) $v ?: 12));

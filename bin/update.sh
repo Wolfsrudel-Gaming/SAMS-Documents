@@ -9,7 +9,8 @@
 #   4. Code auf den neuen Stand bringen (lokale Änderungen werden als Patch gesichert)
 #   5. Datenbank-Migrationen
 #   6. Wartungsmodus aus
-# Schlägt Schritt 5 fehl, werden Code und Datenbank automatisch zurückgesetzt.
+#   7. Selbsttest (Syntax, Datenbank, Dokumentvorlagen) und Aufruf der Seite
+# Schlägt Schritt 5 oder 7 fehl, werden Code und Datenbank automatisch zurückgesetzt.
 #
 # Ein fehlgeschlagener Commit wird gemerkt und erst wieder versucht, wenn ein neuer
 # Commit kommt oder die Prüfung manuell angefordert wird (Button im Admin, --force).
@@ -153,24 +154,46 @@ if [[ $DOCKER -eq 1 ]] && git diff --name-only "$OLD" "$NEW" | grep -qE '^(Docke
     ensure_docker --build || log "WARNUNG: Neubau fehlgeschlagen, verwende bestehende Container."
 fi
 
-# 4. Migrationen
-if ! php_run migrate >>"$LOG" 2>&1; then
-    log "FEHLER: Migration fehlgeschlagen – setze Code und Datenbank auf ${OLD:0:7} zurück."
+# Zurücksetzen auf den alten Stand (Code und Datenbank)
+rollback() {
+    log "FEHLER: $1 – setze Code und Datenbank auf ${OLD:0:7} zurück."
     git reset --hard --quiet "$OLD"
     php_run restore "$BACKUP" --force >>"$LOG" 2>&1 || log "FEHLER: Wiederherstellung des Backups fehlgeschlagen! Manuell prüfen: $BACKUP"
+    [[ -n "$RELOAD_CMD" ]] && bash -c "$RELOAD_CMD" >>"$LOG" 2>&1
     rm -f "$STORAGE/maintenance"
     echo "$NEW" > "$FAILED_FILE"
-    write_status "rolled_back" "$OLD" "$NEW" "Migration fehlgeschlagen, zurückgesetzt"
-    notify "⚠️ SAMS-Update auf ${NEW:0:7} fehlgeschlagen und automatisch zurückgesetzt. Details: storage/logs/update.log"
+    write_status "rolled_back" "$OLD" "$NEW" "$1, zurückgesetzt"
+    notify "⚠️ SAMS-Update auf ${NEW:0:7} fehlgeschlagen ($1) und automatisch zurückgesetzt. Details: storage/logs/update.log"
     exit 1
-fi
+}
+
+# 4. Migrationen
+php_run migrate >>"$LOG" 2>&1 || rollback "Migration fehlgeschlagen"
+
+# 4b. Selbsttest: Syntax aller Dateien, Datenbank, jede Dokumentvorlage
+php_run selftest >>"$LOG" 2>&1 || rollback "Selbsttest fehlgeschlagen"
 
 # 5. Optional: PHP-FPM neu laden (OPcache)
 if [[ -n "$RELOAD_CMD" ]]; then
     bash -c "$RELOAD_CMD" >>"$LOG" 2>&1 || log "WARNUNG: Reload-Befehl fehlgeschlagen: $RELOAD_CMD"
 fi
 
-rm -f "$STORAGE/maintenance" "$FAILED_FILE"
+rm -f "$STORAGE/maintenance"
+
+# 6. Seite wirklich aufrufen (Health-Check und Login-Seite), sonst zurücksetzen
+HEALTH_URL="$(env_get UPDATE_HEALTH_URL "$(env_get APP_URL)")"
+if [[ -n "$HEALTH_URL" ]]; then
+    ok=0
+    for _ in 1 2 3 4 5; do
+        if curl -fsS -m 10 "${HEALTH_URL%/}/health.php" >/dev/null 2>&1 && curl -fsS -m 10 -o /dev/null "${HEALTH_URL%/}/index.php?p=login" 2>/dev/null; then
+            ok=1; break
+        fi
+        sleep 3
+    done
+    [[ $ok -eq 1 ]] || { echo "update ${NEW:0:7}" > "$STORAGE/maintenance"; rollback "Seite nach dem Update nicht erreichbar"; }
+fi
+
+rm -f "$FAILED_FILE"
 SUBJECT="$(git log -1 --pretty=%s "$NEW")"
 write_status "ok" "$OLD" "$NEW" "$SUBJECT"
 log "Update erfolgreich: ${NEW:0:7} – $SUBJECT"

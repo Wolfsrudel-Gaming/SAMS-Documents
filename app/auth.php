@@ -31,7 +31,53 @@ function current_user(bool $refresh = false): ?array
             unset($_SESSION['uid'], $_SESSION['sv']);
         }
     }
+    // Optionale Abmeldung bei Inaktivität (Einstellung session_idle_minutes, 0 = aus)
+    if ($user && PHP_SAPI !== 'cli') {
+        $idle = idle_minutes();
+        if ($idle > 0 && isset($_SESSION['last_activity']) && time() - (int) $_SESSION['last_activity'] > $idle * 60) {
+            unset($_SESSION['uid'], $_SESSION['sv'], $_SESSION['last_activity']);
+            flash('warn', "Du wurdest nach $idle Minuten ohne Aktivität automatisch abgemeldet.");
+            $user = null;
+        } else {
+            $_SESSION['last_activity'] = time();
+        }
+    }
     return $user;
+}
+
+/**
+ * Einfache Ratenbegrenzung pro IP für öffentliche Seiten. Gibt false zurück,
+ * wenn das Limit erreicht ist (dann 429 senden). Großzügig gewählt, damit
+ * normale Nutzung im Browser nie betroffen ist.
+ */
+function rate_limit(string $name, int $max, int $seconds = 60): bool
+{
+    try {
+        $bucket = $name . ':' . client_ip();
+        $since = date('Y-m-d H:i:s', time() - $seconds);
+        if ((int) scalar('SELECT COUNT(*) FROM rate_hits WHERE bucket = ? AND created_at >= ?', [$bucket, $since]) >= $max) {
+            return false;
+        }
+        insert('rate_hits', ['bucket' => $bucket, 'created_at' => now()]);
+        if (random_int(1, 50) === 1) {
+            q('DELETE FROM rate_hits WHERE created_at < ?', [date('Y-m-d H:i:s', time() - 3600)]);
+        }
+    } catch (PDOException $e) {
+        // vor der Migration: nicht begrenzen
+    }
+    return true;
+}
+
+function rate_limited_exit(): void
+{
+    http_response_code(429);
+    header('Retry-After: 60');
+    exit('<!doctype html><meta charset="utf-8"><body style="font-family:system-ui;padding:2rem">Zu viele Anfragen in kurzer Zeit. Bitte eine Minute warten.</body>');
+}
+
+function idle_minutes(): int
+{
+    return max(0, min(1440, (int) setting('session_idle_minutes', '0')));
 }
 
 /** Seiten, die trotz offener Pflichtschritte erreichbar sind. */
@@ -166,6 +212,7 @@ function complete_login(array $u): void
     session_regenerate_id(true);
     $_SESSION['uid'] = (int) $u['id'];
     $_SESSION['sv'] = (int) $u['session_version'];
+    $_SESSION['last_activity'] = time();
     update('users', (int) $u['id'], ['last_login' => now()]);
     current_user(true);
 }

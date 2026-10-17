@@ -321,3 +321,24 @@
     tick();
     setInterval(tick, 30000);
 })();
+
+// Optionale Abmeldung bei Inaktivität: Aktivität hält die Sitzung per Lebenszeichen offen,
+// nach Ablauf lädt die Seite neu (der Server meldet dann ab), damit keine Akte offen stehen bleibt.
+(function () {
+    'use strict';
+    var minutes = parseInt(document.body.dataset.idle || '0', 10);
+    if (!minutes) { return; }
+    var last = Date.now(), pinged = Date.now();
+    ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(function (ev) {
+        document.addEventListener(ev, function () { last = Date.now(); }, { passive: true });
+    });
+    setInterval(function () {
+        var now = Date.now();
+        if (now - last > minutes * 60000 + 5000) {
+            location.reload();
+        } else if (last > pinged && now - pinged > 120000) {
+            pinged = now;
+            fetch('index.php?p=ping', { credentials: 'same-origin' }).catch(function () {});
+        }
+    }, 15000);
+})();

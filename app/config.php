@@ -88,6 +88,7 @@ function build_config(): array
         ],
         // Nur zum Testen ohne Discord-App: Anmeldung im Bürgerportal mit frei eingegebener ID
         'portal_dev_login' => (bool) env('PORTAL_DEV_LOGIN', false),
+        'frame_ancestors' => (string) env('FRAME_ANCESTORS', ''),
     ];
 }
 

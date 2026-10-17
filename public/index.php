@@ -16,6 +16,7 @@ $routes = [
     'dashboard'       => '',
     'profile'         => '',
     'search'          => '',
+    'ping'            => '',
     'patients'        => 'patients.view',
     'patient'         => 'patients.view',
     'case'            => 'patients.view',

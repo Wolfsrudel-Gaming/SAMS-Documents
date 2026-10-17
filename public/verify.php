@@ -7,6 +7,9 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/app/bootstrap.php';
 
 $code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) ($_GET['c'] ?? '')));
+if ($code !== '' && !rate_limit('verify', 60)) {
+    rate_limited_exit();
+}
 $doc = null;
 $type = null;
 if ($code !== '') {

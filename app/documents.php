@@ -540,6 +540,10 @@ function datalist_html(): string
 
 function field_default(array $f)
 {
+    // Listenfelder (Positionen, Mehrfachauswahl, Körperschema) sind immer Arrays
+    if (in_array($f['type'] ?? '', ['items', 'checkboxes', 'bodymap'], true) && !isset($f['default'])) {
+        return [];
+    }
     $d = $f['default'] ?? '';
     if ($d === 'today') {
         return date('Y-m-d');
