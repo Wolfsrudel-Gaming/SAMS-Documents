@@ -79,6 +79,11 @@ function permission_catalog(): array
             'board.manage' => 'Aushänge veröffentlichen und Lesebestätigungen einsehen',
             'messages.use' => 'Interne Nachrichten senden und empfangen',
         ],
+        'Bürgerportal' => [
+            'portal.manage'       => 'Terminanfragen und Anträge aus dem Bürgerportal bearbeiten, Bürgerkonten verwalten',
+            'portal.link'         => 'Bürgerkonten mit Patientenakten verknüpfen',
+            'portal.applications' => 'Bewerbungen bearbeiten',
+        ],
         'Organisation' => [
             'ranks.manage'          => 'Ränge und Rechte verwalten',
             'departments.manage'    => 'Abteilungen verwalten',

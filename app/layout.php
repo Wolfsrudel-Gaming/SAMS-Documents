@@ -18,6 +18,7 @@ $navGroups = [
         'training'     => ['Ausbildung', 'training.view|training.manage', 'shield'],
         'wiki'         => ['Wiki', 'wiki.view|wiki.edit', 'folder'],
         'shared'       => ['Für mich freigegeben', 'documents.shared_view', 'external'],
+        'portal_admin' => ['Bürgerportal', 'portal.manage|portal.applications', 'users'],
     ],
     'Verwaltung' => [
         'users'    => ['Personal', 'users.view', 'users'],
@@ -84,7 +85,7 @@ $active = $activeMap[$current] ?? $current;
         if (!$visible) continue; ?>
         <div class="nav-group"><?= e($group) ?></div>
         <?php foreach ($visible as $p => [$label, $role, $ic]): ?>
-            <a href="<?= e(url($p)) ?>" title="<?= e($label) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e($label) ?></span><?php $cnt = match ($p) { 'drafts' => draft_inbox_count(), 'board' => board_unread_count(), 'messages' => messages_unread_count(), default => 0 }; if ($cnt): ?><b class="nav-count"><?= $cnt ?></b><?php endif; ?></a>
+            <a href="<?= e(url($p)) ?>" title="<?= e($label) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e($label) ?></span><?php $cnt = match ($p) { 'drafts' => draft_inbox_count(), 'board' => board_unread_count(), 'messages' => messages_unread_count(), 'portal_admin' => portal_open_count(), default => 0 }; if ($cnt): ?><b class="nav-count"><?= $cnt ?></b><?php endif; ?></a>
         <?php endforeach; ?>
     <?php endforeach; ?>
     <div class="nav-group">Extern</div>

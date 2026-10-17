@@ -1,6 +1,6 @@
 # SAMS Dokumenten- & Aktensystem – Konzept Version 1
 
-Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1–5 umgesetzt
+Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1–6 umgesetzt
 
 Dieses Konzept fasst die Fragerunde (60 Fragen) und die anschließenden Festlegungen zusammen.
 Es beschreibt, was in Version 1 gebaut wird, in welcher Reihenfolge, und was bewusst später kommt.
@@ -136,11 +136,13 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - ✅ **Schwarzes Brett** *(v1.15.0)*: Aushänge mit Zielgruppe (Abteilung, ab Rang), wichtig/angeheftet/Ablaufdatum, Lesebestätigung mit Übersicht wer bestätigt hat, wichtige Aushänge oben auf der Übersicht
 - ✅ **Interne Nachrichten** *(v1.15.0)*: Unterhaltungen mit einer oder mehreren Personen oder ganzen Abteilungen, Ungelesen-Zähler, Archiv
 
-### Etappe 6 – Bürgerportal *(benötigt Discord-Login für Bürger)*
-- Discord-Login für Bürger, Verknüpfung mit der Patientenakte durch einen Medic
-- Eigene Dokumente ansehen und herunterladen
-- Termine anfragen (z. B. Waffenschein-Untersuchung), Bestätigung durch den SAMS
-- Anträge (Aktenkopie, Schweigepflichtentbindung, Beschwerde) und Bewerbungen
+### Etappe 6 – Bürgerportal ✅ *umgesetzt in v1.16.0*
+- `portal.php`: Discord-Login für Bürger (OAuth2, nur Name und ID), Verknüpfung mit der Patientenakte per 24-h-Code, den ein Medic in der Akte einträgt
+- Eigene Dokumente ansehen und drucken (vertrauliche Arten wie Gutachten sind einstellbar ausgeblendet)
+- Termine anfragen (Terminarten einstellbar), Bestätigung mit Datum/Ort/Hinweis durch den SAMS, Absagen
+- Anträge (Aktenkopie, Schweigepflichtentbindung, Beschwerde) mit Antwort, Bewerbungen mit Status
+- Bearbeitung im Websystem unter *Bürgerportal* (Zähler in der Navigation), Bürgerkonten sperren/lösen
+- Einrichtung: `DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET` in der `.env`, Redirect `APP_URL/portal.php?action=callback`
 
 ### Etappe 7 – Statistik und Discord
 - Dashboards: Aktivität pro Mitarbeiter, Fallzahlen, Finanzen, Qualität

@@ -33,6 +33,12 @@ $keys = [
         'seal_text'  => ['Umschrift Dienstsiegel', 'SAN ANDREAS MEDICAL SERVICES'],
         'currency'   => ['Währungssymbol', '$'],
     ],
+    'Bürgerportal' => [
+        'portal_enabled'           => ['Bürgerportal aktiv (1 = ja, 0 = nein)', '1'],
+        'portal_intro'             => ['Begrüßungstext', ''],
+        'portal_appointment_kinds' => ['Terminarten (durch | getrennt)', 'Allgemeine Sprechstunde | Untersuchung Waffenschein | Untersuchung Führerschein / Fluglizenz | Einstellungsuntersuchung | Psychologisches Gespräch | Nachsorge / Fäden ziehen | Impfung'],
+        'portal_hidden_types'      => ['Im Portal ausgeblendete Dokumentarten (Kürzel-Schlüssel, Komma)', 'psych_gutachten,unterbringung,blutentnahme,verletzung,todesbescheinigung'],
+    ],
     'Dienstzeiten' => [
         'duty_max_hours' => ['Vergessene Schichten automatisch beenden nach (Stunden)', '12'],
         'duty_command'   => ['Befehl im Spiel (Hinweistext, ohne /)', 'dienst'],
@@ -45,6 +51,11 @@ if (is_post()) {
             $v = mb_substr((string) post($k), 0, 300);
             if (str_starts_with($k, 'theme_') && $v !== '' && !preg_match('/^#[0-9a-f]{6}$/i', $v)) {
                 $v = '';
+            }
+            if ($k === 'portal_appointment_kinds') {
+                $v = implode("\n", array_filter(array_map('trim', explode('|', $v))));
+            } elseif ($k === 'portal_enabled') {
+                $v = $v === '0' ? '0' : '1';
             }
             if ($k === 'duty_max_hours') {
                 $v = (string) max(1, min(48, (int) $v ?: 12));
@@ -81,7 +92,7 @@ ob_start(); ?>
                 <div class="field w-third"><label><?= e($label) ?></label>
                     <div class="color-row"><input type="color" value="<?= e($cv) ?>"><input type="text" name="<?= e($k) ?>" value="<?= e(setting($k, '')) ?>" placeholder="<?= e($placeholder) ?>"></div></div>
             <?php else: ?>
-                <div class="field w-half"><label><?= e($label) ?></label><input name="<?= e($k) ?>" value="<?= e(setting($k, '')) ?>" placeholder="<?= e($placeholder) ?>"></div>
+                <div class="field w-half"><label><?= e($label) ?></label><input name="<?= e($k) ?>" value="<?= e(str_replace("\n", ' | ', (string) setting($k, ''))) ?>" placeholder="<?= e($placeholder) ?>"></div>
             <?php endif; ?>
         <?php endforeach; ?>
     <?php endforeach; ?>

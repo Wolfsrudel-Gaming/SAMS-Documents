@@ -45,6 +45,7 @@ $routes = [
     'wiki_lists'      => 'lists.manage',
     'board'           => 'board.view|board.manage',
     'messages'        => 'messages.use',
+    'portal_admin'    => 'portal.manage|portal.applications',
     'users'           => 'users.view',
     'user_edit'       => 'users.view',
     'ranks'           => 'ranks.manage',

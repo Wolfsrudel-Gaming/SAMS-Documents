@@ -43,6 +43,8 @@ require __DIR__ . '/personnel.php';
 require __DIR__ . '/training.php';
 require __DIR__ . '/wiki.php';
 require __DIR__ . '/comms.php';
+require __DIR__ . '/discord.php';
+require __DIR__ . '/portal.php';
 
 set_exception_handler('handle_exception');
 set_error_handler(function (int $no, string $msg, string $file, int $line): bool {

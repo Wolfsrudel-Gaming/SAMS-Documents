@@ -10,6 +10,17 @@ $archived = patient_archived($p);
 
 if (is_post()) {
     csrf_check();
+    if (post('action') === 'portal_link') {
+        require_perm('portal.link');
+        $c = link_citizen((string) post('code'), $id, (int) $me['id']);
+        if ($c) {
+            audit('portal.link', 'patient', $id, patient_name($p) . ' ↔ Discord ' . $c['discord_name']);
+            flash('success', 'Bürgerportal verknüpft: ' . ($c['ic_name'] ?: $c['discord_name']) . ' sieht jetzt die eigenen Dokumente.');
+        } else {
+            flash('error', 'Der Code ist ungültig oder abgelaufen.');
+        }
+        redirect(url('patient', ['id' => $id]));
+    }
     if (post('action') === 'delete' && $archived) {
         // Endgültig löschen nur aus dem Archiv heraus (Archivieren statt Löschen)
         require_perm('patients.delete');
@@ -128,7 +139,16 @@ ob_start(); ?>
         <?php if (trim((string) $p['notes']) !== ''): ?>
             <h2>Notizen</h2><p><?= nl($p['notes']) ?></p>
         <?php endif; ?>
-        <?php if (!$archived && can('patients.archive')): ?>
+        <?php if (can('portal.link')): $linked = all('SELECT * FROM citizens WHERE patient_id = ?', [$id]); ?>
+            <h2>Bürgerportal</h2>
+            <?php foreach ($linked as $lc): ?><p class="small">Verknüpft mit Discord <strong><?= e($lc['discord_name']) ?></strong><?= $lc['linked_at'] ? ' seit ' . e(fmt_date($lc['linked_at'])) : '' ?></p><?php endforeach; ?>
+            <form method="post" class="inline-form">
+                <?= csrf_field() ?><input type="hidden" name="action" value="portal_link">
+                <input name="code" placeholder="Verknüpfungscode, z. B. K7F3-QX9M" maxlength="12" required>
+                <button class="btn small">Verknüpfen</button>
+            </form>
+        <?php endif; ?>
+                <?php if (!$archived && can('patients.archive')): ?>
             <h2>Archiv</h2>
             <form method="post" class="inline-form" onsubmit="return confirm('Akte archivieren? Sie bleibt lesbar, aber es können keine neuen Einträge oder Dokumente mehr angelegt werden.')">
                 <?= csrf_field() ?><input name="reason" placeholder="Grund (z. B. verzogen, verstorben)" maxlength="190">

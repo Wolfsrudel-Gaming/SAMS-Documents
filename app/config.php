@@ -80,6 +80,14 @@ function build_config(): array
             'webhook_secret'  => (string) env('UPDATE_WEBHOOK_SECRET', ''),
         ],
         'backup_keep_days' => (int) env('BACKUP_KEEP_DAYS', 14),
+        'discord' => [
+            'client_id'     => (string) env('DISCORD_CLIENT_ID', ''),
+            'client_secret' => (string) env('DISCORD_CLIENT_SECRET', ''),
+            'bot_token'     => (string) env('DISCORD_BOT_TOKEN', ''),
+            'guild_id'      => (string) env('DISCORD_GUILD_ID', ''),
+        ],
+        // Nur zum Testen ohne Discord-App: Anmeldung im Bürgerportal mit frei eingegebener ID
+        'portal_dev_login' => (bool) env('PORTAL_DEV_LOGIN', false),
     ];
 }
 
