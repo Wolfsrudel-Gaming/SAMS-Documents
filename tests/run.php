@@ -16,10 +16,11 @@ $tmp = sys_get_temp_dir() . '/sams-test-' . getmypid();
 $port = 18000 + getmypid() % 1000;
 define('TEST_BASE', "http://127.0.0.1:$port");
 define('TEST_DB', "$tmp/test.sqlite");
+define('TEST_ROOT_STORAGE', "$tmp/storage");
 $env = [
     'DB_DRIVER' => 'sqlite', 'DB_SQLITE_PATH' => TEST_DB, 'APP_URL' => TEST_BASE, 'APP_DEBUG' => 'true', 'APP_TIMEZONE' => 'Europe/Berlin',
     'API_KEY' => 'testkey', 'SESSION_SAMESITE' => 'Lax', 'PORTAL_DEV_LOGIN' => 'true', 'DISCORD_CLIENT_ID' => '', 'DISCORD_CLIENT_SECRET' => '',
-    'DISCORD_BOT_TOKEN' => '', 'DISCORD_GUILD_ID' => '', 'UPDATE_WEBHOOK_SECRET' => 'testsecret',
+    'DISCORD_BOT_TOKEN' => '', 'DISCORD_GUILD_ID' => '', 'UPDATE_WEBHOOK_SECRET' => 'testsecret', 'STORAGE_PATH' => "$tmp/storage",
 ];
 foreach ($env as $k => $v) {
     putenv("$k=$v");
@@ -74,7 +75,6 @@ foreach ($failed as $f) {
     echo "  ✗ $f\n";
 }
 if (!$failed) {
-    array_map('unlink', glob("$tmp/*"));
-    @rmdir($tmp);
+    exec('rm -rf ' . escapeshellarg($tmp));
 }
 exit($failed ? 1 : 0);

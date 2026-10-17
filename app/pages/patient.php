@@ -10,6 +10,9 @@ $archived = patient_archived($p);
 
 if (is_post()) {
     csrf_check();
+    if (handle_attachment_post($id, null)) {
+        redirect(url('patient', ['id' => $id]) . '#attachments');
+    }
     if (post('action') === 'portal_link') {
         require_perm('portal.link');
         $c = link_citizen((string) post('code'), $id, (int) $me['id']);
@@ -25,6 +28,9 @@ if (is_post()) {
         // Endgültig löschen nur aus dem Archiv heraus (Archivieren statt Löschen)
         require_perm('patients.delete');
         db()->beginTransaction();
+        foreach (all('SELECT * FROM attachments WHERE patient_id = ?', [$id]) as $att) {
+            delete_attachment($att);
+        }
         q('DELETE FROM entries WHERE patient_id = ?', [$id]);
         q('UPDATE documents SET case_id = NULL WHERE case_id IN (SELECT id FROM cases WHERE patient_id = ?)', [$id]);
         q('DELETE FROM cases WHERE patient_id = ?', [$id]);
@@ -175,6 +181,7 @@ ob_start(); ?>
                 </tbody>
             </table>
         </div>
+        <?= attachments_card($id, null, $archived) ?>
         <div class="card">
             <div class="card-head"><h2>Verlauf</h2>
                 <div class="tabs" data-filter="#timeline">

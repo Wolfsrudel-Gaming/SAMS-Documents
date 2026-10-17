@@ -23,6 +23,7 @@ $routes = [
     'case_edit'       => 'cases.manage',
     'patient_edit'    => 'patients.edit',
     'patient_print'   => 'patients.view',
+    'attachment'      => 'patients.view',
     'entry_edit'      => 'entries.create',
     'documents'       => 'documents.view',
     'document'        => 'documents.view',

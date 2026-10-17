@@ -31,6 +31,25 @@ final class Client
         return $this->request('POST', $path, $data);
     }
 
+    /** Formular mit Datei-Upload (multipart). $files: ['feld' => '/pfad/zur/datei'] */
+    public function upload(string $path, array $data, array $files): self
+    {
+        if (!isset($data['_csrf']) && preg_match('/name="_csrf" value="([^"]+)"/', $this->body, $m)) {
+            $data['_csrf'] = $m[1];
+        }
+        foreach ($files as $field => $file) {
+            $data[$field] = new CURLFile($file, mime_content_type($file) ?: 'application/octet-stream', basename($file));
+        }
+        $ch = curl_init($this->base . $path);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_COOKIEJAR => $this->jar,
+            CURLOPT_COOKIEFILE => $this->jar, CURLOPT_POST => true, CURLOPT_POSTFIELDS => $data]);
+        $this->body = (string) curl_exec($ch);
+        $this->status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $this->url = (string) curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+        curl_close($ch);
+        return $this;
+    }
+
     public function login(string $user, string $password = 'TestPasswort123'): self
     {
         $this->get('/index.php?p=login');

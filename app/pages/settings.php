@@ -41,6 +41,7 @@ $keys = [
     ],
     'Sicherheit' => [
         'session_idle_minutes' => ['Automatisch abmelden nach … Minuten ohne Aktivität (0 = aus)', '0'],
+        'attachment_max_mb'    => ['Maximale Größe von Anhängen in MB (begrenzt zusätzlich durch PHP/Webserver)', '10'],
     ],
     'Dienstzeiten' => [
         'duty_max_hours' => ['Vergessene Schichten automatisch beenden nach (Stunden)', '12'],

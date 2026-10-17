@@ -27,6 +27,7 @@ function permission_catalog(): array
             'patients.archive'     => 'Akten archivieren und reaktivieren',
             'cases.manage'         => 'Fallakten anlegen, bearbeiten und abschließen',
             'entries.create'       => 'Akteneinträge schreiben',
+            'attachments.upload'   => 'Anhänge hochladen (Fotos, Röntgenbilder, Scans, PDF)',
             'entries.confidential' => 'Vertrauliche Einträge lesen',
             'entries.edit_all'     => 'Einträge anderer bearbeiten',
             'entries.all_departments' => 'Abteilungseinträge aller Abteilungen lesen',

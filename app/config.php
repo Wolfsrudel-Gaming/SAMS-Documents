@@ -107,7 +107,9 @@ function cfg(string $key, $default = null)
 /** Pfad im Speicherordner. Der übergeordnete Ordner (bzw. mit $isDir der Ordner selbst) wird bei Bedarf angelegt. */
 function storage_path(string $sub = '', bool $isDir = false): string
 {
-    $path = SAMS_ROOT . '/storage' . ($sub !== '' ? '/' . ltrim($sub, '/') : '');
+    // STORAGE_PATH (optional, z. B. für die Tests) – sonst storage/ im Projektordner
+    $base = rtrim((string) (getenv('STORAGE_PATH') ?: SAMS_ROOT . '/storage'), '/');
+    $path = $base . ($sub !== '' ? '/' . ltrim($sub, '/') : '');
     $dir = $isDir || $sub === '' ? $path : dirname($path);
     if (!is_dir($dir)) {
         @mkdir($dir, 0775, true);

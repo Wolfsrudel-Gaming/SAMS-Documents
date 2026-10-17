@@ -568,3 +568,14 @@ body.portal { background: var(--bg); }
 .daybars small { font-size: .62rem; color: var(--muted); margin-top: 2px; overflow: hidden; }
 .hbars td.bar { width: 45%; }
 .hbars td.bar span { display: block; height: 10px; background: var(--primary); border-radius: 2px; min-width: 2px; }
+
+/* Anhänge */
+.att-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: .6rem; }
+.att { margin: 0; border: 1px solid var(--line-soft); border-radius: var(--radius); background: #fff; overflow: hidden; display: flex; flex-direction: column; }
+.att-thumb { display: flex; align-items: center; justify-content: center; height: 110px; background: var(--row-alt); }
+.att-thumb img { max-width: 100%; max-height: 110px; object-fit: cover; width: 100%; height: 100%; }
+.att-pdf { font-weight: 800; color: var(--accent); border: 2px solid var(--accent); padding: .3rem .5rem; border-radius: 3px; }
+.att figcaption { padding: .35rem .45rem; font-size: .8rem; position: relative; }
+.att figcaption small { display: block; color: var(--muted); font-size: .7rem; }
+.att figcaption form { position: absolute; top: .2rem; right: .2rem; }
+.att-upload { border-top: 1px solid var(--line-soft); padding-top: .5rem; }

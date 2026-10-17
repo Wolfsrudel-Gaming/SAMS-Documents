@@ -14,6 +14,9 @@ $archived = patient_archived($p);
 
 if (is_post()) {
     csrf_check();
+    if (handle_attachment_post((int) $p['id'], $id)) {
+        redirect(url('case', ['id' => $id]) . '#attachments');
+    }
     require_perm('cases.manage');
     $action = post('action');
     if ($action === 'close' && $case['status'] === 'open') {
@@ -97,6 +100,7 @@ ob_start(); ?>
             <?php if (!$entries): ?><p class="muted">Noch keine Einträge zu diesem Fall.</p><?php endif; ?>
             </div>
         </div>
+        <?= attachments_card((int) $p['id'], $id, $archived) ?>
         <div class="card">
             <h2>Dokumente (<?= count($docs) ?>)</h2>
             <table class="list compact">
