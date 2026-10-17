@@ -32,6 +32,7 @@ function permission_catalog(): array
             'documents.view'        => 'Dokumente ansehen',
             'documents.revoke.own'  => 'Eigene Dokumente stornieren',
             'documents.revoke.all'  => 'Alle Dokumente stornieren',
+            'documents.print'       => 'Dokumente im Spiel drucken',
         ],
         'Dokumente ausstellen' => $docs,
         'Personal' => [
@@ -48,6 +49,7 @@ function permission_catalog(): array
             'ranks.manage'          => 'Ränge und Rechte verwalten',
             'departments.manage'    => 'Abteilungen verwalten',
             'qualifications.manage' => 'Qualifikationen verwalten',
+            'printers.manage'       => 'Drucker in der Spielwelt verwalten',
         ],
         'System' => [
             'settings.manage' => 'Einstellungen (Briefkopf, Design, Logo)',
@@ -85,8 +87,12 @@ function user_permissions(?array $u): array
         return [];
     }
     if (!empty($u['is_superadmin'])) {
-        // Einschränkungen gelten nicht für den Hauptadministrator
-        return array_values(array_diff(all_permissions(), ['users.scope_department']));
+        // Hauptadministrator: alle Fähigkeiten, aber keine Einschränkungen. Die 2FA-Pflicht richtet sich nach seinem Rang.
+        $perms = array_diff(all_permissions(), ['users.scope_department', 'security.2fa_required']);
+        if (in_array('security.2fa_required', rank_permissions(isset($u['rank_id']) ? (int) $u['rank_id'] : null), true)) {
+            $perms[] = 'security.2fa_required';
+        }
+        return array_values($perms);
     }
     return rank_permissions(isset($u['rank_id']) ? (int) $u['rank_id'] : null);
 }

@@ -119,7 +119,7 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - **Vorlagen-Editor:** Leitung legt neue Dokumentarten im Browser an (Felder, Layout-Grundtyp Brief/Formular/Protokoll, Text mit Platzhaltern)
 - Logo, Farben und Briefkopf im Admin-Panel
 
-### Etappe 4 – Tablet und FiveM-Resource
+### Etappe 4 – Tablet und FiveM-Resource ✅ *Tablet, Drucker und Dokument-Items umgesetzt in v1.4.0 (Dienstzeit folgt)*
 - Eigene Resource `sams_tablet`: Tablet-Item und Befehl, eigene NUI-Oberfläche mit Tablet-Rahmen und Animation
 - Anmeldung im Tablet mit denselben Zugangsdaten, die Sitzung bleibt pro Spieler gemerkt
 - Dokumente werden als **ox_inventory-Item mit Metadaten** an den Patienten übergeben

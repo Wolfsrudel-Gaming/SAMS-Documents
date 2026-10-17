@@ -31,6 +31,7 @@ require __DIR__ . '/totp.php';
 require __DIR__ . '/documents.php';
 require __DIR__ . '/render.php';
 require __DIR__ . '/icons.php';
+require __DIR__ . '/printing.php';
 
 set_exception_handler('handle_exception');
 set_error_handler(function (int $no, string $msg, string $file, int $line): bool {
@@ -54,9 +55,13 @@ function start_session(): void
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
     }
-    $sameSite = cfg('cookie_samesite', 'Lax');
-    $secure = $sameSite === 'None' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+    $sameSite = cfg('cookie_samesite', 'auto');
+    if ($sameSite === 'auto') {
+        // Das Ingame-Tablet bettet das System in einem fremden Ursprung ein (cfx-nui-…)
+        $sameSite = $https ? 'None' : 'Lax';
+    }
+    $secure = $sameSite === 'None' || $https;
     session_name('SAMSSESSID');
     session_set_cookie_params([
         'lifetime' => 0,

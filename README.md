@@ -54,7 +54,8 @@ Ausgestellte Dokumente sind **unveränderlich** (Patienten- und Ausstellerdaten 
 - **Zugriffsprotokoll**: wer hat wann welche Akte geöffnet, welches Dokument ausgestellt oder storniert
 - **Einstellungen**: Name, Adresse, Logo, IK-Nummer, BSNR, Bankverbindung, Siegel-Umschrift, Währung, Nummernpräfix
 - Vorschlagslisten für ICD-10-Diagnosen, Medikamente, Fachrichtungen und Leistungen
-- **JSON-API** für FiveM-Resourcen (siehe unten)
+- **Im Spiel**: eigenes Tablet, Drucker in der Spielwelt, gedruckte Dokumente als Item (ansehen, zeigen, weitergeben) – siehe unten
+- **JSON-API** für FiveM-Resourcen
 
 ## Installation
 
@@ -184,34 +185,27 @@ Mit Docker jeweils `docker compose exec -T app php bin/sams …` voranstellen.
 
 Täglich um 04:30 (`sams-backup.timer`) und vor jedem Update. Aufbewahrung: `BACKUP_KEEP_DAYS` (Standard 14 Tage), Ablage in `storage/backups/`. Für echte Ausfallsicherheit den Ordner zusätzlich auf einen anderen Server kopieren.
 
-### Einbindung im Spiel (FiveM NUI / Tablet-Resource)
+### Im Spiel: Tablet, Drucker und Dokument-Items
 
-Das System kann direkt per URL in einer NUI-Seite oder einem iframe geladen werden. Läuft die Einbindung über eine
-andere Domain, in der `.env` `SESSION_SAMESITE=None` setzen (erfordert HTTPS), damit die Anmeldung im iframe
-funktioniert.
+Die FiveM-Resource [`fivem/sams_tablet`](fivem/sams_tablet) bringt das System ins Spiel: Anmeldung im Tablet mit den normalen Zugangsdaten, Drucker in der Spielwelt (Verwaltung im Tablet per „Aktuelle Position übernehmen“), Druckaufträge, die am Drucker als ox_inventory-Item abgeholt werden, und Dokument-Items zum Ansehen (Klemmbrett-Animation), Zeigen und Weitergeben. Installation und Einstellungen: [`fivem/sams_tablet/README.md`](fivem/sams_tablet/README.md).
+
+Voraussetzung ist HTTPS für das Websystem (das Einrichtungsskript richtet es ein), da das Tablet die Seite einbettet.
 
 ### API für FiveM-Resourcen
 
-In der `.env` steht `API_KEY` (leer = API deaktiviert).
-Den Schlüssel nur serverseitig verwenden (server.lua), nie im Client.
+In der `.env` steht `API_KEY` (leer = API deaktiviert). Den Schlüssel nur serverseitig verwenden (server.lua bzw. `set sams_api_key` in der server.cfg), nie im Client.
 
 ```
-GET api.php?action=verify&code=K7F3QX9M          → Dokument prüfen (z. B. für LSPD-/checkdoc-Befehl)
-GET api.php?action=patient&citizen_id=ABC12345   → Notfalldaten (Blutgruppe, Allergien, Vorerkrankungen …)
-GET api.php?action=documents&citizen_id=ABC12345 → Dokumente eines Bürgers
+GET  api.php?action=verify&code=K7F3QX9M          → Dokument prüfen (z. B. für LSPD-/checkdoc-Befehl)
+GET  api.php?action=patient&citizen_id=ABC12345   → Notfalldaten (Blutgruppe, Allergien, Vorerkrankungen …)
+GET  api.php?action=documents&citizen_id=ABC12345 → Dokumente eines Bürgers
+GET  api.php?action=printers                      → Drucker in der Spielwelt
+POST api.php?action=tablet_login | tablet_session | tablet_launch | tablet_logout
+POST api.php?action=printer_jobs | job_pickup | jobs_since | document_item
 Header: X-API-Key: <api_key>
 ```
 
-Beispiel (server.lua):
-
-```lua
-PerformHttpRequest('https://deine-community.de/sams/api.php?action=verify&code=' .. code, function(status, body)
-    local data = json.decode(body)
-    if data and data.found then
-        print(('%s %s – Status: %s'):format(data.type, data.number, data.status))
-    end
-end, 'GET', '', { ['X-API-Key'] = 'DEIN_API_KEY' })
-```
+Details zu allen Aktionen stehen im Kopf von [`public/api.php`](public/api.php).
 
 ## Eigene Dokumentarten
 

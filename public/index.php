@@ -32,6 +32,7 @@ $routes = [
     'settings'        => 'settings.manage',
     'audit'           => 'audit.view',
     'system'          => 'system.manage',
+    'printers'        => 'printers.manage',
 ];
 
 $page = $_GET['p'] ?? 'dashboard';

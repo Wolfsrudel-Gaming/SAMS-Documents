@@ -103,6 +103,7 @@ if (is_post()) {
                 'patient_snapshot' => json_encode(patient_snapshot($patient), JSON_UNESCAPED_UNICODE),
                 'issuer_snapshot' => json_encode(issuer_snapshot($me), JSON_UNESCAPED_UNICODE),
                 'verify_code' => $code,
+                'view_token' => bin2hex(random_bytes(20)),
                 'status' => 'valid',
                 'issued_by' => $me['id'],
                 'issued_at' => now(),

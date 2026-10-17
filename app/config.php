@@ -72,7 +72,7 @@ function build_config(): array
             'password' => (string) env('DB_PASSWORD', ''),
             'charset'  => 'utf8mb4',
         ],
-        'cookie_samesite' => (string) env('SESSION_SAMESITE', 'Lax'),
+        'cookie_samesite' => (string) env('SESSION_SAMESITE', 'auto'),
         'api_key'  => (string) env('API_KEY', ''),
         'update' => [
             'branch'          => (string) env('UPDATE_BRANCH', 'main'),

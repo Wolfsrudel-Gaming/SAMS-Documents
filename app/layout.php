@@ -16,6 +16,7 @@ $navGroups = [
         'ranks'    => ['Ränge & Rechte', 'ranks.manage', 'shield'],
         'org'      => ['Abteilungen & Qualifikationen', 'departments.manage|qualifications.manage', 'folder'],
         'settings' => ['Einstellungen', 'settings.manage', 'settings'],
+        'printers' => ['Drucker', 'printers.manage', 'print'],
         'audit'    => ['Zugriffsprotokoll', 'audit.view', 'log'],
         'system'   => ['System & Updates', 'system.manage', 'server'],
     ],
@@ -91,6 +92,7 @@ $active = $activeMap[$current] ?? $current;
 <?php endif; ?>
 <?= datalist_html() ?>
 <script src="assets/js/app.js?v=<?= e(SAMS_VERSION) ?>"></script>
+<script src="assets/js/tablet-bridge.js?v=<?= e(SAMS_VERSION) ?>"></script>
 <?php foreach ($scripts ?? [] as $s): ?>
 <script src="<?= e($s) ?>?v=<?= e(SAMS_VERSION) ?>"></script>
 <?php endforeach; ?>

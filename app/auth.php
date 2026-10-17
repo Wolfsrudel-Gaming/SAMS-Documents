@@ -79,19 +79,20 @@ function client_ip(): string
 }
 
 /** Wartezeit in Minuten, falls zu viele Fehlversuche – sonst 0. */
-function login_blocked(string $username): int
+function login_blocked(string $username, ?string $ip = null): int
 {
+    $ip ??= client_ip();
     $since = date('Y-m-d H:i:s', time() - LOGIN_WINDOW_MIN * 60);
     $lastOk = scalar('SELECT MAX(created_at) FROM login_attempts WHERE username = ? AND success = 1', [$username]);
     $from = $lastOk && $lastOk > $since ? $lastOk : $since;
     $byUser = (int) scalar('SELECT COUNT(*) FROM login_attempts WHERE username = ? AND success = 0 AND created_at > ?', [$username, $from]);
-    $byIp = (int) scalar('SELECT COUNT(*) FROM login_attempts WHERE ip = ? AND success = 0 AND created_at > ?', [client_ip(), $since]);
+    $byIp = (int) scalar('SELECT COUNT(*) FROM login_attempts WHERE ip = ? AND success = 0 AND created_at > ?', [$ip, $since]);
     return ($byUser >= LOGIN_MAX_PER_USER || $byIp >= LOGIN_MAX_PER_IP) ? LOGIN_WINDOW_MIN : 0;
 }
 
-function record_login_attempt(string $username, bool $success): void
+function record_login_attempt(string $username, bool $success, ?string $ip = null): void
 {
-    insert('login_attempts', ['username' => mb_substr($username, 0, 190), 'ip' => client_ip(), 'success' => $success ? 1 : 0, 'created_at' => now()]);
+    insert('login_attempts', ['username' => mb_substr($username, 0, 190), 'ip' => substr($ip ?? client_ip(), 0, 64), 'success' => $success ? 1 : 0, 'created_at' => now()]);
     // Alte Einträge gelegentlich aufräumen
     if (random_int(1, 50) === 1) {
         q('DELETE FROM login_attempts WHERE created_at < ?', [date('Y-m-d H:i:s', time() - 30 * 86400)]);

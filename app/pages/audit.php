@@ -21,8 +21,10 @@ $labels = [
     'qualifications.create' => 'Qualifikation angelegt', 'qualifications.update' => 'Qualifikation geändert', 'qualifications.delete' => 'Qualifikation gelöscht',
     'system.update_request' => 'Update angefordert', 'system.migrate' => 'Migrationen ausgeführt', 'system.backup' => 'Backup erstellt',
     'system.backup_download' => 'Backup heruntergeladen',
+    'document.print' => 'Druckauftrag gesendet', 'document.printed' => 'Am Drucker abgeholt', 'document.print_cancel' => 'Druckauftrag abgebrochen',
+    'printers.create' => 'Drucker angelegt', 'printers.update' => 'Drucker geändert', 'printers.delete' => 'Drucker gelöscht', 'printers.pickup_rule' => 'Abholregel geändert',
 ];
-$links = ['patient' => 'patient', 'document' => 'document', 'user' => 'user_edit', 'rank' => 'rank_edit'];
+$links = ['patient' => 'patient', 'document' => 'document', 'user' => 'user_edit', 'rank' => 'rank_edit', 'printer' => 'printers'];
 ob_start(); ?>
 <div class="page-head"><div><h1>Zugriffsprotokoll</h1><p class="muted">Alle Zugriffe auf Akten und Dokumente werden protokolliert (<?= $total ?> Einträge).</p></div>
     <form action="index.php"><input type="hidden" name="p" value="audit">

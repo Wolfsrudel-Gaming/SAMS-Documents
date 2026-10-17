@@ -1,0 +1,54 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: transparent; font-family: "Segoe UI", Tahoma, Arial, sans-serif; overflow: hidden; user-select: none; }
+.hidden { display: none !important; }
+
+/* ---------------- Tablet ---------------- */
+#tablet { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, .25); }
+.bezel {
+    width: min(92vw, calc(88vh * 1.6)); aspect-ratio: 16 / 10; padding: 1.6%; border-radius: 3vh;
+    background: linear-gradient(145deg, #2b2f35, #111317); box-shadow: 0 30px 80px rgba(0, 0, 0, .6), inset 0 0 0 2px #3a3f46;
+    position: relative; animation: rise .22s ease-out;
+}
+@keyframes rise { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.camera { position: absolute; top: .65%; left: 50%; width: .6%; aspect-ratio: 1; border-radius: 50%; background: #0b0d10; box-shadow: inset 0 0 2px #456; transform: translateX(-50%); }
+.screen { width: 100%; height: 100%; border-radius: 1.2vh; overflow: hidden; background: #e3e7ec; display: flex; flex-direction: column; position: relative; }
+.topline { height: 28px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 10px; background: #14202c; color: #c9d4df; font-size: 12px; }
+.topline .brand { display: flex; align-items: center; gap: 6px; font-weight: 700; color: #fff; letter-spacing: .06em; }
+.topline .brand img { width: 18px; height: 18px; background: #fff; border-radius: 50%; }
+.spacer { flex: 1; }
+.tb-btn { background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .15); color: #fff; border-radius: 3px; padding: 2px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+.tb-btn:hover { background: rgba(255, 255, 255, .18); }
+#frame { flex: 1; width: 100%; border: 0; background: #e3e7ec; }
+
+.login { flex: 1; display: grid; place-items: center; background: radial-gradient(circle at 30% 20%, #2a3a4b, #14202c); }
+.login form { width: 360px; background: #fff; border-radius: 4px; padding: 26px 26px 18px; display: grid; gap: 10px; box-shadow: 0 10px 40px rgba(0, 0, 0, .35); }
+.login-logo { width: 64px; height: 64px; margin: 0 auto; }
+.login h1 { font-size: 17px; margin: 0; text-align: center; color: #1b2631; }
+.login .sub { margin: -6px 0 6px; text-align: center; color: #64717f; font-size: 12px; }
+.login label { display: grid; gap: 3px; font-size: 12px; font-weight: 600; color: #33414f; }
+.login input { height: 32px; border: 1px solid #b4bfca; border-radius: 2px; padding: 0 8px; font: inherit; font-size: 14px; user-select: text; }
+.login input:focus { outline: none; border-color: #0b4f9c; box-shadow: 0 0 0 2px #e7eef7; }
+.login button { height: 34px; border: 0; border-radius: 3px; background: linear-gradient(#0b4f9c, #083b75); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.login button:disabled { opacity: .6; }
+.login .hint { font-size: 11px; color: #64717f; margin: 4px 0 0; text-align: center; }
+.error { background: #fdf3f2; border: 1px solid #ecb8b3; border-left: 4px solid #b3261e; color: #8a1f18; padding: 6px 8px; font-size: 12px; border-radius: 2px; }
+.loading { flex: 1; display: grid; place-items: center; align-content: center; gap: 12px; color: #3a4857; font-size: 13px; }
+.spin { width: 34px; height: 34px; border: 4px solid #c6cfd8; border-top-color: #0b4f9c; border-radius: 50%; animation: s 1s linear infinite; margin: 0 auto; }
+@keyframes s { to { transform: rotate(360deg); } }
+
+/* ---------------- Klemmbrett ---------------- */
+#viewer { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, .35); }
+.clipboard {
+    width: min(70vh, 94vw); height: 94vh; position: relative; border-radius: 14px; padding: 58px 18px 18px;
+    background: linear-gradient(135deg, #8a5a2b, #6b4220 60%, #7a4e25); box-shadow: 0 30px 80px rgba(0, 0, 0, .6), inset 0 0 0 3px rgba(0, 0, 0, .15);
+    display: flex; flex-direction: column; animation: rise .2s ease-out;
+}
+.clip { position: absolute; top: -12px; left: 50%; width: 40%; height: 46px; transform: translateX(-50%); border-radius: 8px 8px 14px 14px;
+    background: linear-gradient(#e6e9ec, #9aa3ab); box-shadow: 0 4px 10px rgba(0, 0, 0, .4), inset 0 -4px 0 rgba(0, 0, 0, .15); }
+.vbar { position: absolute; top: 40px; left: 18px; right: 18px; transform: translateY(-100%); display: flex; align-items: center; gap: 8px; color: #fff; font-size: 13px; padding-bottom: 6px; }
+.vbar strong { display: block; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+.vbar small { color: #f3dcc3; }
+.vbar .tb-btn { background: rgba(0, 0, 0, .25); }
+.revoked { background: #b3261e; color: #fff; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 2px; letter-spacing: .1em; }
+.paper-wrap { flex: 1; background: #fff; border-radius: 3px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+#v-frame { width: 100%; height: 100%; border: 0; background: #f4f1ea; }

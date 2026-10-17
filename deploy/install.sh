@@ -346,6 +346,11 @@ echo "  Auto-Update:    folgt Branch ${B}$BRANCH${N} – neue Commits sind nach 
 echo "  Status:         $CMD status   ·   Admin-Bereich → System & Updates"
 echo "  Update-Log:     $APP_DIR/storage/logs/update.log"
 echo
+echo "  ${B}FiveM-Resource (sams_tablet) – in die server.cfg eintragen:${N}"
+echo "    set sams_url \"$SCHEME://$DOMAIN\""
+echo "    set sams_api_key \"$(env_get API_KEY)\""
+echo "    ensure sams_tablet"
+echo
 echo "  ${B}Optional – Sofort-Update per GitHub-Webhook:${N}"
 echo "  GitHub → Repository → Settings → Webhooks → Add webhook"
 echo "    Payload URL:   $SCHEME://$DOMAIN/hooks/github.php"
