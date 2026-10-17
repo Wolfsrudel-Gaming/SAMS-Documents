@@ -1,6 +1,6 @@
 # SAMS Dokumenten- & Aktensystem – Konzept Version 1
 
-Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1–4 umgesetzt
+Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1–5 umgesetzt
 
 Dieses Konzept fasst die Fragerunde (60 Fragen) und die anschließenden Festlegungen zusammen.
 Es beschreibt, was in Version 1 gebaut wird, in welcher Reihenfolge, und was bewusst später kommt.
@@ -129,11 +129,12 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 - ✅ On-/Off-Duty: `/dienst` im Spiel oder Schalter in der Kopfleiste des Websystems (dieselbe Schicht), automatisches Ausstempeln beim Abmelden/Verlassen, vergessene Schichten enden nach einstellbarer Höchstdauer; „Jetzt im Dienst“, Wochenstunden, Korrekturen und Nachträge durch die Leitung; `IsOnDuty`-Export und `sams:dutyChanged`-Event für andere Resourcen
 - Absicherung: Die Resource spricht serverseitig mit einem API-Schlüssel, nie aus dem Client
 
-### Etappe 5 – Personal, Ausbildung, Wiki, Kommunikation
+### Etappe 5 – Personal, Ausbildung, Wiki, Kommunikation ✅ *umgesetzt in v1.12.0 – v1.15.0*
 - ✅ **Personalakte** *(v1.12.0)*: Laufbahn (Eintritt, Rangwechsel, Qualifikationen und ausgestellte Personaldokumente werden automatisch eingetragen), Belobigungen/Notizen/Abmahnungen von Hand, vertrauliche Einträge nur für die Leitung, Personaldokumente, Dienstzeit der letzten 8 Wochen; jede/r sieht die eigene Akte (ohne vertrauliche Notizen)
 - ✅ **Ausbildung** *(v1.13.0)*: Lehrgänge mit Lernmodulen (formatierter Text), Online-Prüfung mit Fragenpool (zufällige Fragen und Antwortreihenfolge, Mehrfachauswahl, Zeitlimit, Versuche pro Tag, Bestehensgrenze, Bewertung nur auf dem Server), nach Bestehen automatisch Qualifikation, Zertifikat (Ausbildungsnachweis) und Laufbahn-Eintrag; Gültigkeit mit Rezertifizierung; Ergebnisübersicht für Ausbilder
 - ✅ **Wiki** *(v1.14.0)*: Seiten nach Kategorien, Suche, Versionsgeschichte, `[[Wiki-Links]]`, Formatierung; pflegt die Vorschlagslisten der Formulare (ICD-10, Medikamente, Fachrichtungen, Impfstoffe)
-- **Schwarzes Brett** mit Lesebestätigung, **interne Nachrichten**
+- ✅ **Schwarzes Brett** *(v1.15.0)*: Aushänge mit Zielgruppe (Abteilung, ab Rang), wichtig/angeheftet/Ablaufdatum, Lesebestätigung mit Übersicht wer bestätigt hat, wichtige Aushänge oben auf der Übersicht
+- ✅ **Interne Nachrichten** *(v1.15.0)*: Unterhaltungen mit einer oder mehreren Personen oder ganzen Abteilungen, Ungelesen-Zähler, Archiv
 
 ### Etappe 6 – Bürgerportal *(benötigt Discord-Login für Bürger)*
 - Discord-Login für Bürger, Verknüpfung mit der Patientenakte durch einen Medic

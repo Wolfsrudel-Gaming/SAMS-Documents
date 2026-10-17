@@ -74,6 +74,11 @@ function permission_catalog(): array
             'wiki.edit'    => 'Wiki-Seiten anlegen und bearbeiten',
             'lists.manage' => 'Vorschlagslisten der Formulare pflegen (ICD, Medikamente …)',
         ],
+        'Kommunikation' => [
+            'board.view'   => 'Schwarzes Brett lesen',
+            'board.manage' => 'Aushänge veröffentlichen und Lesebestätigungen einsehen',
+            'messages.use' => 'Interne Nachrichten senden und empfangen',
+        ],
         'Organisation' => [
             'ranks.manage'          => 'Ränge und Rechte verwalten',
             'departments.manage'    => 'Abteilungen verwalten',

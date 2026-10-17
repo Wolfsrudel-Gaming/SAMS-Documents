@@ -25,4 +25,11 @@ $recentDocs = can('documents.view') ? all('SELECT d.*, p.first_name, p.last_name
     ORDER BY d.id DESC LIMIT 10') : null;
 $recentPatients = can('patients.view') ? all('SELECT * FROM patients WHERE archived_at IS NULL ORDER BY updated_at DESC LIMIT 8') : null;
 
-render('_dashboard', compact('stats', 'recentDocs', 'recentPatients', 'me') + ['title' => 'Übersicht']);
+// Wichtige oder zu bestätigende Aushänge oben anzeigen
+$notices = [];
+if (can('board.view')) {
+    $deps = user_department_ids((int) $me['id']);
+    $notices = array_values(array_filter(visible_announcements($me), fn($a) => announcement_for($a, $deps, user_level($me))
+        && (($a['require_ack'] && !$a['acknowledged_at']) || ($a['priority'] === 'important' && !$a['read_at']))));
+}
+render('_dashboard', compact('stats', 'recentDocs', 'recentPatients', 'me', 'notices') + ['title' => 'Übersicht']);

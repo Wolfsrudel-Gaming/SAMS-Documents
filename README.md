@@ -53,6 +53,7 @@ Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt au
 
 - **Patientenakten**: Personalien, Bürger-ID (z. B. `citizenid` aus ESX/QBCore), Versicherung, Blutgruppe, Allergien
   (Warnhinweis), Vorerkrankungen, Medikation, Notfallkontakt, Organspende, Patientenverfügung, Kennzeichnungen
+- **Schwarzes Brett & Nachrichten**: Aushänge mit Zielgruppe und Lesebestätigung, interne Nachrichten an Personen oder Abteilungen
 - **Wiki**: SOPs und Wissen mit Versionsgeschichte und Wiki-Links; pflegt auch die Vorschlagslisten der Formulare
 - **Ausbildung**: Lehrgänge mit Lernmodulen und Online-Prüfung, bei Bestehen automatisch Qualifikation und Zertifikat
 - **Personalakte**: Laufbahn mit automatischen Einträgen (Rang, Qualifikationen, Beförderung, Abmahnung …), Notizen, Personaldokumente, Dienstzeiten; eigene Akte für alle einsehbar

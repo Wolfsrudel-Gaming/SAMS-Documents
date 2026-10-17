@@ -66,6 +66,7 @@ ob_start(); ?>
         </div>
     </div>
     <div class="btn-row">
+        <?php if (!$own && can('messages.use')): ?><a class="btn" href="<?= e(url('messages', ['new' => 1, 'to' => $id])) ?>"><?= icon('external') ?>Nachricht</a><?php endif; ?>
         <?php if (!$own && can('users.view')): ?><a class="btn" href="<?= e(url('user_edit', ['id' => $id])) ?>"><?= icon('edit') ?>Konto</a><?php endif; ?>
         <?php if ($employeeTypes && !$own): ?><a class="btn primary" href="<?= e(url('document_new', ['employee' => $id])) ?>"><?= icon('doc-plus') ?>Personaldokument</a><?php endif; ?>
     </div>

@@ -7,6 +7,8 @@ $orgShort = setting('org_short', 'SAMS');
 $navGroups = [
     'Klinik' => [
         'dashboard'    => ['Übersicht', '', 'home'],
+        'board'        => ['Schwarzes Brett', 'board.view|board.manage', 'docs'],
+        'messages'     => ['Nachrichten', 'messages.use', 'external'],
         'patients'     => ['Patientenakten', 'patients.view', 'patients'],
         'documents'    => ['Dokumente', 'documents.view', 'docs'],
         'document_new' => ['Neues Dokument', 'documents.issue.*', 'doc-plus'],
@@ -82,7 +84,7 @@ $active = $activeMap[$current] ?? $current;
         if (!$visible) continue; ?>
         <div class="nav-group"><?= e($group) ?></div>
         <?php foreach ($visible as $p => [$label, $role, $ic]): ?>
-            <a href="<?= e(url($p)) ?>" title="<?= e($label) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e($label) ?></span><?php if ($p === 'drafts' && ($cnt = draft_inbox_count())): ?><b class="nav-count"><?= $cnt ?></b><?php endif; ?></a>
+            <a href="<?= e(url($p)) ?>" title="<?= e($label) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e($label) ?></span><?php $cnt = match ($p) { 'drafts' => draft_inbox_count(), 'board' => board_unread_count(), 'messages' => messages_unread_count(), default => 0 }; if ($cnt): ?><b class="nav-count"><?= $cnt ?></b><?php endif; ?></a>
         <?php endforeach; ?>
     <?php endforeach; ?>
     <div class="nav-group">Extern</div>

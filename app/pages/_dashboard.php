@@ -10,6 +10,15 @@
     </div>
 </div>
 
+<?php foreach ($notices as $a): ?>
+<div class="card board-alert">
+    <div class="card-head"><h2><?= e($a['title']) ?></h2><a href="<?= e(url('board')) ?>#a<?= (int) $a['id'] ?>">Schwarzes Brett</a></div>
+    <div class="prose-ui"><?= light_markup(mb_strimwidth((string) $a['content'], 0, 600, '…')) ?></div>
+    <form method="post" action="<?= e(url('board')) ?>"><?= csrf_field() ?><input type="hidden" name="id" value="<?= (int) $a['id'] ?>"><input type="hidden" name="return" value="dashboard">
+        <button class="btn small primary" name="action" value="<?= $a['require_ack'] ? 'ack' : 'read' ?>"><?= $a['require_ack'] ? 'Gelesen und verstanden' : 'Gelesen' ?></button></form>
+</div>
+<?php endforeach; ?>
+
 <?php if (empty($me['signature'])): ?>
 <div class="flash warn">Sie haben noch keine Unterschrift hinterlegt. <a href="<?= e(url('profile')) ?>">Jetzt im Profil unterschreiben</a> – sie wird auf allen Dokumenten gedruckt.</div>
 <?php endif; ?>
