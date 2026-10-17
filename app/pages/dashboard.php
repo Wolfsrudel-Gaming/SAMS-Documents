@@ -32,4 +32,5 @@ if (can('board.view')) {
     $notices = array_values(array_filter(visible_announcements($me), fn($a) => announcement_for($a, $deps, user_level($me))
         && (($a['require_ack'] && !$a['acknowledged_at']) || ($a['priority'] === 'important' && !$a['read_at']))));
 }
-render('_dashboard', compact('stats', 'recentDocs', 'recentPatients', 'me', 'notices') + ['title' => 'Übersicht']);
+$myShifts = can('roster.view') ? roster_upcoming((int) $me['id']) : [];
+render('_dashboard', compact('stats', 'recentDocs', 'recentPatients', 'me', 'notices', 'myShifts') + ['title' => 'Übersicht']);

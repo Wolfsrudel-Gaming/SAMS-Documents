@@ -50,6 +50,7 @@ require __DIR__ . '/stats.php';
 require __DIR__ . '/attachments.php';
 require __DIR__ . '/merge.php';
 require __DIR__ . '/notifications.php';
+require __DIR__ . '/roster.php';
 
 set_exception_handler('handle_exception');
 set_error_handler(function (int $no, string $msg, string $file, int $line): bool {

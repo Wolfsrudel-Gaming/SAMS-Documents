@@ -25,6 +25,7 @@ $env = [
 foreach ($env as $k => $v) {
     putenv("$k=$v");
 }
+date_default_timezone_set('Europe/Berlin');
 require __DIR__ . '/lib.php';
 $GLOBALS['test_count'] = 0;
 $GLOBALS['test_failed'] = [];

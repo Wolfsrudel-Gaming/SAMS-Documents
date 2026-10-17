@@ -215,6 +215,9 @@ switch ($cmd) {
                 $out('Rollen-Sync: ' . $c);
             }
         }
+        if ($r = roster_cron()) {
+            $out("Dienstplan: $r Erinnerung(en)/Warnung(en).");
+        }
         $n = discord_flush(100);
         if ($n) {
             $out("$n Discord-Nachricht(en) gesendet.");

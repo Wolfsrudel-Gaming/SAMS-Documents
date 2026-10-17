@@ -46,6 +46,7 @@ $keys = [
     'Dienstzeiten' => [
         'duty_max_hours' => ['Vergessene Schichten automatisch beenden nach (Stunden)', '12'],
         'duty_command'   => ['Befehl im Spiel (Hinweistext, ohne /)', 'dienst'],
+        'roster_lock_hours' => ['Dienstplan: Austragen bis … Stunden vor Schichtbeginn (danach nur Tausch)', '12'],
     ],
 ];
 if (is_post()) {
@@ -66,6 +67,8 @@ if (is_post()) {
             }
             if ($k === 'duty_max_hours') {
                 $v = (string) max(1, min(48, (int) $v ?: 12));
+            } elseif ($k === 'roster_lock_hours') {
+                $v = (string) max(0, min(168, (int) $v));
             } elseif ($k === 'duty_command') {
                 $v = preg_replace('/[^a-z0-9_]/i', '', $v) ?: 'dienst';
             }

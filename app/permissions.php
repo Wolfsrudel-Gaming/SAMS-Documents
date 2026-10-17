@@ -66,6 +66,15 @@ function permission_catalog(): array
             'duty.clock'  => 'Dienst beginnen/beenden (stempeln)',
             'duty.view'   => 'Sehen, wer im Dienst ist',
             'duty.manage' => 'Dienstzeiten aller einsehen und korrigieren',
+            'roster.view'   => 'Dienstplan ansehen',
+            'roster.signup' => 'Sich in Schichten eintragen, austragen und tauschen',
+            'roster.manage' => 'Dienstplan erstellen, Personal einteilen',
+        ],
+        'Medikamente' => [
+            'stock.view'     => 'Medikamentenbestand ansehen',
+            'stock.dispense' => 'Medikamente ausgeben und Rezepte einlösen',
+            'stock.manage'   => 'Bestand pflegen (Artikel, Zugänge, Korrekturen)',
+            'btm.manage'     => 'BtM-Buch führen und prüfen (Betäubungsmittel)',
         ],
         'Ausbildung' => [
             'training.view'   => 'Lehrgänge lernen und Prüfungen ablegen',

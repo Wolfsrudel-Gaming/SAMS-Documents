@@ -23,6 +23,17 @@
 <div class="flash warn">Sie haben noch keine Unterschrift hinterlegt. <a href="<?= e(url('profile')) ?>">Jetzt im Profil unterschreiben</a> – sie wird auf allen Dokumenten gedruckt.</div>
 <?php endif; ?>
 
+<?php if ($myShifts): ?>
+<div class="card my-shifts">
+    <div class="card-head"><h2>Meine nächsten Schichten</h2><a href="<?= e(url('roster')) ?>">Dienstplan</a></div>
+    <ul class="plain">
+        <?php foreach ($myShifts as $s): ?>
+            <li><strong><?= e(fmt_date($s['starts_at'], 'l, d.m. H:i')) ?>–<?= e(fmt_date($s['ends_at'], 'H:i')) ?></strong> <?= e($s['title'] ?: 'Schicht') ?><?= $s['status'] === 'offered' ? ' <span class="badge orange">zum Tausch angeboten</span>' : '' ?></li>
+        <?php endforeach; ?>
+    </ul>
+</div>
+<?php endif; ?>
+
 <?php if ($stats): ?><div class="stats">
     <?php foreach ($stats as $label => $n): ?>
         <div class="stat"><strong><?= $n ?></strong><span><?= e($label) ?></span></div>

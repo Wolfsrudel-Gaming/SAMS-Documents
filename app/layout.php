@@ -15,6 +15,7 @@ $navGroups = [
         'drafts'       => ['Entwürfe & Freigaben', 'documents.issue.*|documents.approve|documents.drafts_all', 'edit'],
         'invoices'     => ['Rechnungen', 'invoices.manage', 'docs'],
         'duty'         => ['Dienstzeiten', 'duty.clock|duty.view|duty.manage', 'clock'],
+        'roster'       => ['Dienstplan', 'roster.view|roster.manage', 'clock'],
         'training'     => ['Ausbildung', 'training.view|training.manage', 'shield'],
         'wiki'         => ['Wiki', 'wiki.view|wiki.edit', 'folder'],
         'shared'       => ['Für mich freigegeben', 'documents.shared_view', 'external'],
