@@ -452,6 +452,18 @@ function doc_type(string $key): ?array
 /** Vorschlagslisten für Eingabefelder. */
 function datalists(): array
 {
+    // Im Wiki gepflegte Listen ersetzen die eingebauten Vorschläge
+    $lists = datalists_builtin();
+    foreach (array_keys(SUGGESTION_LISTS) as $key) {
+        if (($custom = suggestion_list($key)) !== null) {
+            $lists[$key] = $custom;
+        }
+    }
+    return $lists;
+}
+
+function datalists_builtin(): array
+{
     return [
         'icd' => [
             'S00.9 Oberflächliche Verletzung des Kopfes', 'S01.9 Offene Wunde des Kopfes', 'S02.2 Nasenbeinfraktur',

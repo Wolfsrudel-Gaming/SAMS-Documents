@@ -69,6 +69,11 @@ function permission_catalog(): array
             'training.view'   => 'Lehrgänge lernen und Prüfungen ablegen',
             'training.manage' => 'Lehrgänge, Module und Prüfungsfragen verwalten, Ergebnisse sehen',
         ],
+        'Wiki' => [
+            'wiki.view'    => 'Wiki lesen',
+            'wiki.edit'    => 'Wiki-Seiten anlegen und bearbeiten',
+            'lists.manage' => 'Vorschlagslisten der Formulare pflegen (ICD, Medikamente …)',
+        ],
         'Organisation' => [
             'ranks.manage'          => 'Ränge und Rechte verwalten',
             'departments.manage'    => 'Abteilungen verwalten',
