@@ -27,7 +27,10 @@ $pages = max(1, (int) ceil($total / $per));
 ob_start(); ?>
 <div class="page-head">
     <div><h1>Patientenakten</h1><p class="muted"><?= $total ?> Akte(n)</p></div>
-    <a class="btn primary" href="<?= e(url('patient_edit')) ?>">+ Neue Patientenakte</a>
+    <div class="btn-row">
+        <?php if (can('patients.merge')): ?><a class="btn" href="<?= e(url('patient_merge')) ?>">Doppelte Akten</a><?php endif; ?>
+        <a class="btn primary" href="<?= e(url('patient_edit')) ?>">+ Neue Patientenakte</a>
+    </div>
 </div>
 <form class="card filter" action="index.php">
     <input type="hidden" name="p" value="patients">
@@ -43,7 +46,7 @@ ob_start(); ?>
     <tbody>
     <?php foreach ($patients as $p): ?>
         <tr onclick="location.href='<?= e(url('patient', ['id' => $p['id']])) ?>'">
-            <td><strong><?= e(patient_name($p, true)) ?></strong><?= $p['deceased_at'] ? ' <span class="badge black">† verstorben</span>' : '' ?><?= $p['archived_at'] ? ' <span class="badge grey">archiviert</span>' : '' ?></td>
+            <td><strong><?= e(patient_name($p, true)) ?></strong><?= $p['deceased_at'] ? ' <span class="badge black">† verstorben</span>' : '' ?><?= $p['merged_into'] ? ' <span class="badge grey">zusammengeführt</span>' : ($p['archived_at'] ? ' <span class="badge grey">archiviert</span>' : '') ?></td>
             <td><?= e(fmt_date($p['dob'])) ?> <?= $p['dob'] ? '<small class="muted">(' . e(age($p['dob'])) . ' J.)</small>' : '' ?></td>
             <td class="mono"><?= e($p['citizen_id']) ?></td>
             <td><?= e($p['phone']) ?></td>

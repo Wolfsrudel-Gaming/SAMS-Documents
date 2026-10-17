@@ -28,6 +28,7 @@ function permission_catalog(): array
             'cases.manage'         => 'Fallakten anlegen, bearbeiten und abschließen',
             'entries.create'       => 'Akteneinträge schreiben',
             'attachments.upload'   => 'Anhänge hochladen (Fotos, Röntgenbilder, Scans, PDF)',
+            'patients.merge'       => 'Doppelte Akten zusammenführen',
             'entries.confidential' => 'Vertrauliche Einträge lesen',
             'entries.edit_all'     => 'Einträge anderer bearbeiten',
             'entries.all_departments' => 'Abteilungseinträge aller Abteilungen lesen',

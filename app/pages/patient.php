@@ -5,6 +5,10 @@ $p = one('SELECT * FROM patients WHERE id = ?', [$id]);
 if (!$p) {
     not_found('Patientenakte nicht gefunden.');
 }
+if ($p['merged_into']) {
+    flash('warn', 'Diese Akte wurde mit Akte ' . str_pad((string) $p['merged_into'], 6, '0', STR_PAD_LEFT) . ' zusammengeführt.');
+    redirect(url('patient', ['id' => $p['merged_into']]));
+}
 $me = current_user();
 $archived = patient_archived($p);
 
@@ -109,6 +113,7 @@ ob_start(); ?>
             <?php if (can('entries.create')): ?><a class="btn" href="<?= e(url('entry_edit', ['patient' => $id])) ?>"><?= icon('plus') ?>Akteneintrag</a><?php endif; ?>
         <?php endif; ?>
         <a class="btn" href="<?= e(url('patient_print', ['id' => $id])) ?>" target="_blank"><?= icon('print') ?>Drucken</a>
+        <?php if (!$archived && can('patients.merge')): ?><a class="btn" href="<?= e(url('patient_merge', ['target' => $id])) ?>" title="Doppelte Akte übernehmen">Zusammenführen</a><?php endif; ?>
         <?php if (!$archived && can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new', ['patient' => $id])) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
     </div>
 </div>

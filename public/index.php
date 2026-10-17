@@ -24,6 +24,7 @@ $routes = [
     'patient_edit'    => 'patients.edit',
     'patient_print'   => 'patients.view',
     'attachment'      => 'patients.view',
+    'patient_merge'   => 'patients.merge',
     'entry_edit'      => 'entries.create',
     'documents'       => 'documents.view',
     'document'        => 'documents.view',

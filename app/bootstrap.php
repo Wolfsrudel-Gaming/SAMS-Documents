@@ -48,6 +48,7 @@ require __DIR__ . '/portal.php';
 require __DIR__ . '/notify.php';
 require __DIR__ . '/stats.php';
 require __DIR__ . '/attachments.php';
+require __DIR__ . '/merge.php';
 
 set_exception_handler('handle_exception');
 set_error_handler(function (int $no, string $msg, string $file, int $line): bool {
