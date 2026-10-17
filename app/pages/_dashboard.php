@@ -4,10 +4,10 @@
         <h1>Guten <?= (int) date('G') < 11 ? 'Morgen' : ((int) date('G') < 18 ? 'Tag' : 'Abend') ?>, <?= e(user_display($me)) ?></h1>
         <p class="muted"><?= e(setting('org_name', 'San Andreas Medical Services')) ?> · <?= e(fmt_date(date('Y-m-d'), 'l, d.m.Y')) ?></p>
     </div>
-    <form class="search-inline" action="index.php">
-        <input type="hidden" name="p" value="patients">
-        <input name="q" placeholder="Patient suchen (Name, Bürger-ID, Telefon) …">
-    </form>
+    <div class="btn-row">
+        <a class="btn" href="<?= e(url('patient_edit')) ?>"><?= icon('plus') ?>Neue Patientenakte</a>
+        <?php if (can('medic')): ?><a class="btn primary" href="<?= e(url('document_new')) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
+    </div>
 </div>
 
 <?php if (empty($me['signature'])): ?>

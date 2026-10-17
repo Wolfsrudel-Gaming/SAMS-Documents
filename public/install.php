@@ -102,7 +102,7 @@ if (!$installed && is_post()) {
 <title>Installation · SAMS</title>
 <link rel="stylesheet" href="assets/css/app.css?v=<?= e(SAMS_VERSION) ?>">
 </head>
-<body class="no-nav">
+<body class="no-nav page-install">
 <main class="main">
 <div class="card narrow">
     <div class="verify-head"><img src="assets/img/logo.svg" alt=""><div><h1>Installation</h1><p class="muted">SAMS Dokumenten- &amp; Aktensystem <?= e(version_label()) ?></p></div></div>

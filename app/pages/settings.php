@@ -23,6 +23,11 @@ $keys = [
         'iban'       => ['IBAN', 'SA21 0911 0000 0123 4567 89'],
         'bic'        => ['BIC', 'MAZESALSXXX'],
     ],
+    'Design' => [
+        'theme_primary' => ['Primärfarbe (Schaltflächen, Markierungen)', '#0b4f9c', 'color'],
+        'theme_accent'  => ['Akzentfarbe (Warnhinweise)', '#c8102e', 'color'],
+        'theme_nav'     => ['Farbe Kopfleiste', '#1c2b3b', 'color'],
+    ],
     'Dokumente' => [
         'doc_prefix' => ['Präfix Dokumentnummern', 'SAMS'],
         'seal_text'  => ['Umschrift Dienstsiegel', 'SAN ANDREAS MEDICAL SERVICES'],
@@ -33,7 +38,11 @@ if (is_post()) {
     csrf_check();
     foreach ($keys as $group) {
         foreach ($group as $k => $_) {
-            save_setting($k, mb_substr((string) post($k), 0, 300));
+            $v = mb_substr((string) post($k), 0, 300);
+            if (str_starts_with($k, 'theme_') && $v !== '' && !preg_match('/^#[0-9a-f]{6}$/i', $v)) {
+                $v = '';
+            }
+            save_setting($k, $v);
         }
     }
     if (post('remove_logo')) {
@@ -58,8 +67,13 @@ ob_start(); ?>
     <?= csrf_field() ?>
     <?php foreach ($keys as $group => $items): ?>
         <h3 class="form-heading"><?= e($group) ?></h3>
-        <?php foreach ($items as $k => [$label, $placeholder]): ?>
-            <div class="field w-half"><label><?= e($label) ?></label><input name="<?= e($k) ?>" value="<?= e(setting($k, '')) ?>" placeholder="<?= e($placeholder) ?>"></div>
+        <?php foreach ($items as $k => $def): [$label, $placeholder] = $def; ?>
+            <?php if (($def[2] ?? '') === 'color'): $cv = hex_color((string) setting($k, ''), $placeholder); ?>
+                <div class="field w-third"><label><?= e($label) ?></label>
+                    <div class="color-row"><input type="color" value="<?= e($cv) ?>"><input type="text" name="<?= e($k) ?>" value="<?= e(setting($k, '')) ?>" placeholder="<?= e($placeholder) ?>"></div></div>
+            <?php else: ?>
+                <div class="field w-half"><label><?= e($label) ?></label><input name="<?= e($k) ?>" value="<?= e(setting($k, '')) ?>" placeholder="<?= e($placeholder) ?>"></div>
+            <?php endif; ?>
         <?php endforeach; ?>
     <?php endforeach; ?>
     <h3 class="form-heading">Logo</h3>

@@ -23,6 +23,7 @@ $routes = [
     'audit'             => 'admin',
     'system'            => 'admin',
     'profile'           => 'trainee',
+    'search'            => 'trainee',
 ];
 
 $page = $_GET['p'] ?? 'dashboard';

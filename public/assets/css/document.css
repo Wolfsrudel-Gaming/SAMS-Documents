@@ -281,7 +281,7 @@
 @media print {
     html, body { background: #fff !important; }
     body.has-nav { padding: 0 !important; }
-    .sidebar, .nav-toggle, .no-print, .page-head, .flash, .tabs, details, .card, .preview > h2 { display: none !important; }
+    .sidebar, .topbar, .sidenav, .statusbar, .nav-toggle, .no-print, .page-head, .flash, .tabs, details, .card, .preview > h2 { display: none !important; }
     .main { padding: 0 !important; max-width: none !important; }
     .doc-stage, .doc-wrap { display: block; padding: 0; gap: 0; overflow: visible; }
     .paper { box-shadow: none !important; break-after: page; page-break-after: always; margin: 0; }

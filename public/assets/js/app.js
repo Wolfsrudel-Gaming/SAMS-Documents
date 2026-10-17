@@ -204,3 +204,30 @@
         });
     });
 })();
+
+/* KIS-Rahmen: Schnellsuche (F2) und Uhr in der Statusleiste */
+(function () {
+    'use strict';
+    var qs = document.getElementById('quicksearch');
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'F2' && qs) { e.preventDefault(); qs.focus(); qs.select(); }
+        if (e.key === 'Escape' && document.activeElement === qs) { qs.blur(); }
+    });
+    var clock = document.querySelector('[data-clock]');
+    if (clock) {
+        var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+        var tick = function () {
+            var d = new Date();
+            clock.textContent = pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        };
+        tick();
+        setInterval(tick, 15000);
+    }
+    // Farbwähler und Textfeld synchron halten (Einstellungen → Design)
+    document.querySelectorAll('.color-row').forEach(function (row) {
+        var color = row.querySelector('input[type=color]');
+        var text = row.querySelector('input[type=text]');
+        color.addEventListener('input', function () { text.value = color.value; });
+        text.addEventListener('input', function () { if (/^#[0-9a-f]{6}$/i.test(text.value)) { color.value = text.value; } });
+    });
+})();

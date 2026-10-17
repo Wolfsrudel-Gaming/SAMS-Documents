@@ -22,15 +22,18 @@ if (is_post()) {
 ob_start(); ?>
 <div class="login-wrap">
     <form method="post" class="card login">
-        <img class="login-logo" src="<?= e(setting('logo', 'assets/img/logo.svg')) ?>" alt="">
-        <h1><?= e(setting('org_name', 'San Andreas Medical Services')) ?></h1>
-        <p class="muted">Dokumenten- &amp; Aktensystem · Dienstzugang</p>
-        <?php if ($error): ?><div class="flash error"><?= e($error) ?></div><?php endif; ?>
-        <?= csrf_field() ?>
-        <label>Benutzername<input name="username" autocomplete="username" required autofocus></label>
-        <label>Passwort<input name="password" type="password" autocomplete="current-password" required></label>
-        <button class="btn primary block">Anmelden</button>
-        <p class="muted small center">Dokument prüfen? <a href="verify.php">Zur Echtheitsprüfung</a></p>
+        <div class="login-head">
+            <img src="<?= e(setting('logo', 'assets/img/logo.svg')) ?>" alt="">
+            <div><strong><?= e(setting('org_name', 'San Andreas Medical Services')) ?></strong><small>Klinisches Informationssystem · Dienstzugang</small></div>
+        </div>
+        <div class="login-body">
+            <?php if ($error): ?><div class="flash error"><?= e($error) ?></div><?php endif; ?>
+            <?= csrf_field() ?>
+            <label>Benutzername<input name="username" autocomplete="username" required autofocus></label>
+            <label>Passwort<input name="password" type="password" autocomplete="current-password" required></label>
+            <button class="btn primary block">Anmelden</button>
+        </div>
+        <div class="login-foot"><span><a href="verify.php">Dokument prüfen</a></span><span><?= e(version_label()) ?></span></div>
     </form>
 </div>
 <?php

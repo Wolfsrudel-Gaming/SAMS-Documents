@@ -205,3 +205,32 @@ function forbidden(string $msg = 'Keine Berechtigung.'): void
     render('error', ['message' => $msg, 'title' => 'Zugriff verweigert']);
     exit;
 }
+
+/** Hex-Farbe prüfen, sonst Standard verwenden. */
+function hex_color(string $value, string $default): string
+{
+    return preg_match('/^#[0-9a-f]{6}$/i', $value) ? strtolower($value) : $default;
+}
+
+/** Farbe aufhellen (> 0) oder abdunkeln (< 0), $amount von -1 bis 1. */
+function shade(string $hex, float $amount): string
+{
+    $rgb = array_map('hexdec', str_split(ltrim($hex, '#'), 2));
+    foreach ($rgb as &$c) {
+        $c = (int) round($amount < 0 ? $c * (1 + $amount) : $c + (255 - $c) * $amount);
+    }
+    return sprintf('#%02x%02x%02x', ...$rgb);
+}
+
+/** Farbschema aus den Einstellungen (Admin → Einstellungen → Design). */
+function theme_style(): string
+{
+    $primary = hex_color((string) setting('theme_primary', ''), '#0b4f9c');
+    $accent = hex_color((string) setting('theme_accent', ''), '#c8102e');
+    $nav = hex_color((string) setting('theme_nav', ''), '#1c2b3b');
+    return '<style>:root{'
+        . '--primary:' . $primary . ';--primary-dark:' . shade($primary, -0.25) . ';--primary-soft:' . shade($primary, 0.9) . ';'
+        . '--accent:' . $accent . ';--accent-soft:' . shade($accent, 0.88) . ';'
+        . '--nav:' . $nav . ';--nav-dark:' . shade($nav, -0.3) . ';--nav-hover:' . shade($nav, 0.08) . ';'
+        . '}</style>';
+}

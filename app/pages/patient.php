@@ -26,22 +26,29 @@ usort($timeline, fn($a, $b) => strcmp($b['at'], $a['at']));
 $canSeeConfidential = fn($en) => !$en['confidential'] || can('doctor') || (int) $en['created_by'] === (int) $me['id'];
 
 ob_start(); ?>
-<div class="page-head">
+<div class="patient-banner">
+    <div class="pb-avatar"><?= icon('user') ?></div>
     <div>
-        <h1><?= e(patient_name($p, true)) ?> <?= $p['deceased_at'] ? '<span class="badge black">† ' . e(fmt_date($p['deceased_at'])) . '</span>' : '' ?></h1>
-        <p class="muted">Akte Nr. <?= str_pad((string) $p['id'], 6, '0', STR_PAD_LEFT) ?> · angelegt <?= e(fmt_datetime($p['created_at'])) ?> · zuletzt geändert <?= e(fmt_datetime($p['updated_at'])) ?></p>
+        <div class="pb-name"><?= e(patient_name($p, true)) ?> <?= $p['deceased_at'] ? '<span class="badge black">† ' . e(fmt_date($p['deceased_at'])) . '</span>' : '' ?></div>
+        <div class="pb-facts">
+            <span><b>geb.</b><?= e(fmt_date($p['dob']) ?: '–') ?><?= $p['dob'] ? ' (' . e(age($p['dob'])) . ' J.)' : '' ?></span>
+            <span><b>Geschl.</b><?= e(['m' => 'männlich', 'w' => 'weiblich', 'd' => 'divers'][$p['gender']] ?? '–') ?></span>
+            <span><b>Bürger-ID</b><span class="mono"><?= e($p['citizen_id'] ?: '–') ?></span></span>
+            <span><b>Blutgruppe</b><?= e($p['blood_type'] ?: '–') ?></span>
+            <span><b>Akte</b><span class="mono"><?= str_pad((string) $p['id'], 6, '0', STR_PAD_LEFT) ?></span></span>
+        </div>
     </div>
     <div class="btn-row">
-        <a class="btn" href="<?= e(url('patient_edit', ['id' => $id])) ?>">Stammdaten bearbeiten</a>
-        <a class="btn" href="<?= e(url('patient_print', ['id' => $id])) ?>" target="_blank">Akte drucken</a>
-        <a class="btn" href="<?= e(url('entry_edit', ['patient' => $id])) ?>">+ Akteneintrag</a>
-        <?php if (can('medic')): ?><a class="btn primary" href="<?= e(url('document_new', ['patient' => $id])) ?>">+ Dokument ausstellen</a><?php endif; ?>
+        <a class="btn" href="<?= e(url('patient_edit', ['id' => $id])) ?>"><?= icon('edit') ?>Stammdaten</a>
+        <a class="btn" href="<?= e(url('patient_print', ['id' => $id])) ?>" target="_blank"><?= icon('print') ?>Drucken</a>
+        <a class="btn" href="<?= e(url('entry_edit', ['patient' => $id])) ?>"><?= icon('plus') ?>Akteneintrag</a>
+        <?php if (can('medic')): ?><a class="btn primary" href="<?= e(url('document_new', ['patient' => $id])) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
     </div>
 </div>
 
 <?php if (trim((string) $p['allergies']) !== '' || trim((string) $p['flags']) !== ''): ?>
 <div class="alertbar">
-    <?php if (trim((string) $p['allergies']) !== ''): ?><div><strong>⚠ Allergien:</strong> <?= e($p['allergies']) ?></div><?php endif; ?>
+    <?php if (trim((string) $p['allergies']) !== ''): ?><div><strong><?= icon('warn') ?> Allergien:</strong> <?= e($p['allergies']) ?></div><?php endif; ?>
     <?php if (trim((string) $p['flags']) !== ''): ?><div><strong>Hinweise:</strong> <?php foreach (array_filter(array_map('trim', explode(',', $p['flags']))) as $f): ?><span class="badge orange"><?= e($f) ?></span> <?php endforeach; ?></div><?php endif; ?>
 </div>
 <?php endif; ?>

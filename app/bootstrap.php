@@ -25,6 +25,7 @@ require __DIR__ . '/system.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/documents.php';
 require __DIR__ . '/render.php';
+require __DIR__ . '/icons.php';
 
 set_exception_handler('handle_exception');
 set_error_handler(function (int $no, string $msg, string $file, int $line): bool {
