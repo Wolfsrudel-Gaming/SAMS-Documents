@@ -65,6 +65,12 @@ const FACTION_KINDS = [
         'terms' => ['record' => 'Einsatzakte', 'records' => 'Einsatzakten', 'person' => 'Gerettete/r', 'persons' => 'Gerettete',
             'case' => 'Einsatz', 'cases' => 'Einsätze', 'billing' => 'Kostenbescheide', 'catalog' => 'Kostenordnung', 'staff' => 'Personal'],
     ],
+    'law' => [
+        'label' => 'Anwaltskanzlei', 'logo' => 'assets/img/kinds/law.svg', 'color' => '#1f3d36',
+        'modules' => ['records', 'billing', 'requests', 'court'],
+        'terms' => ['record' => 'Mandantenakte', 'records' => 'Mandantenakten', 'person' => 'Mandant/in', 'persons' => 'Mandanten',
+            'case' => 'Mandat', 'cases' => 'Mandate', 'billing' => 'Honorarrechnungen', 'catalog' => 'Honorarordnung', 'staff' => 'Kanzlei'],
+    ],
     'government' => [
         'label' => 'Verwaltung / Sonstige', 'logo' => 'assets/img/kinds/government.svg', 'color' => '#2f5d50',
         'modules' => ['records', 'billing', 'requests', 'licenses', 'vehicles'],
@@ -106,6 +112,14 @@ const FACTION_RANK_TEMPLATES = [
         ['Justizangestellte/r', 'JA', 30, '#64717f', 'staff', ['clerk']],
         ['Referendar/in', 'REF', 10, '#8a96a3', 'trainee', []],
     ],
+    'law' => [
+        ['Kanzleiinhaber/in', 'KI', 95, '#13261f', 'chief', ['lawyer', 'partner', 'assistant', 'staff']],
+        ['Partner/in', 'P', 80, '#1f3d36', 'lead', ['lawyer', 'partner', 'assistant', 'staff']],
+        ['Rechtsanwalt / Rechtsanwältin', 'RA', 60, '#2f5d50', 'senior', ['lawyer', 'assistant']],
+        ['Junior-Anwalt / -Anwältin', 'JRA', 45, '#3f7d6a', 'staff', ['lawyer', 'assistant']],
+        ['Rechtsanwaltsfachangestellte/r', 'ReFa', 30, '#64717f', 'staff', ['assistant']],
+        ['Referendar/in', 'REF', 10, '#8a96a3', 'trainee', []],
+    ],
     'fire' => [
         ['Fire Chief', 'FC', 95, '#5c0b0e', 'chief', ['fire', 'lead', 'staff']],
         ['Battalion Chief', 'BC', 85, '#7d0f13', 'lead', ['fire', 'lead', 'staff']],
@@ -140,6 +154,7 @@ const FACTION_DEPARTMENT_TEMPLATES = [
     'fire'       => [['Brandbekämpfung', 'FIRE', '#a3161a'], ['Technische Hilfe', 'RES', '#d35400'], ['Vorbeugender Brandschutz', 'PREV', '#8a6d1d']],
     'rescue'     => [['Geländerettung', 'GR', '#8a5a2b'], ['Wasserrettung & Tauchen', 'WR', '#1f6fb2'], ['Luftrettung', 'LR', '#d35400'], ['Suche & Ortung', 'SO', '#5b6b2e'], ['Ausbildung', 'AUS', '#8a6d1d']],
     'government' => [['Bürgeramt', 'BA', '#2f5d50'], ['Ordnungsamt', 'OA', '#5b6b2e']],
+    'law'        => [['Strafrecht', 'STR', '#1f3d36'], ['Zivilrecht', 'ZIV', '#2f5d50'], ['Verkehrsrecht', 'VER', '#3f7d6a'], ['Verwaltungsrecht', 'VWR', '#5b6b2e'], ['Sekretariat', 'SEK', '#64717f']],
 ];
 
 /** Startkatalog (Kürzel, Bezeichnung, Kategorie, Betrag, Haft-Einheiten) für Bußgeld-/Gebührenbescheide. */
@@ -168,6 +183,12 @@ const FACTION_CATALOG_TEMPLATES = [
         ['R01', 'Rettung / Bergung aus unwegsamem Gelände', 'Einsätze', 1500, 0], ['R02', 'Wasserrettung', 'Einsätze', 1200, 0], ['R03', 'Hubschraubereinsatz (je Minute)', 'Luftrettung', 150, 0],
         ['R04', 'Windenbergung', 'Luftrettung', 2500, 0], ['R05', 'Vermisstensuche (je Stunde)', 'Suche', 400, 0], ['R06', 'Fahrzeugbergung aus Gewässer', 'Bergung', 3000, 0],
         ['R07', 'Tierrettung', 'Einsätze', 300, 0], ['R08', 'Absicherung Veranstaltung / Strandwache (je Stunde)', 'Absicherung', 200, 0], ['R09', 'Mutwilliger Fehlalarm', 'Einsätze', 800, 0],
+    ],
+    'law' => [
+        ['H01', 'Erstberatung', 'Beratung', 250, 0], ['H02', 'Beratung (je Stunde)', 'Beratung', 300, 0], ['H03', 'Grundgebühr Strafverteidigung', 'Strafsachen', 1000, 0],
+        ['H04', 'Verfahrensgebühr Ermittlungsverfahren', 'Strafsachen', 750, 0], ['H05', 'Terminsgebühr Hauptverhandlung (je Termin)', 'Strafsachen', 1200, 0],
+        ['H06', 'Haftprüfung / Haftbesuch', 'Strafsachen', 600, 0], ['H07', 'Akteneinsicht', 'Strafsachen', 200, 0], ['H08', 'Einspruch gegen Strafbefehl / Bußgeldbescheid', 'Strafsachen', 500, 0],
+        ['H09', 'Schriftsatz', 'Allgemein', 400, 0], ['H10', 'Vertragsentwurf / Vereinbarung', 'Zivilsachen', 800, 0], ['H11', 'Vertretung im Zivilverfahren (je Termin)', 'Zivilsachen', 1000, 0],
     ],
     'government' => [
         ['G01', 'Gewerbeanmeldung', 'Gewerbe', 150, 0], ['G02', 'Gaststättenerlaubnis', 'Gewerbe', 750, 0], ['G03', 'Veranstaltungsgenehmigung', 'Genehmigungen', 400, 0],
@@ -467,6 +488,7 @@ const BILLING_LABELS = [
     'justice' => ['title' => 'Kostenrechnung', 'item' => 'Kostenposition', 'items' => 'Kosten', 'date' => 'Datum', 'intro' => 'In der oben bezeichneten Sache werden folgende Kosten erhoben:', 'office' => 'Kostenstelle', 'total' => 'Gesamtbetrag'],
     'fire' => ['title' => 'Gebührenbescheid', 'item' => 'Leistung', 'items' => 'Leistungen', 'date' => 'Einsatzdatum', 'intro' => 'Für den Einsatz werden nach der Gebührenordnung folgende Gebühren erhoben:', 'office' => 'Gebührenstelle', 'total' => 'Gebühr gesamt'],
     'rescue' => ['title' => 'Kostenbescheid', 'item' => 'Leistung', 'items' => 'Leistungen', 'date' => 'Einsatzdatum', 'intro' => 'Für den Rettungs- bzw. Bergungseinsatz werden folgende Kosten erhoben:', 'office' => 'Kostenstelle', 'total' => 'Kosten gesamt'],
+    'law' => ['title' => 'Honorarrechnung', 'item' => 'Leistung', 'items' => 'Leistungen', 'date' => 'Leistungszeitraum', 'intro' => 'Für unsere anwaltliche Tätigkeit in der oben bezeichneten Angelegenheit berechnen wir:', 'office' => 'Kanzlei', 'total' => 'Rechnungsbetrag'],
     'government' => ['title' => 'Gebührenbescheid', 'item' => 'Gebühr', 'items' => 'Gebühren', 'date' => 'Datum', 'intro' => 'Für die nachstehenden Amtshandlungen werden folgende Gebühren erhoben:', 'office' => 'Gebührenstelle', 'total' => 'Gebühr gesamt'],
 ];
 
@@ -533,6 +555,7 @@ function entry_types(?string $kind = null): array
         'fire' => ['Einsatz', 'Brandschau', 'Beratung', 'Notiz', 'Sonstiges'],
         'government' => ['Notiz', 'Antrag', 'Bescheid', 'Vorsprache', 'Telefonat', 'Sonstiges'],
         'rescue' => ['Einsatz', 'Rettung', 'Suche', 'Bergung', 'Übergabe an SAMS', 'Notiz', 'Sonstiges'],
+        'law' => ['Mandantengespräch', 'Akteneinsicht', 'Schriftsatz', 'Gerichtstermin', 'Haftbesuch', 'Telefonat', 'Notiz', 'Sonstiges'],
         default => ['Behandlung', 'Notfalleinsatz', 'Untersuchung', 'Verlaufsnotiz', 'Psychologisches Gespräch', 'Labor', 'Bildgebung', 'Operation', 'Medikation', 'Telefonat', 'Sonstiges'],
     };
 }
@@ -552,6 +575,10 @@ function entry_templates(?string $kind = null): array
         ],
         'fire' => ['Einsatz' => "Alarmierung:\nLage bei Eintreffen:\nMaßnahmen:\nEinsatzende:"],
         'government' => ['Antrag' => "Anliegen:\n\nUnterlagen:\n\nErgebnis:"],
+        'law' => [
+            'Mandantengespräch' => "Anwesend:\nSachverhalt aus Sicht der Mandantschaft:\nZiel / Auftrag:\nRisiken / Einschätzung:\nNächste Schritte und Fristen:",
+            'Haftbesuch' => "Ort / Zelle:\nZustand der Mandantschaft:\nBesprochen:\nVereinbart:",
+        ],
         'rescue' => ['Rettung' => "Einsatzort / Koordinaten:\nLage bei Eintreffen:\nRettungsweg / Technik:\nZustand der Person:\nÜbergabe (SAMS / selbstständig):"],
         default => [
             'SOAP' => "Anamnese:\n\nBefund:\n\nDiagnose:\n\nTherapie:\n\nProcedere:",
@@ -567,6 +594,7 @@ function case_labels(?string $kind = null): array
         'police' => ['incident' => 'Sachverhalt', 'incident_ph' => 'Was ist passiert? Wer war beteiligt?', 'diagnosis' => 'Tatvorwurf / Delikte', 'diagnosis_ph' => 'Ein Delikt pro Zeile'],
         'justice' => ['incident' => 'Sachverhalt', 'incident_ph' => 'Gegenstand des Verfahrens', 'diagnosis' => 'Anklagepunkte / Gegenstand', 'diagnosis_ph' => 'Ein Punkt pro Zeile'],
         'fire' => ['incident' => 'Lage', 'incident_ph' => 'Lage bei Eintreffen', 'diagnosis' => 'Maßnahmen', 'diagnosis_ph' => 'Eine Maßnahme pro Zeile'],
+        'law' => ['incident' => 'Sachverhalt / Mandat', 'incident_ph' => 'Worum geht es? Gegenseite, Gericht, Aktenzeichen', 'diagnosis' => 'Vorwürfe / Anspruchsgrundlagen', 'diagnosis_ph' => 'Ein Punkt pro Zeile, gern mit Paragraph (z. B. §6 StGB)'],
         'rescue' => ['incident' => 'Lage', 'incident_ph' => 'Wo und wie wurde die Person gefunden? Gelände, Gewässer, Wetter', 'diagnosis' => 'Maßnahmen / Rettungstechnik', 'diagnosis_ph' => 'Eine Maßnahme pro Zeile'],
         'government' => ['incident' => 'Anliegen', 'incident_ph' => 'Worum geht es?', 'diagnosis' => 'Ergebnis / Bescheid', 'diagnosis_ph' => ''],
         default => ['incident' => 'Hergang / Anlass', 'incident_ph' => 'Was ist passiert? Wie wurde der Patient vorgefunden?', 'diagnosis' => 'Diagnose(n)', 'diagnosis_ph' => 'Eine Diagnose pro Zeile, gern mit ICD-10 (z. B. S52.5 Distale Radiusfraktur)'],

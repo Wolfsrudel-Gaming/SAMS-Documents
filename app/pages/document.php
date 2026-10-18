@@ -345,6 +345,12 @@ ob_start(); ?>
         <?php if (can('documents.issue.dienstausweis')): ?><form method="post" class="inline"><?= csrf_field() ?><button class="btn small" name="action" value="embed_photo">Erneut versuchen</button></form><?php endif; ?></div>
 <?php endif; ?>
 <div class="doc-stage" id="doc-stage"><?= $html ?></div>
+<?php $cited = law_refs_in(implode("\n", array_filter(array_map(fn($v) => is_scalar($v) ? (string) $v : '', (array) $doc['data'])))); if ($cited): ?>
+<details class="card no-print law-cited"><summary class="card-head"><h2>Zitierte Gesetze (<?= count($cited) ?>)</h2><span class="muted small"><?= e(implode(', ', array_column($cited, 'ref'))) ?></span></summary>
+    <?php foreach ($cited as $s): ?><article class="law-section"><h3><?= e($s['ref']) ?> <?= e($s['title']) ?> <a class="small" href="<?= e(url('laws') . '#s' . $s['id']) ?>">im Gesetzbuch</a></h3><?= law_body_html((string) $s['body']) ?>
+        <?php if ($s['penalty'] !== ''): ?><p class="law-penalty"><span class="badge red">Strafmaß</span> <?= e($s['penalty']) ?></p><?php endif; ?></article><?php endforeach; ?>
+</details>
+<?php endif; ?>
 <?php if ($doc['type'] === 'sv_untersuchung'): $cert = !empty($doc['data']['_certificate']) ? one('SELECT id, number FROM documents WHERE id = ?', [(int) $doc['data']['_certificate']]) : null; ?>
 <div class="flash <?= $cert ? 'success' : 'warn' ?> no-print">Vertrauliche ärztliche Unterlage – nicht an die Dienststelle weitergeben.
     <?= $cert ? 'Die Bescheinigung ohne Befunde wurde automatisch ausgestellt: <a href="' . e(url('document', ['id' => $cert['id']])) . '">' . e($cert['number']) . '</a>.' : 'Keine Bescheinigung erzeugt: bitte mindestens eine Verwendung beurteilen.' ?></div>

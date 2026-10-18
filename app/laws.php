@@ -233,6 +233,13 @@ function law_import(array $parsed, ?int $serverId, string $source, int $userId):
             $codeId = insert('law_codes', ['server_id' => $serverId, 'name' => $parsed['name'], 'description' => $parsed['description'], 'source' => mb_substr($source, 0, 190),
                 'active' => 1, 'created_by' => $userId, 'created_at' => now(), 'updated_at' => now()]);
         }
+        // Höchstgrenzen der Gesamtstrafe aus dem Text (für den Strafrechner)
+        [$maxJail, $maxFine] = law_detect_limits(implode("\n", array_merge(...array_map(fn($b) => array_column($b['sections'], 'body'), $parsed['books'] ?: [['sections' => []]]))));
+        try {
+            update('law_codes', $codeId, ['max_jail' => $maxJail, 'max_fine' => $maxFine]);
+        } catch (PDOException $e) {
+            // vor Migration 0045
+        }
         foreach (array_values($parsed['books']) as $bi => $b) {
             $bookId = insert('law_books', ['code_id' => $codeId, 'title' => mb_substr((string) $b['title'], 0, 190), 'short' => mb_substr((string) $b['short'], 0, 32), 'sort' => $bi]);
             foreach (array_values($b['sections']) as $si => $s) {
@@ -316,4 +323,136 @@ function law_body_html(string $body, string $highlight = ''): string
         $list = false;
     }
     return $out . ($list ? '</ul>' : '');
+}
+
+// ----------------------------------------------------- Nutzung in anderen Teilen
+
+/** Höchstgrenzen aus dem Gesetzestext („maximale Freiheitsstrafe beträgt 100 Hafteinheiten“, „maximale Geldstrafe beträgt 50.000 $“). */
+function law_detect_limits(string $text): array
+{
+    $jail = preg_match('/(?:maximale|höchste|Höchst)\s*(?:Freiheitsstrafe|Haftstrafe)\s+(?:beträgt|von)\s+(\d+)/iu', $text, $m) ? (int) $m[1] : 0;
+    $fine = preg_match('/(?:maximale|höchste|Höchst)\s*Geldstrafe\s+(?:beträgt|von)\s+(\d{1,3}(?:[.\s]\d{3})+|\d+)/iu', $text, $m) ? (int) preg_replace('/\D/', '', $m[1]) : 0;
+    return [$jail, $fine];
+}
+
+/** Gesetzbuch, das für die angemeldete Person gilt (Staat ihres Spielservers), oder null. */
+function law_current_code(): ?array
+{
+    static $code = false;
+    if ($code === false) {
+        $me = current_user();
+        $code = $me ? law_default_code(law_codes(), (int) $me['id']) : null;
+    }
+    return $code;
+}
+
+/** Paragraphen des geltenden Gesetzbuchs: ref („§2 StGB“), title, penalty, jail, fine, mode, book. */
+function law_sections_flat(?array $code = null): array
+{
+    static $cache = [];
+    $code ??= law_current_code();
+    if (!$code) {
+        return [];
+    }
+    try {
+        return $cache[(int) $code['id']] ??= array_map(fn($s) => ['id' => (int) $s['id'], 'ref' => '§' . $s['number'] . ' ' . $s['short'], 'number' => $s['number'], 'short' => $s['short'],
+            'title' => $s['title'], 'book' => $s['book'], 'penalty' => $s['penalty'], 'jail' => (int) $s['jail_max'], 'fine' => (int) $s['fine_max'], 'mode' => $s['penalty_mode'], 'body' => $s['body']],
+            all('SELECT s.*, b.short, b.title AS book FROM law_sections s JOIN law_books b ON b.id = s.book_id WHERE b.code_id = ? ORDER BY b.sort, s.sort', [$code['id']]));
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/** Vorschläge für Formularfelder (Tatvorwurf, Delikte, Begründung): „§2 StGB – Raub (bis 35 HE oder 15.000 $)“. */
+function law_datalist(): array
+{
+    return array_map(fn($s) => $s['ref'] . ' – ' . $s['title'] . ($s['jail'] || $s['fine'] ? ' (' . law_penalty_label(['jail_max' => $s['jail'], 'fine_max' => $s['fine'], 'penalty_mode' => $s['mode']]) . ')' : ''),
+        array_filter(law_sections_flat(), fn($s) => $s['short'] !== ''));
+}
+
+/** In einem Text zitierte Paragraphen („§ 2 StGB“, „§2 Abs. 1 StVO“, „§§ 1, 5 StGB“) des geltenden Gesetzbuchs. */
+function law_refs_in(string $text): array
+{
+    $flat = law_sections_flat();
+    if (!$flat || !str_contains($text, '§')) {
+        return [];
+    }
+    $by = [];
+    foreach ($flat as $s) {
+        $by[mb_strtolower($s['short']) . '|' . mb_strtolower($s['number'])] = $s;
+    }
+    $found = [];
+    if (preg_match_all('/§§?\s*((?:\d+[a-z]?(?:\s*(?:Abs\.|Absatz)\s*\d+)?(?:\s*(?:,|und|u\.)\s*)?)+)\s*([A-ZÄÖÜ][A-Za-zÄÖÜäöüß]{1,11})/u', $text, $mm, PREG_SET_ORDER)) {
+        foreach ($mm as $m) {
+            preg_match_all('/(\d+[a-z]?)(?:\s*(?:Abs\.|Absatz)\s*\d+)?/u', $m[1], $nums);
+            foreach ($nums[1] as $n) {
+                $key = mb_strtolower($m[2]) . '|' . mb_strtolower($n);
+                if (isset($by[$key])) {
+                    $found[$by[$key]['id']] = $by[$key];
+                }
+            }
+        }
+    }
+    return array_values($found);
+}
+
+/** Behörden, bei denen eine Kanzlei Schriftsätze einreichen kann (Gericht/Staatsanwaltschaft, Polizei, Verwaltung). */
+function law_submit_targets(): array
+{
+    try {
+        $out = [];
+        foreach (factions() as $f) {
+            if (in_array($f['kind'] ?? '', ['justice', 'police', 'government'], true)) {
+                $out[(int) $f['id']] = $f['name'];
+            }
+        }
+        return $out;
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+/** Nach dem Ausstellen eines Kanzlei-Schriftsatzes: bei der gewählten Behörde einreichen (Freigabe), Akteneinsicht als Anfrage. */
+function law_document_issued(int $docId, array $type, array $data, ?array $patient, array $issuer): void
+{
+    if (!str_starts_with($type['key'], 'ra_') || !($target = (int) ($data['einreichen'] ?? 0)) || !isset(law_submit_targets()[$target])) {
+        return;
+    }
+    $f = faction_by_id($target);
+    $firm = org('org_name');
+    $number = (string) scalar('SELECT number FROM documents WHERE id = ?', [$docId]);
+    $person = $patient ? patient_name($patient) : '';
+    insert('document_shares', ['document_id' => $docId, 'kind' => 'faction', 'target_faction_id' => $target, 'agency' => (string) ($f['code'] ?? ''),
+        'recipient' => (string) $f['name'], 'purpose' => 'Eingereicht von ' . $firm . ': ' . $type['title'], 'expires_at' => null, 'created_by' => (int) $issuer['id'], 'created_at' => now()]);
+    if ($type['key'] === 'ra_akteneinsicht') {
+        // Die Behörde beantwortet die Anfrage und gibt dabei die Akte frei (Behördenanfragen)
+        insert('agency_requests', ['to_faction_id' => $target, 'subject' => 'Akteneinsicht' . (($data['aktenzeichen'] ?? '') !== '' ? ' Az. ' . $data['aktenzeichen'] : '') . ($person !== '' ? ' – ' . $person : ''),
+            'body' => 'Antrag auf Akteneinsicht von ' . $firm . ' (' . user_display($issuer) . '), Schriftsatz ' . $number . '. ' . trim((string) ($data['zweck'] ?? '')),
+            'citizen_id' => (string) ($patient['citizen_id'] ?? ''), 'person' => $person, 'reference' => 'akteneinsicht:' . $docId, 'status' => 'open',
+            'created_by' => (int) $issuer['id'], 'created_at' => now()]);
+    }
+    audit('document.submit', 'document', $docId, $number . ' eingereicht bei ' . $f['name']);
+    $prev = fid();
+    set_faction_context($target);
+    notify_users_with($type['key'] === 'ra_akteneinsicht' ? 'requests.manage' : 'requests.view', $type['key'] === 'ra_akteneinsicht' ? 'request' : 'share',
+        'Eingang von ' . $firm . ': ' . $type['title'] . ($person !== '' ? ' (' . $person . ')' : ''), $type['key'] === 'ra_akteneinsicht' ? url('requests') : url('shared', ['id' => $docId]),
+        fn($u) => (int) $u['faction_id'] === $target);
+    set_faction_context($prev);
+}
+
+/** Kanzleien mit Anschrift/Telefon (aus den Einstellungen der jeweiligen Kanzlei) und ihren Anwältinnen und Anwälten. */
+function law_firms(): array
+{
+    $firms = [];
+    foreach (lawyers_directory() as $l) {
+        $fid = (int) $l['faction_id'];
+        if (!isset($firms[$fid])) {
+            $prev = fid();
+            set_faction_context($fid);
+            $firms[$fid] = ['id' => $fid, 'name' => $l['firm'], 'street' => org('org_street'), 'city' => org('city'), 'phone' => org('phone'), 'logo' => faction_logo(), 'lawyers' => []];
+            set_faction_context($prev);
+        }
+        $firms[$fid]['lawyers'][] = $l;
+    }
+    return array_values($firms);
 }

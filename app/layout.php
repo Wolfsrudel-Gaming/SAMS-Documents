@@ -34,6 +34,7 @@ $navGroups = [
         'training'     => ['Ausbildung', 'training.view|training.manage', 'shield'],
         'wiki'         => ['Wiki', 'wiki.view|wiki.edit', 'folder'],
         'laws'         => ['Gesetze', law_codes() ? '' : 'laws.manage', 'docs'],
+        'lawyers'      => ['Anwaltsverzeichnis', lawyers_directory() ? '' : 'lawyers.none', 'users'],
         'shared'       => ['Freigegebene Dokumente', 'documents.shared_view|documents.view|requests.view', 'external'],
         'portal_admin' => ['Bürgerportal', 'portal.manage|portal.applications', 'users'],
     ],

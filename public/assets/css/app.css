@@ -690,3 +690,6 @@ details.card:not([open]) > summary { margin-bottom: 0; }
 .law-section:target { background: var(--primary-soft); border-radius: 6px; padding-left: .5rem; }
 .law-snippet { max-width: 60ch; }
 @media (max-width: 1150px) { .law-nav { position: static; max-height: none; } }
+.lawyer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.firm-logo { width: 26px; height: 26px; vertical-align: middle; border-radius: 50%; }
+.law-cited > summary { cursor: pointer; list-style: none; } .law-cited > summary::-webkit-details-marker { display: none; }

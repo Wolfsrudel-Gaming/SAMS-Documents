@@ -253,6 +253,24 @@ Unter *Gesetze* lesen und durchsuchen alle Fraktionen die Gesetzbücher (Bücher
 - **Strafmaße in den Katalog übernehmen**: Polizei und Justiz übernehmen alle Paragraphen mit Strafmaß als Positionen (z. B. „§2 StGB – Raub“, Geldstrafe und Hafteinheiten) in ihren Bußgeld- und Strafkatalog – damit stehen sie in Strafanzeige, Strafbefehl und Bußgeldbescheid zur Auswahl. Erneute Übernahme aktualisiert statt zu verdoppeln.
 - Einzelne Paragraphen lassen sich nachträglich bearbeiten; das Strafmaß wird dabei neu ausgewertet.
 
+### Anwaltskanzleien
+
+Fraktionsart **Anwaltskanzlei** (*Fraktionen → anlegen*, beliebig viele – jede Kanzlei ist eine eigene Fraktion mit getrennten Daten):
+
+- Ränge Kanzleiinhaber/in, Partner/in, Rechtsanwalt/-anwältin, Junior-Anwalt, Rechtsanwaltsfachangestellte/r, Referendar/in; Abteilungen Straf-, Zivil-, Verkehrs-, Verwaltungsrecht, Sekretariat; **Honorarordnung** und **Honorarrechnungen**; eigenes Logo und Kanzleistempel.
+- **Mandantenakten** und **Mandate** – nur die eigene Kanzlei sieht sie.
+- Dokumente: Vollmacht, Mandatsvereinbarung, Schriftsatz, Einspruch, Antrag auf Akteneinsicht, Antrag auf Haftprüfung, Beweisantrag. Mit **„Einreichen bei“** gehen sie beim Ausstellen direkt an Gericht/Staatsanwaltschaft, Polizei oder Verwaltung (als Freigabe, mit Benachrichtigung). Ein Antrag auf Akteneinsicht legt dort zusätzlich eine **Behördenanfrage** an; die Antwort kommt mit freigegebenen Akten zurück.
+- **Gerichtskalender**: Das Gericht wählt Anwältinnen und Anwälte aller Kanzleien als Verteidigung; die Kanzlei sieht diese Termine (mit Erinnerung) und führt eigene Fristen.
+- **Anwaltsverzeichnis** für alle Fraktionen und im Bürgerportal.
+
+### Gesetze überall
+
+- **Vorschläge in Formularen**: Tatvorwurf/Delikte (Strafanzeige, Festnahme, Ermittlungsbericht, Anklage, Strafbefehl, Urteil, Haftbefehl), Schriftsätze der Kanzleien und Vorwürfe in Vorgängen/Mandaten schlagen beim Tippen Paragraphen vor („§2 StGB – Raub (bis 35 HE oder 15.000 $)“).
+- **Zitierte Gesetze**: Unter jedem Dokument erscheinen die darin genannten Paragraphen („§ 2 StGB“, „§§ 1, 5 StVO“) mit Gesetzestext und Strafmaß.
+- **Strafrechner** (*Gesetze → Strafrechner*): Tatvorwürfe mit Anzahl wählen, Strafrahmen wird summiert und auf die Höchstgrenzen der Gesamtstrafe begrenzt (aus dem Gesetzbuch erkannt, änderbar); fertiger Text zum Kopieren.
+- **Suche** findet Paragraphen; das **Bürgerportal** zeigt das Gesetzbuch.
+- Es gilt jeweils das Gesetzbuch des eigenen Staats (Spielserver), sonst das für alle Staaten.
+
 ### Mehrere FiveM-Server (Staaten) an einem Portal
 
 Unter *Administration → Spielserver* (nur Hauptadministrator) verbindest du beliebig viele FiveM-Server, z. B. je Staat. Jeder Server bekommt einen **eigenen API-Schlüssel**; Portal-Adresse (`sams_url`) und Schlüssel (`sams_api_key`) lassen sich dort anzeigen und kopieren. Der erste Server (Hauptserver) nutzt `API_KEY` aus der `.env`, bis im Portal ein eigener Schlüssel erzeugt wird.

@@ -592,6 +592,7 @@ function datalists_builtin(): array
         'ranks' => db_column_list('SELECT name FROM ranks WHERE ' . fw() . ' ORDER BY level DESC'),
         'qualifications' => db_column_list('SELECT name FROM qualifications WHERE ' . fw() . ' ORDER BY name'),
         'staff_departments' => db_column_list('SELECT name FROM departments WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name'),
+        'laws' => law_datalist(),
         'services' => price_list() ? array_map('price_label', price_list()) : [
             'Notfalleinsatz Rettungswagen', 'Notarzteinsatz', 'Luftrettung (Helikopter)', 'Ambulante Erstversorgung', 'Ärztliche Untersuchung',
             'Wundversorgung / Naht', 'Gipsverband / Schienung', 'Röntgen', 'CT', 'Stationäre Behandlung (pro Tag)', 'Operation',

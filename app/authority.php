@@ -211,10 +211,14 @@ function licenses_for_citizen(string $citizenId): array
 function hearing_scope(string $alias = 'h'): string
 {
     $u = current_user();
+    $id = (int) $u['id'];
+    if (faction_kind() === 'law') {
+        // Kanzlei: Termine aller Gerichte, in denen eigene Anwältinnen und Anwälte als Verteidigung eingetragen sind
+        return can('court.own') ? "$alias.lawyer_id = $id" : "$alias.lawyer_id IN (SELECT id FROM users WHERE faction_id = " . fid() . ')';
+    }
     if (!can('court.own')) {
         return fw($alias);
     }
-    $id = (int) $u['id'];
     return fw($alias) . " AND ($alias.judge_id = $id OR $alias.prosecutor_id = $id OR $alias.lawyer_id = $id OR $alias.created_by = $id)";
 }
 
@@ -262,7 +266,25 @@ function court_open_count(): int
 /** Konten der eigenen Fraktion mit einer Rolle für Auswahllisten (Richter/in, Staatsanwaltschaft, Anwaltschaft). */
 function court_people(): array
 {
-    return all('SELECT u.id, u.name, r.short AS rank_short FROM users u LEFT JOIN ranks r ON r.id = u.rank_id WHERE u.active = 1 AND ' . fw('u') . ' ORDER BY u.name');
+    $own = all("SELECT u.id, u.name, r.short AS rank_short, '' AS firm FROM users u LEFT JOIN ranks r ON r.id = u.rank_id WHERE u.active = 1 AND " . fw('u') . ' ORDER BY u.name');
+    return array_merge($own, array_filter(lawyers_directory(), fn($l) => (int) $l['faction_id'] !== fid()));
+}
+
+/** Anwältinnen und Anwälte aller Kanzleien (und mit Anwaltszugang bei der Justiz): id, name, rank_short, firm, faction_id, phone. */
+function lawyers_directory(): array
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    $law = array_values(array_filter(factions(), fn($f) => ($f['kind'] ?? '') === 'law'));
+    if (!$law) {
+        return $cache = [];
+    }
+    $ids = implode(',', array_map(fn($f) => (int) $f['id'], $law));
+    return $cache = all("SELECT DISTINCT u.id, u.name, u.title, u.phone, u.badge_number, u.faction_id, r.short AS rank_short, r.name AS rank_name, r.level, f.name AS firm
+        FROM users u JOIN ranks r ON r.id = u.rank_id JOIN factions f ON f.id = u.faction_id JOIN rank_permissions rp ON rp.rank_id = u.rank_id
+        WHERE u.active = 1 AND u.faction_id IN ($ids) AND rp.permission = 'documents.issue.ra_vollmacht' ORDER BY f.name, r.level DESC, u.name");
 }
 
 // ------------------------------------------------------------ Objektpläne

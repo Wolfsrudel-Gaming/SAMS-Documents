@@ -107,6 +107,23 @@ Gelände-, Wasser- und Luftrettung, Vermisstensuche, Bergung und Absicherung (z.
 - Der Rettungsdienst untersucht mit dem **Untersuchungsbogen Sonderverwendungsfähigkeit** nach unserem Standard (Anforderungen je Verwendung stehen unter *Tauglichkeit*). Die Leitung erhält die **Bescheinigung über die Sonderverwendungsfähigkeit** mit Profil (PULHES), Beurteilung je Verwendung und Einschränkungen.
 MD,
     ],
+    'law' => $all + [
+        'Handbuch: Kanzlei' => <<<'MD'
+## Mandantenakten und Mandate
+- Jede Mandantin und jeder Mandant hat eine **Mandantenakte** – nur eure Kanzlei sieht sie. Andere Kanzleien, Gericht und Polizei haben keinen Zugriff.
+- Ein **Mandat** bündelt Sachverhalt, Vorwürfe (mit Paragraphen aus dem Gesetzbuch), Schriftsätze und Rechnungen.
+
+## Dokumente
+- Vollmacht, Mandatsvereinbarung, Schriftsatz, Einspruch, Antrag auf Akteneinsicht, Antrag auf Haftprüfung, Beweisantrag, Honorarrechnung.
+- **Einreichen bei**: Schriftsätze gehen beim Ausstellen direkt an Gericht/Staatsanwaltschaft, Polizei oder Verwaltung (als Freigabe). Ein **Antrag auf Akteneinsicht** erzeugt dort zusätzlich eine Behördenanfrage – die Antwort kommt mit freigegebenen Akten zurück.
+- Tatvorwürfe und Begründungen: beim Tippen werden Paragraphen aus dem Gesetzbuch vorgeschlagen.
+
+## Gericht und Gesetze
+- Der **Gerichtskalender** zeigt alle Termine, in denen jemand aus eurer Kanzlei als Verteidigung eingetragen ist (Erinnerung 24 Stunden vorher). Eigene Fristen tragt ihr unter „Fristen“ ein.
+- Unter **Gesetze** findet ihr das Gesetzbuch eures Staats und den **Strafrechner** (Strafrahmen mehrerer Tatvorwürfe mit Höchstgrenzen).
+- Das **Anwaltsverzeichnis** zeigt allen Behörden und im Bürgerportal, welche Kanzleien es gibt.
+MD,
+    ],
     'government' => $all + [
         'Handbuch: Verwaltung' => <<<'MD'
 ## Dokumente

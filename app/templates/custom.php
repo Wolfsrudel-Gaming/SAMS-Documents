@@ -5,7 +5,7 @@ defined('SAMS_ROOT') || exit;
  * eingefrorene Vorlage (_tpl), sonst die aktuelle Definition (Vorschau/Entwurf).
  */
 $tpl = is_array($d['_tpl'] ?? null) ? $d['_tpl'] : ($type['custom'] ?? []);
-$fields = $tpl['fields'] ?? $type['fields'];
+$fields = array_values(array_filter($tpl['fields'] ?? $type['fields'], fn($f) => ($f['print'] ?? true) !== false)); // 'print' => false: nur Steuerfeld (z. B. „Einreichen bei“)
 $layout = $tpl['layout'] ?? 'letter';
 $seal = $tpl['seal'] ?? 'rect';
 $title = $tpl['title'] ?? $type['title'];

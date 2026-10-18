@@ -20,6 +20,8 @@ function document_types_factions(): array
     $head = fn(string $label) => ['type' => 'heading', 'label' => $label];
     $sign = fn(string $name, string $label) => ['name' => $name, 'label' => $label, 'type' => 'signature', 'width' => 'half'];
     $az = $t('aktenzeichen', 'Aktenzeichen', ['width' => 'third', 'placeholder' => 'z. B. 2 Js 123/26']);
+    // Kanzlei: Schriftsatz direkt bei Gericht, Staatsanwaltschaft, Polizei oder Behörde einreichen (Freigabe an die Behörde)
+    $submit = ['name' => 'einreichen', 'label' => 'Einreichen bei', 'type' => 'select', 'width' => 'half', 'print' => false, 'options' => ['' => 'nicht einreichen (nur ausstellen)'] + law_submit_targets()];
 
     $def = function (string $title, string $short, string $code, string $kind, string $role, string $category, string $layout, array $fields, string $body = '', string $patient = 'required', string $seal = 'round', ?string $valid = null): array {
         return array_filter([
@@ -33,14 +35,14 @@ function document_types_factions(): array
         // ================================================================ Polizei
         'pd_anzeige' => $def('Strafanzeige', 'Strafanzeige', 'SA', 'police', 'officer', 'Ermittlungen', 'protocol', [
             $head('Tat'), $date('tatdatum', 'Tatdatum', ['required' => true, 'default' => 'today']), $time('tatzeit', 'Tatzeit'),
-            $t('tatort', 'Tatort', ['width' => 'half', 'required' => true]), $t('delikt', 'Delikt(e)', ['required' => true, 'list' => 'services']),
+            $t('tatort', 'Tatort', ['width' => 'half', 'required' => true]), $t('delikt', 'Delikt(e)', ['required' => true, 'list' => 'laws']),
             $area('sachverhalt', 'Sachverhalt', ['required' => true, 'rows' => 6]), $area('beweismittel', 'Beweismittel / Spuren', ['rows' => 3]),
             $head('Beteiligte'), $t('anzeigeerstatter', 'Anzeigeerstatter/in', ['width' => 'half']), $t('geschaedigt', 'Geschädigte/r', ['width' => 'half']),
             $area('zeugen', 'Zeug/innen', ['rows' => 2]), $sign('sig_anzeige', 'Unterschrift Anzeigeerstatter/in'),
         ], '', 'optional'),
         'pd_festnahme' => $def('Festnahmeprotokoll', 'Festnahme', 'FN', 'police', 'officer', 'Einsatz', 'protocol', [
             $head('Festnahme'), $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Uhrzeit'),
-            $t('ort', 'Ort der Festnahme', ['width' => 'half', 'required' => true]), $t('delikte', 'Tatvorwurf / Delikte', ['required' => true, 'list' => 'services']),
+            $t('ort', 'Ort der Festnahme', ['width' => 'half', 'required' => true]), $t('delikte', 'Tatvorwurf / Delikte', ['required' => true, 'list' => 'laws']),
             $area('grund', 'Grund und Hergang', ['required' => true]),
             $head('Rechte und Maßnahmen'), $check('belehrt', 'Über Rechte belehrt (Miranda)'), $time('belehrt_um', 'Belehrt um'), $check('anwalt', 'Rechtsbeistand verlangt'),
             $check('durchsucht', 'Person durchsucht'), $check('rettungsdienst', 'Rettungsdienst hinzugezogen'), $check('fesselung', 'Fesselung angewendet'),
@@ -82,7 +84,7 @@ function document_types_factions(): array
         ], "Gegenüber **{{patient.name}}** wird hiermit ein Platzverweis für folgenden Bereich ausgesprochen:\n\n**{{ort}}** – Dauer: **{{dauer}}**\n\nGrund: {{grund}}\n\nBei Zuwiderhandlung kann die Maßnahme mit unmittelbarem Zwang durchgesetzt und eine Ingewahrsamnahme angeordnet werden."),
         'pd_ermittlung' => $def('Ermittlungsbericht', 'Ermittlungsbericht', 'EB', 'police', 'officer', 'Ermittlungen', 'letter', [
             $area('empfaenger', 'Empfänger', ['rows' => 3, 'placeholder' => "Department of Justice\nStaatsanwaltschaft"]), $az,
-            $t('delikte', 'Tatvorwurf', ['list' => 'services']), $area('ergebnis', 'Ermittlungsergebnis', ['required' => true, 'rows' => 10]),
+            $t('delikte', 'Tatvorwurf', ['list' => 'laws']), $area('ergebnis', 'Ermittlungsergebnis', ['required' => true, 'rows' => 10]),
             $area('beweise', 'Beweismittel', ['rows' => 3]), $area('antrag', 'Anregung / Antrag', ['rows' => 2, 'placeholder' => 'z. B. Erlass eines Haftbefehls']),
         ], '', 'optional'),
         'pd_waffenschein' => $def('Waffenschein', 'Waffenschein', 'WS', 'police', 'lead', 'Erlaubnisse', 'letter', [
@@ -93,20 +95,20 @@ function document_types_factions(): array
         // ================================================================= Justiz
         'doj_anklage' => $def('Anklageschrift', 'Anklage', 'AK', 'justice', 'prosecutor', 'Strafverfahren', 'letter', [
             $t('gericht', 'An das Gericht', ['width' => 'half', 'default' => 'Superior Court of San Andreas']), $az,
-            $area('tatvorwurf', 'Tatvorwurf', ['required' => true]), $area('sachverhalt', 'Wesentliches Ergebnis der Ermittlungen', ['rows' => 6]),
+            $area('tatvorwurf', 'Tatvorwurf', ['required' => true, 'list' => 'laws']), $area('sachverhalt', 'Wesentliches Ergebnis der Ermittlungen', ['rows' => 6]),
             $area('beweismittel', 'Beweismittel', ['rows' => 3]), $area('antrag', 'Antrag', ['rows' => 2, 'default' => 'Es wird beantragt, die Anklage zur Hauptverhandlung zuzulassen.']),
         ], "**{{patient.name}}**, geboren am {{patient.dob}}, wird angeklagt:\n\n{{tatvorwurf}}"),
         'doj_strafbefehl' => $def('Strafbefehl', 'Strafbefehl', 'SB', 'justice', 'judge', 'Strafverfahren', 'letter', [
-            $az, $area('tat', 'Tat', ['required' => true]), $sel('strafe', 'Rechtsfolge', ['Geldstrafe', 'Freiheitsstrafe', 'Geld- und Freiheitsstrafe'], ['required' => true]),
+            $az, $area('tat', 'Tat', ['required' => true, 'list' => 'laws']), $sel('strafe', 'Rechtsfolge', ['Geldstrafe', 'Freiheitsstrafe', 'Geld- und Freiheitsstrafe'], ['required' => true]),
             $t('betrag', 'Geldstrafe (Betrag)', ['width' => 'third']), ['name' => 'haft', 'label' => 'Haft-Einheiten', 'type' => 'number', 'width' => 'third'],
         ], "Gegen **{{patient.name}}** wird wegen folgender Tat\n\n{{tat}}\n\nauf Antrag der Staatsanwaltschaft ein Strafbefehl erlassen: **{{strafe}}** – {{betrag}} {{haft}} Haft-Einheiten.\n\nGegen diesen Strafbefehl kann innerhalb von zwei Wochen nach Zustellung Einspruch eingelegt werden. Andernfalls wird er rechtskräftig."),
         'doj_urteil' => $def('Urteil', 'Urteil', 'UR', 'justice', 'judge', 'Strafverfahren', 'letter', [
-            $az, $date('verhandlung', 'Verhandlungstag', ['required' => true]), $area('tenor', 'Urteilstenor', ['required' => true]),
+            $az, $date('verhandlung', 'Verhandlungstag', ['required' => true]), $area('tenor', 'Urteilstenor', ['required' => true, 'list' => 'laws']),
             $t('geldstrafe', 'Geldstrafe (Betrag, falls verhängt – kann ins Spiel gesendet werden)', ['width' => 'half']),
             $area('gruende', 'Gründe', ['rows' => 8]), $area('rechtsmittel', 'Rechtsmittelbelehrung', ['rows' => 2, 'default' => 'Gegen dieses Urteil ist binnen einer Woche die Berufung zulässig.']),
         ], "**Im Namen des Volkes**\n\nIn der Strafsache gegen **{{patient.name}}**, geboren am {{patient.dob}}, hat das Gericht aufgrund der Hauptverhandlung vom {{verhandlung}} für Recht erkannt:\n\n{{tenor}}"),
         'doj_haftbefehl' => $def('Haftbefehl', 'Haftbefehl', 'HB', 'justice', 'judge', 'Beschlüsse', 'letter', [
-            $az, $area('tatvorwurf', 'Tatvorwurf', ['required' => true]),
+            $az, $area('tatvorwurf', 'Tatvorwurf', ['required' => true, 'list' => 'laws']),
             $radio('haftgrund', 'Haftgrund', ['Fluchtgefahr', 'Verdunkelungsgefahr', 'Wiederholungsgefahr', 'Schwere der Tat'], ['required' => true]),
             $date('gueltig_bis', 'Gültig bis', ['required' => true]), $check('gefaehrlich', 'Person gilt als gefährlich / bewaffnet'),
         ], "Gegen **{{patient.name}}**, geboren am {{patient.dob}}, wird die Untersuchungshaft angeordnet.\n\nTatvorwurf: {{tatvorwurf}}\n\nHaftgrund: **{{haftgrund}}**\n\nDie Polizeibehörden werden ersucht, die beschuldigte Person festzunehmen und unverzüglich dem Gericht vorzuführen. Der Haftbefehl gilt bis {{gueltig_bis}}.", 'required', 'round', 'gueltig_bis'),
@@ -125,6 +127,42 @@ function document_types_factions(): array
             $az, $area('umfang', 'Umfang der Vollmacht', ['required' => true, 'default' => 'Vertretung im Straf- und Ermittlungsverfahren, Akteneinsicht, Empfang von Zustellungen.']),
             $sign('sig_mandant', 'Unterschrift Mandant/in'),
         ], "Hiermit erteilt **{{patient.name}}** Vollmacht an {{issuer.name}} für:\n\n{{umfang}}", 'required', 'none'),
+
+        // ======================================================== Anwaltskanzlei
+        'ra_vollmacht' => $def('Vollmacht', 'Vollmacht', 'VM', 'law', 'lawyer', 'Mandat', 'letter', [
+            $t('sache', 'Angelegenheit', ['required' => true, 'placeholder' => 'z. B. Ermittlungsverfahren wegen Raub']), $az,
+            $area('umfang', 'Umfang der Vollmacht', ['required' => true, 'default' => 'Vertretung in der oben genannten Angelegenheit, insbesondere im Ermittlungs-, Straf- und Bußgeldverfahren; Akteneinsicht; Empfang von Zustellungen; Einlegung und Rücknahme von Rechtsmitteln; Besuche in der Haft.']),
+            $sign('sig_mandant', 'Unterschrift Mandant/in'), $submit,
+        ], "Hiermit erteile ich, **{{patient.name}}**, geboren am {{patient.dob}}, **{{issuer.name}}** ({{org.name}}) Vollmacht in der Angelegenheit **{{sache}}** {{aktenzeichen}}:\n\n{{umfang}}", 'required', 'rect'),
+        'ra_mandat' => $def('Mandatsvereinbarung', 'Mandatsvereinbarung', 'MV', 'law', 'lawyer', 'Mandat', 'letter', [
+            $t('sache', 'Gegenstand des Mandats', ['required' => true]),
+            $sel('honorar', 'Vergütung', ['nach Honorarordnung der Kanzlei', 'Pauschalhonorar', 'Stundenhonorar'], ['required' => true]),
+            $t('betrag', 'Betrag (bei Pauschale / je Stunde)', ['width' => 'third']), $t('vorschuss', 'Vorschuss', ['width' => 'third']),
+            $area('vereinbarung', 'Besondere Vereinbarungen', ['rows' => 3]), $sign('sig_mandant', 'Unterschrift Mandant/in'),
+        ], "Zwischen **{{patient.name}}** (Mandant/in) und **{{org.name}}**, vertreten durch {{issuer.name}}, wird folgendes Mandat vereinbart:\n\n**Gegenstand:** {{sache}}\n\n**Vergütung:** {{honorar}} {{betrag}} – Vorschuss: {{vorschuss}}\n\n{{vereinbarung}}\n\nDie Kanzlei ist zur Verschwiegenheit verpflichtet. Das Mandat kann von beiden Seiten jederzeit beendet werden; bis dahin erbrachte Leistungen sind zu vergüten.", 'required', 'rect'),
+        'ra_schriftsatz' => $def('Schriftsatz', 'Schriftsatz', 'SS', 'law', 'lawyer', 'Schriftsätze', 'letter', [
+            $sel('art', 'Art', ['Verteidigungsschrift', 'Stellungnahme', 'Klageschrift', 'Klageerwiderung', 'Berufung', 'Revision', 'Beschwerde', 'Antrag'], ['required' => true]),
+            $t('an', 'An', ['width' => 'half', 'default' => 'Superior Court of San Andreas']), $az,
+            $area('antrag', 'Antrag', ['required' => true, 'rows' => 3, 'list' => 'laws']), $area('begruendung', 'Begründung', ['rows' => 10, 'list' => 'laws']), $submit,
+        ], "An: {{an}}\n\nIn der Sache {{aktenzeichen}} zeigen wir an, dass wir **{{patient.name}}** vertreten. Eine Vollmacht liegt vor.\n\n**{{art}}**\n\n**Wir beantragen:**\n\n{{antrag}}\n\n**Begründung:**\n\n{{begruendung}}", 'required', 'rect'),
+        'ra_einspruch' => $def('Einspruch', 'Einspruch', 'EI', 'law', 'lawyer', 'Schriftsätze', 'letter', [
+            $sel('gegen', 'Einspruch gegen', ['Strafbefehl', 'Bußgeldbescheid', 'Kostenbescheid', 'Gebührenbescheid', 'sonstigen Bescheid'], ['required' => true]),
+            $date('vom', 'vom', ['required' => true]), $az, $t('an', 'An', ['width' => 'half', 'default' => 'Superior Court of San Andreas']),
+            $area('begruendung', 'Begründung', ['rows' => 6, 'list' => 'laws', 'default' => 'Eine Begründung bleibt einem gesonderten Schriftsatz nach Akteneinsicht vorbehalten.']), $submit,
+        ], "An: {{an}}\n\nNamens und in Vollmacht von **{{patient.name}}**, geboren am {{patient.dob}}, legen wir gegen den {{gegen}} vom {{vom}}, Az. {{aktenzeichen}},\n\n**Einspruch**\n\nein.\n\n{{begruendung}}", 'required', 'rect'),
+        'ra_akteneinsicht' => $def('Antrag auf Akteneinsicht', 'Akteneinsicht', 'AE', 'law', 'lawyer', 'Schriftsätze', 'letter', [
+            $t('an', 'An', ['width' => 'half', 'default' => 'Staatsanwaltschaft San Andreas']), $az,
+            $area('zweck', 'Ergänzung', ['rows' => 3, 'default' => 'Wir bitten um Übersendung bzw. Freigabe der vollständigen Ermittlungsakte einschließlich aller Beiakten, Lichtbilder und Beweismittelverzeichnisse.']),
+            $submit + ['required' => true],
+        ], "An: {{an}}\n\nIn der Sache {{aktenzeichen}} zeigen wir unter Vorlage der Vollmacht an, dass wir **{{patient.name}}** vertreten, und beantragen\n\n**Akteneinsicht**\n\n{{zweck}}", 'required', 'rect'),
+        'ra_haftpruefung' => $def('Antrag auf Haftprüfung', 'Haftprüfung', 'HP', 'law', 'lawyer', 'Schriftsätze', 'letter', [
+            $t('an', 'An', ['width' => 'half', 'default' => 'Superior Court of San Andreas']), $az,
+            $area('begruendung', 'Begründung', ['required' => true, 'rows' => 6, 'list' => 'laws']), $area('auflagen', 'Angebotene Auflagen (z. B. Kaution, Meldepflicht)', ['rows' => 2]), $submit,
+        ], "An: {{an}}\n\nNamens und in Vollmacht von **{{patient.name}}** beantragen wir in der Sache {{aktenzeichen}}\n\n**Haftprüfung**\n\nund die Aufhebung, hilfsweise die Außervollzugsetzung des Haftbefehls.\n\n**Begründung:**\n\n{{begruendung}}\n\n**Angebotene Auflagen:** {{auflagen}}", 'required', 'rect'),
+        'ra_beweisantrag' => $def('Beweisantrag', 'Beweisantrag', 'BA', 'law', 'lawyer', 'Schriftsätze', 'letter', [
+            $az, $area('thema', 'Beweisthema (was soll bewiesen werden?)', ['required' => true, 'rows' => 3]),
+            $area('mittel', 'Beweismittel (Zeugen, Urkunden, Gutachten, Aufnahmen)', ['required' => true, 'rows' => 3]), $area('bedeutung', 'Bedeutung für das Verfahren', ['rows' => 3, 'list' => 'laws']), $submit,
+        ], "In der Sache {{aktenzeichen}} gegen **{{patient.name}}** wird beantragt, Beweis zu erheben über die Tatsache,\n\n{{thema}}\n\ndurch: {{mittel}}\n\n**Bedeutung:** {{bedeutung}}", 'required', 'rect'),
 
         // ============================================================= Feuerwehr
         'fd_einsatz' => $def('Einsatzbericht', 'Einsatzbericht', 'EB', 'fire', 'fire', 'Einsatz', 'protocol', [

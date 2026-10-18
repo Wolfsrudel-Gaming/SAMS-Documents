@@ -125,6 +125,13 @@ if ($c && is_post()) {
 
 $patient = $c && $c['patient_id'] ? one('SELECT * FROM patients WHERE id = ?', [$c['patient_id']]) : null;
 $tabs = ['home' => 'Start', 'documents' => 'Meine Dokumente', 'appointments' => 'Termine', 'requests' => 'Anträge', 'apply' => 'Bewerben'];
+$lawCode = law_default_code(law_codes(), 0);
+if ($lawCode) {
+    $tabs['laws'] = 'Gesetze';
+}
+if (lawyers_directory()) {
+    $tabs['lawyers'] = 'Anwälte';
+}
 if (!isset($tabs[$page])) {
     $page = 'home';
 }
@@ -290,6 +297,20 @@ if (!isset($tabs[$page])) {
                 <div class="form-actions"><button class="btn primary">Bewerbung absenden</button></div>
             </form>
         </div>
+    <?php elseif ($page === 'laws'): $lq = trim((string) ($_GET['q'] ?? '')); $flat = array_filter(law_sections_flat($lawCode), fn($s) => $lq === '' || mb_stripos($s['title'] . ' ' . $s['body'] . ' ' . $s['ref'], $lq) !== false); ?>
+        <section class="card">
+            <h2><?= e($lawCode['name']) ?></h2>
+            <form method="get" class="inline"><input type="hidden" name="page" value="laws"><input type="search" name="q" value="<?= e($lq) ?>" placeholder="Im Gesetzbuch suchen"></form>
+            <?php $book = ''; foreach ($flat as $s): if ($s['book'] !== $book): $book = $s['book']; ?><h3 class="form-heading"><?= e($book) ?></h3><?php endif; ?>
+                <article class="law-section"><h3><?= e($s['ref']) ?> <?= e($s['title']) ?></h3><?= law_body_html((string) $s['body'], $lq) ?><?php if ($s['penalty'] !== ''): ?><p class="law-penalty">Strafmaß: <?= e($s['penalty']) ?></p><?php endif; ?></article>
+            <?php endforeach; ?>
+            <?php if (!$flat): ?><p class="muted">Keine Treffer.</p><?php endif; ?>
+        </section>
+    <?php elseif ($page === 'lawyers'): ?>
+        <div class="grid-2"><?php foreach (law_firms() as $f): ?>
+            <section class="card"><h2><?= e($f['name']) ?></h2><p class="muted small"><?= e(trim($f['street'] . ', ' . $f['city'], ', ')) ?><?= $f['phone'] !== '' ? ' · Tel. ' . e($f['phone']) : '' ?></p>
+                <ul><?php foreach ($f['lawyers'] as $l): ?><li><strong><?= e(user_display($l)) ?></strong> – <?= e($l['rank_name']) ?><?= $l['phone'] ? ' · Tel. ' . e($l['phone']) : '' ?></li><?php endforeach; ?></ul></section>
+        <?php endforeach; ?></div>
     <?php endif; ?>
 <?php endif; ?>
 </main>

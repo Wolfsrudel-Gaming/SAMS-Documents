@@ -56,6 +56,12 @@ if (can('wiki.view|wiki.edit')) {
     $rows = all('SELECT * FROM wiki_pages WHERE ' . fw() . ' AND (title LIKE ? OR content LIKE ?) ORDER BY title LIMIT ' . $limit, [$like, $like]);
     $sections['Wiki'] = array_map(fn($w) => ['url' => url('wiki_page', ['slug' => $w['slug']]), 'title' => $w['title'], 'meta' => $w['category'], 'text' => $snippet((string) $w['content'])], $rows);
 }
+if ($code = law_current_code()) {
+    $rows = all('SELECT s.*, b.short, b.title AS book FROM law_sections s JOIN law_books b ON b.id = s.book_id WHERE b.code_id = ? AND (s.title LIKE ? OR s.body LIKE ? OR (? LIKE ' . (db_driver() === 'sqlite' ? "'%' || s.number || '%'" : "CONCAT('%', s.number, '%')") . " AND ? LIKE '%§%')) ORDER BY b.sort, s.sort LIMIT " . $limit,
+        [$code['id'], $like, $like, $q, $q]);
+    $sections['Gesetze'] = array_map(fn($s) => ['url' => url('laws', ['code' => $code['id']]) . '#s' . $s['id'], 'title' => '§' . $s['number'] . ' ' . $s['short'] . ' – ' . $s['title'],
+        'meta' => $s['book'] . ($s['penalty'] !== '' ? ' · ' . $s['penalty'] : ''), 'text' => $snippet((string) $s['body'])], $rows);
+}
 if (can('training.view|training.manage')) {
     $rows = all('SELECT * FROM training_courses WHERE ' . fw() . ' AND active = 1 AND (title LIKE ? OR description LIKE ?) ORDER BY title LIMIT ' . $limit, [$like, $like]);
     $sections['Lehrgänge'] = array_map(fn($c) => ['url' => url('course', ['id' => $c['id']]), 'title' => $c['title'], 'meta' => 'Lehrgang', 'text' => $snippet((string) $c['description'])], $rows);

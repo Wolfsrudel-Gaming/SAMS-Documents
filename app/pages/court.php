@@ -6,6 +6,7 @@ defined('SAMS_ROOT') || exit;
  */
 $me = current_user();
 $manage = can('court.manage') && !can('court.own');
+$isFirm = faction_kind() === 'law'; // Kanzlei: sieht Termine ihrer Anwälte, setzt selbst keine Termine
 $view = ($_GET['view'] ?? '') === 'deadlines' ? 'deadlines' : (($_GET['view'] ?? '') === 'past' ? 'past' : 'upcoming');
 $rooms = setting_list('court_rooms', 'Saal 1 | Saal 2 | Besprechungsraum');
 $people = court_people();
@@ -20,6 +21,9 @@ if (is_post()) {
         forbidden('Mit Anwaltszugang können keine Termine angelegt werden.');
     }
     $action = post('action');
+    if ($isFirm && in_array($action, ['hearing', 'hearing_status'], true)) {
+        forbidden('Termine setzt das Gericht.');
+    }
     if ($action === 'hearing') {
         $h = (int) post('id') ? fone('hearings', (int) post('id')) : null;
         $p = (int) post('patient_id') ? fone('patients', (int) post('patient_id')) : null;
@@ -87,23 +91,32 @@ if (is_post()) {
 }
 
 $edit = $manage && (int) ($_GET['edit'] ?? 0) ? fone('hearings', (int) $_GET['edit']) : null;
-$sel = 'SELECT h.*, j.name AS judge, s.name AS prosecutor, l.name AS lawyer FROM hearings h LEFT JOIN users j ON j.id = h.judge_id LEFT JOIN users s ON s.id = h.prosecutor_id LEFT JOIN users l ON l.id = h.lawyer_id WHERE ' . hearing_scope();
+$sel = 'SELECT h.*, j.name AS judge, s.name AS prosecutor, l.name AS lawyer, lf.name AS lawyer_firm, cf.name AS court_name FROM hearings h LEFT JOIN users j ON j.id = h.judge_id LEFT JOIN users s ON s.id = h.prosecutor_id
+    LEFT JOIN users l ON l.id = h.lawyer_id LEFT JOIN factions lf ON lf.id = l.faction_id AND l.faction_id <> h.faction_id LEFT JOIN factions cf ON cf.id = h.faction_id WHERE ' . hearing_scope();
 $hearings = $view === 'past'
     ? all($sel . " AND (h.starts_at < ? OR h.status <> 'planned') ORDER BY h.starts_at DESC LIMIT 100", [date('Y-m-d 00:00:00')])
     : all($sel . " AND h.starts_at >= ? AND h.status = 'planned' ORDER BY h.starts_at LIMIT 200", [date('Y-m-d 00:00:00')]);
 $deadlines = $view === 'deadlines' ? all('SELECT d.*, u.name AS assignee FROM deadlines d LEFT JOIN users u ON u.id = d.assigned_to WHERE ' . deadline_scope() . ' ORDER BY d.done_at IS NOT NULL, d.due_date LIMIT 300') : [];
 $records = $manage ? record_options() : [];
-$userSelect = function (string $name, $value) use ($people) {
+$userSelect = function (string $name, $value, bool $withFirms = false) use ($people) {
     $h = '<select name="' . $name . '"><option value="">–</option>';
+    $group = '';
     foreach ($people as $u) {
+        if ($u['firm'] !== '' && !$withFirms) {
+            continue;
+        }
+        if ($u['firm'] !== $group) {
+            $h .= ($group !== '' ? '</optgroup>' : '') . '<optgroup label="' . e($u['firm']) . '">';
+            $group = $u['firm'];
+        }
         $h .= '<option value="' . (int) $u['id'] . '"' . selected($u['id'], $value) . '>' . e($u['name']) . ($u['rank_short'] ? ' (' . e($u['rank_short']) . ')' : '') . '</option>';
     }
-    return $h . '</select>';
+    return $h . ($group !== '' ? '</optgroup>' : '') . '</select>';
 };
 $val = fn($k, $d = '') => e((string) ($edit[$k] ?? $d));
 
 ob_start(); ?>
-<div class="page-head"><div><h1>Gerichtskalender</h1><p class="muted"><?= can('court.own') ? 'Ihre Termine und Fristen als Rechtsbeistand.' : 'Verhandlungen, Säle, Beteiligte und Fristen.' ?></p></div></div>
+<div class="page-head"><div><h1>Gerichtskalender</h1><p class="muted"><?= $isFirm ? 'Gerichtstermine, in denen Ihre Kanzlei die Verteidigung führt, und Fristen der Kanzlei.' : (can('court.own') ? 'Ihre Termine und Fristen als Rechtsbeistand.' : 'Verhandlungen, Säle, Beteiligte und Fristen.') ?></p></div></div>
 <div class="tabs"><a href="<?= e(url('court')) ?>" class="<?= $view === 'upcoming' ? 'active' : '' ?>">Anstehend</a><a href="<?= e(url('court', ['view' => 'past'])) ?>" class="<?= $view === 'past' ? 'active' : '' ?>">Vergangen</a><a href="<?= e(url('court', ['view' => 'deadlines'])) ?>" class="<?= $view === 'deadlines' ? 'active' : '' ?>">Fristen</a></div>
 <div class="grid-side wide-side reverse">
 <section>
@@ -127,11 +140,11 @@ ob_start(); ?>
     <div class="card">
         <div class="card-head"><h2><?= e(substr($h['starts_at'], 11, 5)) ?> · <?= e($h['title']) ?> <small class="muted"><?= e($h['kind']) ?></small></h2><?= status_badge(HEARING_STATUS, $h['status']) ?></div>
         <p class="small"><?= $h['room'] !== '' ? '<strong>' . e($h['room']) . '</strong> · ' : '' ?><?= $h['case_ref'] !== '' ? 'Az. <span class="mono">' . e($h['case_ref']) . '</span> · ' : '' ?>
-            Gericht: <?= e($h['judge'] ?? '–') ?> · Staatsanwaltschaft: <?= e($h['prosecutor'] ?? '–') ?> · Verteidigung: <?= e($h['lawyer'] ?? '–') ?>
-            <?= $h['patient_id'] && can('patients.view') && !can('court.own') ? ' · <a href="' . e(url('patient', ['id' => $h['patient_id']])) . '">Akte</a>' : '' ?></p>
+            <?= $isFirm ? e($h['court_name'] ?? '') . ' · ' : '' ?>Gericht: <?= e($h['judge'] ?? '–') ?> · Staatsanwaltschaft: <?= e($h['prosecutor'] ?? '–') ?> · Verteidigung: <?= e($h['lawyer'] ?? '–') ?><?= !$isFirm && $h['lawyer_firm'] ? ' (' . e($h['lawyer_firm']) . ')' : '' ?>
+            <?= $h['patient_id'] && can('patients.view') && !can('court.own') && !$isFirm ? ' · <a href="' . e(url('patient', ['id' => $h['patient_id']])) . '">Akte</a>' : '' ?></p>
         <?php if (trim((string) $h['participants']) !== ''): ?><p class="small muted"><?= nl($h['participants']) ?></p><?php endif; ?>
         <?php if (trim((string) $h['result']) !== ''): ?><p><strong>Ergebnis:</strong> <?= nl($h['result']) ?></p><?php endif; ?>
-        <?php if ($manage && $h['status'] === 'planned'): ?>
+        <?php if ($manage && !$isFirm && $h['status'] === 'planned'): ?>
         <form method="post" class="inline-form"><?= csrf_field() ?><input type="hidden" name="action" value="hearing_status"><input type="hidden" name="id" value="<?= (int) $h['id'] ?>">
             <input name="result" placeholder="Ergebnis / Grund" maxlength="4000"><input type="datetime-local" name="new_date" title="Neuer Termin (bei Vertagung)">
             <button class="btn small primary" name="status" value="done">Durchgeführt</button><button class="btn small" name="status" value="postponed">Vertagen</button><button class="btn small" name="status" value="cancelled">Aufheben</button>
@@ -155,6 +168,8 @@ ob_start(); ?>
     <div class="field w-full"><label>Notiz</label><textarea name="note" rows="2"></textarea></div>
     <div class="form-actions"><button class="btn primary">Eintragen</button></div>
 </form>
+<?php elseif ($isFirm): ?>
+<div class="card"><h2>Termine</h2><p class="small muted">Gerichtstermine setzt das Gericht. Hier erscheinen automatisch alle Termine, in denen jemand aus Ihrer Kanzlei als Verteidigung bzw. Rechtsbeistand eingetragen ist – mit Erinnerung 24 Stunden vorher. Eigene Fristen (z. B. Einspruchsfristen) tragen Sie unter „Fristen“ ein.</p></div>
 <?php elseif ($manage): ?>
 <form method="post" class="card form-grid">
     <?= csrf_field() ?><input type="hidden" name="action" value="hearing"><input type="hidden" name="id" value="<?= (int) ($edit['id'] ?? 0) ?>">
@@ -166,7 +181,7 @@ ob_start(); ?>
     <div class="field"><label>Saal</label><input name="room" list="rooms" value="<?= $val('room', $rooms[0] ?? '') ?>"><datalist id="rooms"><?php foreach ($rooms as $r): ?><option value="<?= e($r) ?>"><?php endforeach; ?></datalist></div>
     <div class="field"><label>Richter/in</label><?= $userSelect('judge_id', $edit['judge_id'] ?? $me['id']) ?></div>
     <div class="field"><label>Staatsanwaltschaft</label><?= $userSelect('prosecutor_id', $edit['prosecutor_id'] ?? '') ?></div>
-    <div class="field"><label>Verteidigung / Rechtsbeistand</label><?= $userSelect('lawyer_id', $edit['lawyer_id'] ?? '') ?></div>
+    <div class="field"><label>Verteidigung / Rechtsbeistand</label><?= $userSelect('lawyer_id', $edit['lawyer_id'] ?? '', true) ?></div>
     <?php if ($records): ?><div class="field"><label>Beteiligte/r (Akte)</label><select name="patient_id"><option value="">–</option><?php foreach ($records as $r): ?><option value="<?= (int) $r['id'] ?>"<?= selected($r['id'], $edit['patient_id'] ?? '') ?>><?= e(patient_name($r, true)) ?></option><?php endforeach; ?></select></div><?php endif; ?>
     <div class="field w-full"><label>Weitere Beteiligte (Zeugen, Sachverständige, Polizei …)</label><textarea name="participants" rows="2"><?= $val('participants') ?></textarea></div>
     <div class="form-actions"><?php if ($edit): ?><a class="btn" href="<?= e(url('court')) ?>">Abbrechen</a><?php endif; ?><button class="btn primary">Speichern</button></div>

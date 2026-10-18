@@ -162,7 +162,7 @@ ob_start(); ?>
 <form method="post" class="card form-grid" id="new">
     <?= csrf_field() ?><input type="hidden" name="action" value="create">
     <h2 class="w-full">Neue Anfrage</h2>
-    <div class="field w-full"><label>An</label><select name="to_faction_id" required><option value="">– Behörde wählen –</option><?php foreach ($targets as $f): ?><option value="<?= (int) $f['id'] ?>"><?= e($f['name']) ?></option><?php endforeach; ?></select></div>
+    <div class="field w-full"><label>An</label><select name="to_faction_id" required><option value="">– Behörde wählen –</option><?php foreach ($targets as $f): ?><option value="<?= (int) $f['id'] ?>"<?= selected($f['id'], $_GET['to'] ?? '') ?>><?= e($f['name']) ?></option><?php endforeach; ?></select></div>
     <div class="field w-full"><label>Betreff</label><input name="subject" required maxlength="190" placeholder="z. B. Blutentnahme / Befundbericht angefordert"></div>
     <div class="field"><label>Person</label><input name="person" maxlength="190"></div>
     <div class="field"><label>Bürger-ID</label><input name="citizen_id" maxlength="64"></div>

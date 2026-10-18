@@ -233,6 +233,7 @@ const STAMP_PROFILES = [
     'justice'    => ['color' => '#6b1e1e', 'emblem' => 'scales', 'seal_label' => 'GERICHTSSIEGEL', 'caption' => 'Unterschrift und Siegel', 'head' => 'Präsidium'],
     'fire'       => ['color' => '#a3161a', 'emblem' => 'maltese', 'seal_label' => 'DIENSTSIEGEL', 'caption' => 'Unterschrift und Dienststempel', 'head' => 'Leitung der Feuerwehr'],
     'rescue'     => ['color' => '#b34700', 'emblem' => 'rescue', 'seal_label' => 'DIENSTSIEGEL', 'caption' => 'Unterschrift und Dienststempel', 'head' => 'Leitung Spezialrettung'],
+    'law'        => ['color' => '#1f3d36', 'emblem' => 'scales', 'seal_label' => 'KANZLEISIEGEL', 'caption' => 'Unterschrift und Kanzleistempel', 'head' => 'Kanzleileitung'],
     'government' => ['color' => '#2f5d50', 'emblem' => 'columns', 'seal_label' => 'AMTSSIEGEL', 'caption' => 'Unterschrift und Amtsstempel', 'head' => 'Verwaltungsleitung'],
 ];
 
@@ -361,6 +362,15 @@ function doctor_stamp_svg(array $doc): string
             ['t' => $place, 'c' => ''],
             ['t' => trim((org('phone') !== '' ? 'Tel. ' . org('phone') : '') . (!empty($u['doctor_number']) ? ' · Arzt-Nr. ' . $u['doctor_number'] : ''), ' ·'), 'c' => 'small'],
             ['t' => org('bsnr') !== '' ? 'BSNR ' . org('bsnr') : '', 'c' => 'small'],
+        ];
+    } elseif (faction_kind() === 'law') {
+        // Kanzleistempel: Name, Berufsbezeichnung, Kanzlei, Anschrift
+        $lines = [
+            ['t' => user_display($u), 'c' => 'big'],
+            ['t' => $u['rank_name'] ?? '', 'c' => ''],
+            ['t' => org('org_name'), 'c' => 'head'],
+            ['t' => $place, 'c' => 'small'],
+            ['t' => org('phone') !== '' ? 'Tel. ' . org('phone') : '', 'c' => 'small'],
         ];
     } else {
         $rankLine = trim(($u['rank_name'] ?? '') . (!empty($u['badge_number']) ? ' · Dienst-Nr. ' . $u['badge_number'] : ''), ' ·');

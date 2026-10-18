@@ -66,8 +66,11 @@ ob_start(); ?>
             <?php foreach ($departments as $d): ?><option value="<?= (int) $d['id'] ?>"<?= selected($d['id'], $data['department_id'] ?? '') ?>><?= e($d['name']) ?></option><?php endforeach; ?></select></div>
     <div class="field w-full"><label>Einsatz-/Behandlungsort</label><input name="location" value="<?= e($data['location']) ?>" placeholder="z. B. Route 68 / Höhe Harmony, oder Pillbox Hill Medical Center"></div>
     <div class="field w-full"><label><?= e(case_labels()['incident']) ?></label><textarea name="incident" rows="4" placeholder="<?= e(case_labels()['incident_ph']) ?>"><?= e($data['incident']) ?></textarea></div>
-    <div class="field w-full"><label><?= e(case_labels()['diagnosis']) ?></label><textarea name="diagnosis" rows="3" placeholder="<?= e(case_labels()['diagnosis_ph']) ?>"><?= e($data['diagnosis']) ?></textarea>
-        <div class="hint">Wird beim Ausstellen von Dokumenten aus diesem Fall automatisch übernommen.</div></div>
+    <div class="field w-full"><label><?= e(case_labels()['diagnosis']) ?></label><textarea name="diagnosis" id="case-diagnosis" rows="3" placeholder="<?= e(case_labels()['diagnosis_ph']) ?>"><?= e($data['diagnosis']) ?></textarea>
+        <div class="hint">Wird beim Ausstellen von Dokumenten aus diesem Fall automatisch übernommen.</div>
+        <?php if (in_array(faction_kind(), ['police', 'justice', 'law'], true) && ($lawList = law_datalist())): ?>
+        <div class="hint">Gesetz einfügen: <input class="suggest" data-target="case-diagnosis" list="dl-case-laws" placeholder="tippen & mit Enter einfügen …"></div>
+        <datalist id="dl-case-laws"><?php foreach ($lawList as $l): ?><option value="<?= e($l) ?>"><?php endforeach; ?></datalist><?php endif; ?></div>
     <div class="field w-full"><label>Zusammenfassung / Epikrise</label><textarea name="summary" rows="5" placeholder="Verlauf, Therapie, Entlassung, Empfehlungen"><?= e($data['summary']) ?></textarea></div>
     <div class="form-actions"><button class="btn primary">Speichern</button></div>
 </form>
