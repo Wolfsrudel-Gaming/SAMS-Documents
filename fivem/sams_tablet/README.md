@@ -75,7 +75,7 @@ AddEventHandler('sams:dutyChanged', function(src, onDuty) ... end)
 
 ## Fahndung (Polizei)
 
-- `/kennzeichen` fragt das Fahrzeug vor dir ab, `/kennzeichen ABC123` ein bestimmtes Kennzeichen (`Config.WantedCommand`, nur im Dienst, wenn `Config.WantedRequiresDuty`).
+- `/kennzeichen` fragt das Fahrzeug vor dir ab, `/kennzeichen ABC123` ein bestimmtes Kennzeichen – mit Halter/in aus dem Fahrzeugregister (Polizei/DMV), abgelaufener Zulassung und gestohlen/beschlagnahmt (`Config.WantedCommand`, nur im Dienst, wenn `Config.WantedRequiresDuty`).
 - Erlaubt für Konten mit dem Recht „Fahndungen einsehen“ (Polizei). Treffer zeigen Grund, Gefährlichkeit und ob ein Haftbefehl der Justiz vorliegt.
 - Für eigene MDT-Scripte (serverseitig): `exports.sams_tablet:CheckWanted(kennzeichen, buergerId)` und `exports.sams_tablet:CheckPerson(buergerId)` (Fahndung, Führerschein-/Waffenscheinstatus, gültige Erlaubnisse).
 - Dienstzeit, Drucker und Dokumente funktionieren für alle Fraktionen gleich – jede Fraktion stellt ihre Drucker im eigenen Websystem-Bereich auf.
