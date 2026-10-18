@@ -58,8 +58,8 @@ check($lines === ['ok', 'btm_form', 'nomatch'] && ($res['prescriptions'][0]['lin
 [$st, $res] = api('rx_redeem', ['token' => $token, 'player' => 'Tom', 'license' => 'license:abc']);
 check($st === 200 && ($res['items'][0] ?? []) === ['item' => 'ibuprofen', 'count' => 4, 'name' => 'Ibuprofen 600 mg Filmtbl. N2'], 'Einlösen gibt Items aus');
 check((int) tval('SELECT stock FROM medications WHERE id = ?', [$ibu]) === 5, 'Bestand ausgebucht (2 Packungen)');
-[$st] = api('rx_redeem', ['token' => $token, 'player' => 'Tom']);
-check($st === 409, 'Doppeltes Einlösen verhindert');
+[$st, $res] = api('rx_redeem', ['token' => $token, 'player' => 'Tom']);
+check($st === 200 && ($res['ok'] ?? null) === false, 'Doppeltes Einlösen verhindert (HTTP 200 mit ok:false, siehe 22_api_fivem_vertrag)');
 $arzt->get('/index.php?p=document&id=' . $doc);
 check($arzt->has('Apotheke (Tom)') && $arzt->has('nur auf BtM-Rezept'), 'Einlösung auf dem Rezept sichtbar');
 // BtM-Rezept, in der Klinik ausgeben
@@ -73,5 +73,5 @@ check(($res['prescriptions'][0]['lines'][0]['status'] ?? '') === 'redeemed', 'Ei
 $doc3 = $rx('kassen', ['Ibuprofen 600 mg Filmtbl. N2']);
 texec('UPDATE documents SET issued_at = ? WHERE id = ?', [date('Y-m-d H:i:s', strtotime('-40 days')), $doc3]);
 [$st, $res] = api('rx_redeem', ['token' => (string) tval('SELECT view_token FROM documents WHERE id = ?', [$doc3])]);
-check($st === 409 && str_contains($res['error'] ?? '', 'abgelaufen'), 'Abgelaufenes Rezept abgelehnt');
+check($st === 200 && ($res['ok'] ?? null) === false && str_contains($res['error'] ?? '', 'abgelaufen'), 'Abgelaufenes Rezept abgelehnt');
 check($arzt->get('/index.php?p=document_new&type=rezept&patient=1')->has('<option value="Ibuprofen 600 mg Filmtbl. N2">'), 'Sortiment als Vorschlag im Rezept');

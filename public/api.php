@@ -4,6 +4,12 @@
  * Authentifizierung: Header "X-API-Key" (Wert API_KEY aus der .env).
  * Der Schlüssel gehört ausschließlich auf den Spielserver, nie in den Client.
  *
+ * WICHTIG – HTTP-Statuscodes: FXServer (PerformHttpRequest) reicht bei Nicht-2xx-Antworten KEINEN Antworttext an die
+ * Resource weiter. Fachliche Ergebnisse und Fehler (falsches Passwort, 2FA nötig, Auftrag schon abgeholt, keine Berechtigung …)
+ * deshalb immer mit HTTP 200 und Text im JSON (ok:false + error bzw. status) beantworten. Erlaubt sind nur 401 (Schlüssel/
+ * Anmeldung ungültig – die Resource wertet den Code aus) und 503 (Wartung/API aus). tests/cases/22_api_fivem_vertrag.php
+ * prüft das automatisch.
+ *
  * Abfragen (GET):
  *   ?action=verify&code=XXXX                 Dokument prüfen
  *   ?action=patient&citizen_id=ABC123         Notfalldaten eines Patienten
@@ -119,7 +125,9 @@ switch ($action) {
     // ------------------------------------------------------------- Tablet
     case 'tablet_login':
         $res = tablet_login($in('username'), (string) ($body['password'] ?? ''), $in('code'), $in('license'), $in('player'));
-        respond($res, $res['status'] === 'ok' ? 200 : 403);
+        // Immer HTTP 200: FXServer reicht bei Fehlercodes keinen Antworttext an die Resource weiter.
+        // Das Ergebnis (ok / 2fa / invalid / blocked ...) steht im Feld "status".
+        respond($res, 200);
         // no break
     case 'tablet_session':
         $tu = $tokenUser();
@@ -161,13 +169,13 @@ switch ($action) {
         $jobId = (int) $in('job_id');
         $allowed = array_column(printer_jobs_for((int) $in('printer_id'), $tu[1] ?? null), null, 'id');
         if (!isset($allowed[$jobId])) {
-            respond(['ok' => false, 'error' => 'Dieser Auftrag ist nicht (mehr) abholbereit.'], 404);
+            respond(['ok' => false, 'error' => 'Dieser Auftrag ist nicht (mehr) abholbereit.']);
         }
         // Gleichzeitiges Abholen verhindern: nur wer den Status ändert, bekommt das Dokument
         $st = q("UPDATE print_jobs SET status = 'printed', picked_up_at = ?, picked_up_by = ?, picked_up_license = ? WHERE id = ? AND status = 'queued'",
             [now(), mb_substr($in('player'), 0, 190), mb_substr($in('license'), 0, 190), $jobId]);
         if ($st->rowCount() !== 1) {
-            respond(['ok' => false, 'error' => 'Der Auftrag wurde bereits abgeholt.'], 409);
+            respond(['ok' => false, 'error' => 'Der Auftrag wurde bereits abgeholt.']);
         }
         $job = $allowed[$jobId];
         $doc = one('SELECT * FROM documents WHERE id = ?', [$job['document_id']]);
@@ -192,7 +200,7 @@ switch ($action) {
     case 'document_item':
         $doc = one('SELECT number, status FROM documents WHERE view_token = ?', [$in('token')]);
         if (!$doc || $in('token') === '') {
-            respond(['ok' => false], 404);
+            respond(['ok' => false]);
         }
         respond(['ok' => true, 'number' => $doc['number'], 'revoked' => $doc['status'] === 'revoked', 'url' => document_view_url($in('token'), $in('variant'))]);
         // no break
@@ -205,7 +213,7 @@ switch ($action) {
             respond(['ok' => false, 'error' => 'Anmeldung abgelaufen'], 401);
         }
         if (!in_array('duty.clock', user_permissions($tu[1]), true)) {
-            respond(['ok' => false, 'error' => 'Dein Rang darf keine Dienstzeiten stempeln.'], 403);
+            respond(['ok' => false, 'error' => 'Dein Rang darf keine Dienstzeiten stempeln.']);
         }
         if ($action === 'duty_set') {
             duty_set((int) $tu[1]['id'], in_array(strtolower($in('on')), ['1', 'true', 'on', 'yes'], true), 'game');
@@ -237,14 +245,14 @@ switch ($action) {
     case 'rx_redeem':
         $doc = $in('token') !== '' ? one("SELECT * FROM documents WHERE view_token = ? AND type = 'rezept'", [$in('token')]) : null;
         if (!$doc) {
-            respond(['ok' => false, 'error' => 'Rezept nicht gefunden.'], 404);
+            respond(['ok' => false, 'error' => 'Rezept nicht gefunden.']);
         }
         if ($problem = rx_problem($doc)) {
-            respond(['ok' => false, 'error' => $problem], 409);
+            respond(['ok' => false, 'error' => $problem]);
         }
         [$given, $notes] = rx_redeem($doc, 'game', null, $in('player'), $in('license'));
         if (!$given) {
-            respond(['ok' => false, 'error' => $notes ? implode(' · ', $notes) : 'Alle Positionen sind bereits eingelöst.', 'notes' => $notes], 409);
+            respond(['ok' => false, 'error' => $notes ? implode(' · ', $notes) : 'Alle Positionen sind bereits eingelöst.', 'notes' => $notes]);
         }
         respond(['ok' => true, 'number' => $doc['number'], 'notes' => $notes,
             'items' => array_map(fn($g) => ['item' => $g['item'], 'count' => $g['count'], 'name' => $g['name']], $given)]);
@@ -256,7 +264,7 @@ switch ($action) {
         if ($in('token') !== '') {
             $tu = $tokenUser();
             if (!$tu || !in_array('wanted.view', user_permissions($tu[1]), true)) {
-                respond(['ok' => false, 'error' => 'Keine Berechtigung für Fahndungsabfragen.'], 403);
+                respond(['ok' => false, 'error' => 'Keine Berechtigung für Fahndungsabfragen.']);
             }
         }
         $hits = wanted_lookup($in('citizen_id'), $in('plate'));
@@ -269,7 +277,7 @@ switch ($action) {
     case 'person_check':
         $cid = $in('citizen_id');
         if ($cid === '') {
-            respond(['ok' => false, 'error' => 'citizen_id fehlt'], 400);
+            respond(['ok' => false, 'error' => 'citizen_id fehlt']);
         }
         $licenses = ['driver' => '', 'weapon' => ''];
         foreach (all("SELECT extra FROM patients WHERE citizen_id = ? AND merged_into IS NULL AND faction_id IN (" . implode(',', faction_ids_of_kind('police')) . ')', [$cid]) as $r) {

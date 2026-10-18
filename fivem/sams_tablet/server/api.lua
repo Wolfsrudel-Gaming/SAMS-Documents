@@ -46,6 +46,9 @@ local function request(method, action, payload)
         print(('^3[sams_tablet] Websystem nicht erreichbar (%s)^0'):format(action))
     elseif res.status == 401 and action ~= 'tablet_session' and action ~= 'tablet_launch' then
         print('^1[sams_tablet] API-Schlüssel abgelehnt – sams_api_key in der server.cfg prüfen.^0')
+    elseif res.status >= 400 and res.status ~= 401 and not res.data then
+        -- FXServer verwirft bei Fehlercodes den Antworttext; die Web-API muss fachliche Fehler mit HTTP 200 melden
+        print(('^3[sams_tablet] %s: HTTP %s ohne lesbare Antwort (Wartung, Serverfehler oder API gibt Fehlercode statt 200 zurück)^0'):format(action, tostring(res.status)))
     end
     return res.data, res.status
 end
