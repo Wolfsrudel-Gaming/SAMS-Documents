@@ -242,6 +242,18 @@ Voraussetzung ist HTTPS für das Websystem (das Einrichtungsskript richtet es ei
 
 In der `.env` steht `API_KEY` (leer = API deaktiviert). Den Schlüssel nur serverseitig verwenden (server.lua bzw. `set sams_api_key` in der server.cfg), nie im Client.
 
+### Mehrere FiveM-Server (Staaten) an einem Portal
+
+Unter *Administration → Spielserver* (nur Hauptadministrator) verbindest du beliebig viele FiveM-Server, z. B. je Staat. Jeder Server bekommt einen **eigenen API-Schlüssel**; Portal-Adresse (`sams_url`) und Schlüssel (`sams_api_key`) lassen sich dort anzeigen und kopieren. Der erste Server (Hauptserver) nutzt `API_KEY` aus der `.env`, bis im Portal ein eigener Schlüssel erzeugt wird.
+
+- **Drucker** werden einem Staat zugeordnet: Sie erscheinen nur auf diesem Server, und nur dort können Aufträge abgeholt werden. In der Druckerauswahl steht der Staat dabei, die Drucker des eigenen Staats zuerst.
+- **Tablet-Anmeldungen** gelten nur auf dem Server, auf dem sie entstanden sind.
+- **Spiel-Rechnungen** gehen an den Server, auf dem die ausstellende Person zuletzt mit dem Tablet angemeldet war.
+- **Leitstelle**: Einsätze verschiedener Server werden getrennt gespeichert.
+- **Spieleinstellungen** (Framework, Rechnungssystem, Befehle, Sky, tetrascript) gelten global und lassen sich je Server überschreiben.
+- Akten, Dokumente, Fraktionen und Benutzer sind gemeinsam.
+- Schlüssel erneuern macht den alten sofort ungültig; deaktivierte Server werden abgewiesen.
+
 ```
 GET  api.php?action=verify&code=K7F3QX9M          → Dokument prüfen (z. B. für LSPD-/checkdoc-Befehl)
 GET  api.php?action=patient&citizen_id=ABC12345   → Notfalldaten (Blutgruppe, Allergien, Vorerkrankungen …)

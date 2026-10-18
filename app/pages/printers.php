@@ -43,6 +43,10 @@ if (is_post()) {
         'active' => post('active') ? 1 : 0,
         'updated_at' => now(),
     ];
+    if (game_servers()) {
+        // Staat / Spielserver, auf dem der Drucker steht (nur dort erscheint er und nur dort wird abgeholt)
+        $row['server_id'] = game_server((int) post('server_id')) ? (int) post('server_id') : game_server_for_user((int) current_user()['id']);
+    }
     if ($row['name'] === '') {
         $errors[] = 'Bitte einen Namen angeben.';
     }
@@ -67,7 +71,7 @@ if (is_post()) {
 $printers = all("SELECT p.*, (SELECT COUNT(*) FROM print_jobs j WHERE j.printer_id = p.id AND j.status = 'queued') AS queued,
     (SELECT COUNT(*) FROM print_jobs j WHERE j.printer_id = p.id AND j.status = 'printed') AS printed FROM printers p WHERE " . fw('p') . " ORDER BY p.name");
 $edit = $editId ? fone('printers', $editId) : null;
-$form = $edit ?? ['id' => 0, 'name' => '', 'location' => '', 'x' => '', 'y' => '', 'z' => '', 'heading' => '', 'prop_model' => 'prop_printer_01', 'show_blip' => 0, 'active' => 1];
+$form = $edit ?? ['id' => 0, 'server_id' => game_server_for_user((int) current_user()['id']), 'name' => '', 'location' => '', 'x' => '', 'y' => '', 'z' => '', 'heading' => '', 'prop_model' => 'prop_printer_01', 'show_blip' => 0, 'active' => 1];
 if ($errors) {
     $form = array_merge($form, array_intersect_key($_POST, $form));
 }
@@ -87,11 +91,12 @@ ob_start(); ?>
         <section class="card">
             <h2>Drucker</h2>
             <table class="list">
-                <thead><tr><th>Name</th><th>Standort</th><th>Position</th><th>Prop</th><th class="right">Wartend</th><th class="right">Gedruckt</th><th></th></tr></thead>
+                <thead><tr><th>Name</th><?php if (multi_server()): ?><th>Staat</th><?php endif; ?><th>Standort</th><th>Position</th><th>Prop</th><th class="right">Wartend</th><th class="right">Gedruckt</th><th></th></tr></thead>
                 <tbody>
                 <?php foreach ($printers as $p): ?>
                     <tr class="<?= $p['active'] ? '' : 'inactive' ?>">
                         <td><strong><?= e($p['name']) ?></strong><?= $p['active'] ? '' : ' <span class="badge grey">inaktiv</span>' ?><?= $p['show_blip'] ? ' <span class="badge blue">Karte</span>' : '' ?></td>
+                        <?php if (multi_server()): ?><td class="small"><?= e(game_server_label((int) $p['server_id']) ?: '–') ?></td><?php endif; ?>
                         <td class="small"><?= e($p['location']) ?></td>
                         <td class="mono small"><?= e(sprintf('%.1f, %.1f, %.1f', $p['x'], $p['y'], $p['z'])) ?></td>
                         <td class="mono small"><?= e($p['prop_model'] ?: '–') ?></td>
@@ -126,6 +131,10 @@ ob_start(); ?>
             <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= (int) $form['id'] ?>">
             <div class="field w-full"><label>Name <span class="req">*</span></label><input name="name" value="<?= e($form['name']) ?>" required placeholder="z. B. Drucker Notaufnahme"></div>
+            <?php if (count(game_servers()) > 1): ?>
+            <div class="field w-full"><label>Staat / Spielserver <span class="req">*</span></label><select name="server_id"><?php foreach (game_servers() as $gs): ?><option value="<?= (int) $gs['id'] ?>"<?= selected($gs['id'], $form['server_id'] ?? null) ?>><?= e($gs['name']) ?><?= $gs['active'] ? '' : ' (deaktiviert)' ?></option><?php endforeach; ?></select>
+                <div class="hint">Der Drucker erscheint nur auf diesem Server; Aufträge können nur dort abgeholt werden.</div></div>
+            <?php else: ?><input type="hidden" name="server_id" value="<?= (int) ($form['server_id'] ?? 0) ?>"><?php endif; ?>
             <div class="field w-full"><label>Standort-Beschreibung</label><input name="location" value="<?= e($form['location']) ?>" placeholder="z. B. Pillbox, 1. OG, Anmeldung"></div>
             <div class="field w-full" data-game-only hidden>
                 <button type="button" class="btn primary block" id="use-position"><?= icon('home') ?>Aktuelle Position übernehmen</button>

@@ -666,3 +666,11 @@ form.inline { display: inline; }
 /* Bildfeld (Ausweisfoto) */
 .image-field { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 .image-field .image-preview { width: 72px; height: 96px; object-fit: cover; border: 1px solid var(--line-soft); border-radius: 3px; }
+
+/* Spielserver */
+details.card > summary { cursor: pointer; list-style: none; }
+details.card > summary::-webkit-details-marker { display: none; }
+details.card:not([open]) > summary { margin-bottom: 0; }
+.code-block { background: #f5f6f8; border: 1px solid var(--border, #dde1e6); border-radius: 6px; padding: .6rem .8rem; font-size: .85rem; white-space: pre-wrap; word-break: break-all; margin: .4rem 0; }
+.inline-reveal { display: inline-block; } .inline-reveal > summary { list-style: none; display: inline-block; } .inline-reveal > summary::-webkit-details-marker { display: none; }
+.inline-reveal[open] > summary { display: none; } .inline-reveal code { word-break: break-all; }

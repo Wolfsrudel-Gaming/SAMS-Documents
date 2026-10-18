@@ -51,6 +51,7 @@ $navGroups = [
         'audit'    => ['Zugriffsprotokoll', 'audit.view', 'log'],
         'system'   => ['System & Updates', 'system.manage', 'server'],
         'factions' => ['Fraktionen', !empty($user['is_superadmin']) ? '' : 'factions.none', 'users'],
+        'servers' => ['Spielserver', !empty($user['is_superadmin']) ? '' : 'factions.none', 'server'],
     ],
 ];
 // Unterseiten der passenden Navigation zuordnen

@@ -238,6 +238,11 @@ $doc['issuer_snapshot'] = json_decode((string) $doc['issuer_snapshot'], true) ?:
 $copy = (string) ($_GET['copy'] ?? '');
 $html = render_document($doc, ['copy' => $copy]);
 $printers = active_printers();
+if (multi_server()) {
+    // Drucker des Staats, in dem man gerade im Spiel ist, zuerst
+    $myServer = game_server_for_user((int) $me['id']);
+    usort($printers, fn($a, $b) => [(int) ($a['server_id'] ?? 0) !== $myServer, $a['name']] <=> [(int) ($b['server_id'] ?? 0) !== $myServer, $b['name']]);
+}
 $jobs = all('SELECT j.*, p.name AS printer, u.name AS requester FROM print_jobs j JOIN printers p ON p.id = j.printer_id
     LEFT JOIN users u ON u.id = j.requested_by WHERE j.document_id = ? ORDER BY j.id DESC LIMIT 20', [$id]);
 $gameNotify = $_SESSION['game_notify'] ?? null;
@@ -401,7 +406,7 @@ ob_start(); ?>
             <?= csrf_field() ?><input type="hidden" name="action" value="print">
             <div class="field w-half"><label>Drucker</label>
                 <select name="printer_id" required>
-                    <?php foreach ($printers as $pr): ?><option value="<?= (int) $pr['id'] ?>"><?= e($pr['name']) ?><?= $pr['location'] ? ' – ' . e($pr['location']) : '' ?></option><?php endforeach; ?>
+                    <?php foreach ($printers as $pr): ?><option value="<?= (int) $pr['id'] ?>"><?= e(printer_label($pr)) ?><?= $pr['location'] ? ' – ' . e($pr['location']) : '' ?></option><?php endforeach; ?>
                 </select></div>
             <div class="field w-half"><span class="label">Exemplare</span>
                 <div class="copies-grid">

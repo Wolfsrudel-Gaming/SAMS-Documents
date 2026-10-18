@@ -58,7 +58,7 @@ function tablet_login(string $username, string $password, string $code, string $
         'user_id' => $u['id'], 'token_hash' => hash('sha256', $token), 'session_version' => (int) $u['session_version'],
         'player_name' => mb_substr($playerName, 0, 190), 'license' => mb_substr($license, 0, 190),
         'created_at' => now(), 'last_used_at' => now(), 'expires_at' => date('Y-m-d H:i:s', time() + TABLET_TOKEN_DAYS * 86400),
-    ]);
+    ] + (game_server_id() ? ['server_id' => game_server_id()] : []));
     update('users', (int) $u['id'], ['last_login' => now()]);
     audit_as((int) $u['id'], 'login', 'user', (int) $u['id'], 'Tablet im Spiel (' . $playerName . ')');
     return ['status' => 'ok', 'token' => $token, 'user' => tablet_user_info($u)];
@@ -72,6 +72,10 @@ function tablet_token_user(string $token): ?array
     }
     $row = one('SELECT * FROM tablet_tokens WHERE token_hash = ? AND revoked = 0', [hash('sha256', $token)]);
     if (!$row || $row['expires_at'] < now()) {
+        return null;
+    }
+    // Anmeldungen gelten nur auf dem Spielserver, auf dem sie entstanden sind
+    if (game_server_id() && !empty($row['server_id']) && (int) $row['server_id'] !== game_server_id()) {
         return null;
     }
     $u = one('SELECT * FROM users WHERE id = ? AND active = 1', [$row['user_id']]);
@@ -118,6 +122,26 @@ function tablet_launch_url(array $tokenRow, string $next = ''): string
 function active_printers(bool $allFactions = false): array
 {
     return all('SELECT * FROM printers WHERE active = 1' . ($allFactions ? '' : ' AND ' . fw()) . ' ORDER BY name');
+}
+
+/** Aktive Drucker des anfragenden Spielservers (im Browser: alle). */
+function server_printers(): array
+{
+    $id = game_server_id();
+    return all('SELECT * FROM printers WHERE active = 1' . ($id ? ' AND server_id = ' . $id : '') . ' ORDER BY name');
+}
+
+function printer_on_server(int $printerId): bool
+{
+    $id = game_server_id();
+    return !$id || (bool) scalar('SELECT id FROM printers WHERE id = ? AND server_id = ?', [$printerId, $id]);
+}
+
+/** Drucker-Bezeichnung mit Staat, wenn mehrere Server verbunden sind. */
+function printer_label(array $p): string
+{
+    $staat = multi_server() ? game_server_label((int) ($p['server_id'] ?? 0)) : '';
+    return $p['name'] . ($staat !== '' ? ' · ' . $staat : '');
 }
 
 function printer_payload(array $p): array

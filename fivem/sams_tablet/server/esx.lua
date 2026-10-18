@@ -14,6 +14,9 @@ local ESX = nil
 local function loadConfig()
     local data = Api.post('game_config', {})
     if data and data.ok then
+        if not GameConfig and data.server and data.server.name and data.server.name ~= '' then
+            print(('[sams_tablet] Mit dem Portal verbunden als Spielserver „%s“'):format(data.server.name))
+        end
         GameConfig = data
         -- an alle Spieler (keine Geheimnisse): Befehlsnamen und Reichweite
         GlobalState.samsConfig = { commands = data.commands, framework = data.framework, akte_distance = data.akte_distance,

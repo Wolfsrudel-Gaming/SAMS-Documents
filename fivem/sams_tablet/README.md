@@ -22,7 +22,7 @@ Bringt das SAMS-Dokumentensystem ins Spiel:
 2. In die `server.cfg` (nach ox_lib und ox_inventory):
    ```cfg
    set sams_url "https://sams.deinserver.de"
-   set sams_api_key "API_KEY aus der .env des Websystems"
+   set sams_api_key "Schlüssel aus dem Portal (Administration → Spielserver) bzw. API_KEY aus der .env"
    ensure sams_tablet
    ```
    Wichtig: `set`, **nicht** `setr` – sonst könnten Spieler den Schlüssel auslesen.

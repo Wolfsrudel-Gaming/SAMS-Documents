@@ -206,7 +206,7 @@ ob_start(); ?>
     <div class="field w-full"><div class="choices">
         <?php foreach (FACTION_MODULES as $mk => $ml): ?><label class="choice"><input type="checkbox" name="modules[]" value="<?= e($mk) ?>"<?= module_enabled($mk) ? ' checked' : '' ?>> <?= e($ml) ?></label><?php endforeach; ?>
     </div><p class="hint">Ausgeschaltete Module verschwinden aus Menü und Rechten aller Ränge dieser Fraktion; Daten bleiben erhalten.</p></div>
-    <p class="hint w-full">Spielserver: Befehle werden beim Start der Resource übernommen (danach <code>restart sams_tablet</code>), alles andere innerhalb weniger Minuten.</p>
+    <p class="hint w-full">Spielserver: Befehle werden beim Start der Resource übernommen (danach <code>restart sams_tablet</code>), alles andere innerhalb weniger Minuten.<?php if (!empty(current_user()['is_superadmin'])): ?> Portal-Adresse, API-Schlüssel und Einstellungen je Server (mehrere Staaten): <a href="<?= e(url('servers')) ?>">Spielserver</a>.<?php endif; ?></p>
     <h3 class="form-heading">Logo</h3>
     <div class="field w-half"><label>Eigenes Logo (PNG/JPG/WEBP, quadratisch empfohlen)</label><input type="file" name="logo" accept="image/png,image/jpeg,image/webp"></div>
     <div class="field w-half"><span class="label">Aktuell</span><img src="<?= e(faction_logo()) ?>" alt="" style="height:64px">

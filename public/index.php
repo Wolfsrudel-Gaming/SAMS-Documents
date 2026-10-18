@@ -42,6 +42,7 @@ $routes = [
     'stock'           => 'stock.view|stock.manage',
     'locations'       => 'settings.manage',
     'factions'        => '',
+    'servers'         => '',
     'wanted'          => 'wanted.view|wanted.manage',
     'custody'         => 'custody.view|custody.manage',
     'evidence'        => 'evidence.view|evidence.manage',

@@ -67,14 +67,19 @@ function respond(array $data, int $status = 200): void
 if (in_maintenance()) {
     respond(['error' => 'maintenance', 'message' => 'Das System wird gerade aktualisiert.'], 503);
 }
-$key = (string) cfg('api_key', '');
 $sent = (string) ($_SERVER['HTTP_X_API_KEY'] ?? ($_GET['key'] ?? ''));
-if ($key === '') {
-    respond(['error' => 'API deaktiviert (API_KEY in der .env setzen)'], 503);
+if (!game_api_enabled()) {
+    respond(['error' => 'API deaktiviert (Administration → Spielserver: Schlüssel erzeugen oder API_KEY in der .env setzen)'], 503);
 }
-if (!hash_equals($key, $sent)) {
+// Jeder Spielserver (Staat) hat seinen eigenen Schlüssel; Drucker, Tablet-Anmeldungen und Rechnungen gehören zum Server
+$server = game_server_by_key($sent);
+if (!$server && !game_servers() && hash_equals((string) cfg('api_key', ''), $sent) && $sent !== '') {
+    $server = ['id' => 0, 'name' => '', 'config' => '{}', 'last_seen_at' => date('Y-m-d H:i:s')]; // vor der Migration
+}
+if (!$server) {
     respond(['error' => 'Ungültiger API-Schlüssel'], 401);
 }
+set_current_game_server($server);
 
 $body = [];
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
@@ -168,11 +173,11 @@ switch ($action) {
 
     // ------------------------------------------------------------ Drucker
     case 'printers':
-        respond(['printers' => array_map('printer_payload', active_printers(true)), 'pickup' => pickup_rule()]);
+        respond(['printers' => array_map('printer_payload', server_printers()), 'pickup' => pickup_rule()]);
         // no break
     case 'printer_jobs':
         $tu = $tokenUser();
-        $jobs = printer_jobs_for((int) $in('printer_id'), $tu[1] ?? null);
+        $jobs = printer_on_server((int) $in('printer_id')) ? printer_jobs_for((int) $in('printer_id'), $tu[1] ?? null) : [];
         respond([
             'ok' => true, 'logged_in' => (bool) $tu, 'pickup' => pickup_rule(),
             'jobs' => array_map(fn($j) => [
@@ -185,7 +190,7 @@ switch ($action) {
     case 'job_pickup':
         $tu = $tokenUser();
         $jobId = (int) $in('job_id');
-        $allowed = array_column(printer_jobs_for((int) $in('printer_id'), $tu[1] ?? null), null, 'id');
+        $allowed = printer_on_server((int) $in('printer_id')) ? array_column(printer_jobs_for((int) $in('printer_id'), $tu[1] ?? null), null, 'id') : [];
         if (!isset($allowed[$jobId])) {
             respond(['ok' => false, 'error' => 'Dieser Auftrag ist nicht (mehr) abholbereit.']);
         }
@@ -209,7 +214,7 @@ switch ($action) {
         }
         $rows = all("SELECT j.id, j.requested_by, j.printer_id, p.name AS printer, p.x, p.y, p.z, d.type, d.number, d.patient_snapshot, j.copy_variant
             FROM print_jobs j JOIN printers p ON p.id = j.printer_id JOIN documents d ON d.id = j.document_id
-            WHERE j.id > ? AND j.status = 'queued' ORDER BY j.id LIMIT 50", [$since]);
+            WHERE j.id > ? AND j.status = 'queued'" . (game_server_id() ? ' AND p.server_id = ' . game_server_id() : '') . ' ORDER BY j.id LIMIT 50', [$since]);
         respond(['ok' => true, 'last_id' => $rows ? (int) end($rows)['id'] : $since, 'jobs' => array_map(fn($r) => [
             'id' => (int) $r['id'], 'user_id' => (int) $r['requested_by'], 'printer_id' => (int) $r['printer_id'],
             'printer' => $r['printer'], 'x' => (float) $r['x'], 'y' => (float) $r['y'], 'z' => (float) $r['z'], 'label' => job_label($r),
@@ -467,7 +472,8 @@ switch ($action) {
         }
         $n = 0;
         foreach (array_slice(is_array($body['incidents'] ?? null) ? $body['incidents'] : [], 0, 100) as $inc) {
-            $n += is_array($inc) ? dispatch_upsert($inc) : 0;
+            // Einsatznummern der Leitstellen verschiedener Server dürfen sich überschneiden
+            $n += is_array($inc) ? dispatch_upsert($inc, game_server_id() && game_server_id() !== game_server_default_id() ? 'tetra-s' . game_server_id() : 'tetra') : 0;
         }
         respond(['ok' => true, 'stored' => $n]);
         // no break

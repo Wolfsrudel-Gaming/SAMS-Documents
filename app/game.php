@@ -18,24 +18,24 @@ const GAME_BILL_STATUS = [
 /** Systemweite Einstellungen der Resource (gelten für alle Fraktionen). */
 function game_global(): array
 {
-    $cmd = fn(string $k, string $d) => preg_replace('/[^a-z0-9_]/i', '', (string) setting($k, $d));
+    $cmd = fn(string $k, string $d) => preg_replace('/[^a-z0-9_]/i', '', game_setting($k, $d));
     return [
-        'framework' => setting('ingame_framework', 'esx') === 'none' ? 'none' : 'esx',
+        'framework' => game_setting('ingame_framework', 'esx') === 'none' ? 'none' : 'esx',
         'commands' => [
             'tablet' => $cmd('ingame_cmd_tablet', 'tablet'), 'duty' => $cmd('duty_command', 'dienst'),
             'akte' => $cmd('ingame_cmd_akte', 'akte'), 'plate' => $cmd('ingame_cmd_plate', 'kennzeichen'),
         ],
-        'billing_table' => preg_replace('/[^a-z0-9_]/i', '', (string) setting('ingame_billing_table', 'billing')) ?: 'billing',
-        'akte_distance' => max(1.0, min(10.0, (float) setting('ingame_akte_distance', '3'))),
-        'bill_interval' => max(15, min(600, (int) setting('ingame_bill_interval', '30'))),
+        'billing_table' => preg_replace('/[^a-z0-9_]/i', '', game_setting('ingame_billing_table', 'billing')) ?: 'billing',
+        'akte_distance' => max(1.0, min(10.0, (float) game_setting('ingame_akte_distance', '3'))),
+        'bill_interval' => max(15, min(600, (int) game_setting('ingame_bill_interval', '30'))),
         // Sky Ambulance (sky_ambulancejob) und Rechnungssystem (esx_billing oder Sky Billing aus sky_jobs_base)
-        'billing_provider' => setting('ingame_billing_provider', 'esx_billing') === 'sky' ? 'sky' : 'esx_billing',
-        'sky' => setting('ingame_sky', '0') === '1',
-        'sky_death' => setting('ingame_sky', '0') === '1' && setting('ingame_sky_death', '1') === '1',
-        'sky_meds' => setting('ingame_sky', '0') === '1' && setting('ingame_sky_meds', '1') === '1',
+        'billing_provider' => game_setting('ingame_billing_provider', 'esx_billing') === 'sky' ? 'sky' : 'esx_billing',
+        'sky' => game_setting('ingame_sky', '0') === '1',
+        'sky_death' => game_setting('ingame_sky', '0') === '1' && game_setting('ingame_sky_death', '1') === '1',
+        'sky_meds' => game_setting('ingame_sky', '0') === '1' && game_setting('ingame_sky_meds', '1') === '1',
         // Leitstelle tetrascript (tetra-core): FMS-Status und Einsätze über die Brücke in sams_tablet
-        'tetra' => setting('ingame_tetra', '0') === '1',
-        'tetra_poll' => max(10, min(300, (int) setting('ingame_tetra_poll', '20'))),
+        'tetra' => game_setting('ingame_tetra', '0') === '1',
+        'tetra_poll' => max(10, min(300, (int) game_setting('ingame_tetra_poll', '20'))),
     ];
 }
 
@@ -67,7 +67,8 @@ function game_config(): array
     foreach (factions() as $f) {
         $factions[] = ['id' => (int) $f['id'], 'short' => (string) $f['short'], 'name' => (string) $f['name'], 'kind' => faction_kind((int) $f['id'])] + game_faction((int) $f['id']);
     }
-    return ['ok' => true] + game_global() + ['factions' => $factions];
+    $srv = current_game_server();
+    return ['ok' => true] + game_global() + ['server' => ['id' => (int) ($srv['id'] ?? 0), 'name' => (string) ($srv['name'] ?? '')], 'factions' => $factions];
 }
 
 // ------------------------------------------------------------ Rechnungen
@@ -147,7 +148,7 @@ function game_bill_send(array $doc, int $userId): int
         'amount' => game_bill_amount($doc), 'society' => $g['society'],
         'label' => mb_substr(trim(($f['short'] ?? '') . ' ' . ($doc['type'] === 'rechnung' ? billing_labels((int) $doc['faction_id'])['title'] : 'Geldstrafe ' . (doc_type($doc['type'])['title'] ?? '')) . ' ' . $doc['number']), 0, 190),
         'status' => 'pending', 'created_by' => $userId, 'created_at' => now(),
-    ]);
+    ] + (game_server_default_id() ? ['server_id' => game_server_for_user($userId)] : []));
     audit('invoice.game_send', 'document', (int) $doc['id'], $doc['number'] . ' ins Spiel gesendet (' . $g['society'] . ')');
     return $id;
 }
@@ -165,11 +166,21 @@ function game_bill_badge(array $b): string
     return '<span class="badge ' . $c . '">' . e($l) . '</span>';
 }
 
+/** Nur Rechnungen des anfragenden Servers (ohne Zuordnung: Hauptserver). */
+function game_bill_server_where(string $alias): string
+{
+    $id = game_server_id();
+    if (!$id) {
+        return '1 = 1';
+    }
+    return $id === game_server_default_id() ? "($alias.server_id = $id OR $alias.server_id IS NULL)" : "$alias.server_id = $id";
+}
+
 /** Abgleich für die Resource: neue, zurückzuziehende und offene Spiel-Rechnungen. */
 function game_bills_sync(): array
 {
     $pending = all("SELECT g.id, g.citizen_id, g.amount, g.society, g.label, g.faction_id, d.patient_snapshot, d.number FROM game_bills g JOIN documents d ON d.id = g.document_id
-        WHERE g.status = 'pending' ORDER BY g.id LIMIT 50");
+        WHERE g.status = 'pending' AND " . game_bill_server_where('g') . ' ORDER BY g.id LIMIT 50');
     foreach ($pending as $i => $b) {
         // Für Sky Billing: Job (Society) der Fraktion und Name des Empfängers
         $snap = json_decode((string) $b['patient_snapshot'], true) ?: [];
@@ -178,8 +189,8 @@ function game_bills_sync(): array
         $pending[$i]['reference'] = 'SAMS-' . $b['number'] . '-' . $b['id'];
         unset($pending[$i]['patient_snapshot'], $pending[$i]['faction_id'], $pending[$i]['number']);
     }
-    $cancel = all("SELECT id, esx_id, ext_ref FROM game_bills WHERE status = 'cancel' ORDER BY id LIMIT 50");
-    $open = all("SELECT id, esx_id, ext_ref FROM game_bills WHERE status = 'sent' ORDER BY id LIMIT 500");
+    $cancel = all("SELECT id, esx_id, ext_ref FROM game_bills g WHERE status = 'cancel' AND " . game_bill_server_where('g') . ' ORDER BY id LIMIT 50');
+    $open = all("SELECT id, esx_id, ext_ref FROM game_bills g WHERE status = 'sent' AND " . game_bill_server_where('g') . ' ORDER BY id LIMIT 500');
     $int = fn(array $rows, array $keys) => array_map(function ($r) use ($keys) {
         foreach ($keys as $k) {
             $r[$k] = (int) $r[$k];
@@ -193,7 +204,7 @@ function game_bills_sync(): array
 /** Ergebnis der Resource verarbeiten: sent, failed, paid, cancelled. */
 function game_bill_result(int $id, string $result, int $esxId = 0, string $error = '', string $extRef = ''): array
 {
-    $b = one('SELECT * FROM game_bills WHERE id = ?', [$id]);
+    $b = one('SELECT * FROM game_bills g WHERE id = ? AND ' . game_bill_server_where('g'), [$id]);
     if (!$b) {
         return ['ok' => false, 'error' => 'Spiel-Rechnung nicht gefunden.'];
     }

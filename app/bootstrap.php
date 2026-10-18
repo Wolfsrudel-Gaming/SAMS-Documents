@@ -58,6 +58,7 @@ require __DIR__ . '/notifications.php';
 require __DIR__ . '/roster.php';
 require __DIR__ . '/pharmacy.php';
 require __DIR__ . '/agency.php';
+require __DIR__ . '/servers.php';
 require __DIR__ . '/game.php';
 require __DIR__ . '/authority.php';
 require __DIR__ . '/signing.php';
