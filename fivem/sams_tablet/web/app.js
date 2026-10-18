@@ -96,7 +96,102 @@
     });
 
     // --------------------------------------------------------- Klemmbrett
+    // Unterschriftsleiste: offene Felder unterschreiben, Abschließen (nur wer das Blatt besitzt)
+    function renderSigning(sig, canFinalize, revoked) {
+        var bar = $('v-sign');
+        bar.innerHTML = '';
+        if (!sig || !sig.fields || revoked) { show('v-sign', false); return; }
+        var add = function (el) { bar.appendChild(el); return el; };
+        var mk = function (tag, cls, text) { var el = document.createElement(tag); if (cls) { el.className = cls; } el.textContent = text; return el; };
+        if (sig.final) {
+            add(mk('span', 'final', '✔ Abgeschlossen'));
+        }
+        sig.fields.forEach(function (f) {
+            if (f.signed) {
+                add(mk('span', 'done', '✔ ' + f.label + (f.by ? ' – ' + f.by : '')));
+            } else if (!sig.final) {
+                var b = add(mk('button', 'tb-btn sign', '✍ ' + f.label));
+                b.addEventListener('click', function () { openPad(f); });
+            }
+        });
+        if (!sig.final && canFinalize) {
+            var fin = add(mk('button', 'tb-btn', 'Abschließen'));
+            // zweiter Klick bestätigt (Dialoge wie confirm() gibt es im Spiel nicht)
+            fin.addEventListener('click', function () {
+                if (!fin.dataset.sure) { fin.dataset.sure = '1'; fin.textContent = 'Wirklich abschließen? Nochmal klicken'; return; }
+                nui('finalizeDocument').then(function (res) { if (res && res.error) { fin.textContent = res.error; } else { afterSign(res); } });
+            });
+        }
+        show('v-sign', true);
+    }
+    function afterSign(res) {
+        if (!res || res.error) { $('sig-error').textContent = (res && res.error) || 'Fehler'; show('sig-error', true); return false; }
+        show('sigmodal', false);
+        state.viewer.signing = res.signing;
+        renderSigning(res.signing, state.viewer.canFinalize, false);
+        // Blatt neu laden, damit die Unterschrift sichtbar wird
+        var fr = $('v-frame'); fr.src = state.viewer.url + (state.viewer.url.indexOf('?') < 0 ? '?' : '&') + 'r=' + Date.now();
+        return true;
+    }
+
+    // Unterschriften-Pad
+    var pad = { canvas: $('sig-canvas'), field: null, dirty: false, drawing: false, last: null };
+    pad.ctx = pad.canvas.getContext('2d');
+    function padClear() {
+        pad.ctx.clearRect(0, 0, pad.canvas.width, pad.canvas.height);
+        pad.dirty = false;
+    }
+    function padPos(e) {
+        var r = pad.canvas.getBoundingClientRect();
+        return { x: (e.clientX - r.left) * pad.canvas.width / r.width, y: (e.clientY - r.top) * pad.canvas.height / r.height };
+    }
+    pad.canvas.addEventListener('pointerdown', function (e) { pad.drawing = true; pad.last = padPos(e); pad.canvas.setPointerCapture(e.pointerId); });
+    pad.canvas.addEventListener('pointermove', function (e) {
+        if (!pad.drawing) { return; }
+        var p = padPos(e), c = pad.ctx;
+        c.strokeStyle = '#1b2d78'; c.lineWidth = 2.6; c.lineCap = 'round'; c.lineJoin = 'round';
+        c.beginPath(); c.moveTo(pad.last.x, pad.last.y); c.lineTo(p.x, p.y); c.stroke();
+        pad.last = p; pad.dirty = true;
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { pad.canvas.addEventListener(ev, function () { pad.drawing = false; }); });
+    /** Auf die Unterschrift zuschneiden und klein halten (Netzwerk-Ereignisse im Spiel sind begrenzt). */
+    function padExport() {
+        var c = pad.canvas, ctx = pad.ctx, img = ctx.getImageData(0, 0, c.width, c.height).data;
+        var minX = c.width, minY = c.height, maxX = 0, maxY = 0;
+        for (var y = 0; y < c.height; y++) { for (var x = 0; x < c.width; x++) {
+            if (img[(y * c.width + x) * 4 + 3] > 10) { if (x < minX) { minX = x; } if (y < minY) { minY = y; } if (x > maxX) { maxX = x; } if (y > maxY) { maxY = y; } }
+        } }
+        if (maxX <= minX || maxY <= minY) { return ''; }
+        var w = maxX - minX + 8, h = maxY - minY + 8, scale = 1, out;
+        do {
+            var t = document.createElement('canvas');
+            t.width = Math.max(1, Math.round(w * scale)); t.height = Math.max(1, Math.round(h * scale));
+            t.getContext('2d').drawImage(c, minX - 4, minY - 4, w, h, 0, 0, t.width, t.height);
+            out = t.toDataURL('image/png');
+            scale *= 0.75;
+        } while (out.length > 60000 && scale > 0.2);
+        return out;
+    }
+    function openPad(f) {
+        pad.field = f.name;
+        $('sig-title').textContent = f.label;
+        show('sig-error', false);
+        padClear();
+        show('sigmodal', true);
+    }
+    $('sig-clear').addEventListener('click', padClear);
+    $('sig-cancel').addEventListener('click', function () { show('sigmodal', false); });
+    $('sig-ok').addEventListener('click', function () {
+        if (!pad.dirty) { $('sig-error').textContent = 'Bitte zuerst unterschreiben.'; show('sig-error', true); return; }
+        var png = padExport();
+        if (!png) { return; }
+        $('sig-ok').disabled = true;
+        nui('signDocument', { field: pad.field, signature: png }).then(function (res) { $('sig-ok').disabled = false; afterSign(res); });
+    });
+
     function openViewer(d) {
+        state.viewer = { url: d.url, signing: d.signing, canFinalize: !!d.canFinalize };
+        renderSigning(d.signing, !!d.canFinalize, !!d.revoked);
         $('v-label').textContent = d.label || 'Dokument';
         $('v-from').textContent = d.from ? 'gezeigt von ' + d.from : '';
         show('v-revoked', !!d.revoked);
@@ -107,6 +202,7 @@
     }
     function closeViewer() {
         show('viewer', false);
+        show('sigmodal', false);
         $('v-frame').src = 'about:blank';
     }
     $('v-close').addEventListener('click', function () { nui('closeDocument'); });
@@ -135,7 +231,8 @@
 
     document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') { return; }
-        if (!$('viewer').classList.contains('hidden')) { nui('closeDocument'); }
+        if (!$('sigmodal').classList.contains('hidden')) { show('sigmodal', false); }
+        else if (!$('viewer').classList.contains('hidden')) { nui('closeDocument'); }
         else if (!$('tablet').classList.contains('hidden')) { nui('closeTablet'); }
     });
 

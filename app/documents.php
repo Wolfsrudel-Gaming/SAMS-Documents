@@ -705,7 +705,7 @@ function render_field(array $f, $value): string
                 . '<div class="sigpad" data-input="' . e($id) . '"><canvas width="600" height="180"></canvas>'
                 . '<button type="button" class="btn small sig-clear">Löschen</button></div>'
                 . '<input type="hidden" id="' . e($id) . '" name="d[' . e($name) . ']" value="' . e($value) . '">'
-                . '<div class="hint">Mit Maus, Stift oder Finger unterschreiben lassen.</div>';
+                . '<div class="hint">Mit Maus, Stift oder Finger unterschreiben lassen – oder leer lassen: Dann wird auf dem Ausdruck im Spiel bzw. später im Tablet unterschrieben.</div>';
             break;
 
         default:

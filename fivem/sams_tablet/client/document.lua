@@ -17,7 +17,7 @@ local function openViewer(data, own)
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'viewDocument', url = data.url, label = data.label, from = data.from,
-        canShow = own, revoked = data.revoked,
+        canShow = own, revoked = data.revoked, signing = data.signing, canFinalize = own,
     })
 end
 
@@ -31,7 +31,7 @@ exports('useDocument', function(_, slot)
     if not info then
         return Notify(Config.Text.offline, 'error')
     end
-    openViewer({ url = info.url, label = meta.label or info.number, token = meta.sams_token, variant = meta.sams_variant, revoked = info.revoked }, true)
+    openViewer({ url = info.url, label = meta.label or info.number, token = meta.sams_token, variant = meta.sams_variant, revoked = info.revoked, signing = info.signing }, true)
 end)
 
 -- Jemand zeigt mir ein Dokument
@@ -54,4 +54,25 @@ RegisterNUICallback('showDocument', function(_, cb)
     end
     TriggerServerEvent('sams:document:show', GetPlayerServerId(player), viewing.token, viewing.variant, viewing.label)
     Notify(Config.Text.showed, 'success')
+end)
+
+-- Unterschreiben auf dem Klemmbrett (Unterschrift kommt als PNG aus der NUI)
+RegisterNUICallback('signDocument', function(d, cb)
+    if not viewing or not viewing.token then return cb({ error = Config.Text.signNoAccess }) end
+    local res = lib.callback.await('sams:document:sign', false, viewing.token, d.field, d.signature)
+    if res and res.ok then
+        Notify(Config.Text.signed, 'success')
+        viewing.signing = res.signing
+    end
+    cb(res or { error = Config.Text.offline })
+end)
+
+RegisterNUICallback('finalizeDocument', function(_, cb)
+    if not viewing or not viewing.own then return cb({ error = Config.Text.signNoAccess }) end
+    local res = lib.callback.await('sams:document:finalize', false, viewing.token)
+    if res and res.ok then
+        Notify(Config.Text.finalized, 'success')
+        viewing.signing = res.signing
+    end
+    cb(res or { error = Config.Text.offline })
 end)

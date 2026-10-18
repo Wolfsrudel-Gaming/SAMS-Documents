@@ -50,6 +50,18 @@
                 <button id="v-close" class="tb-btn">Schließen</button>
             </div>
             <div class="paper-wrap"><iframe id="v-frame" title="Dokument"></iframe></div>
+            <div id="v-sign" class="sbar hidden"></div>
+        </div>
+    </div>
+
+    <!-- Unterschrift mit Maus auf dem Klemmbrett -->
+    <div id="sigmodal" class="hidden">
+        <div class="sigbox">
+            <strong id="sig-title">Unterschrift</strong>
+            <canvas id="sig-canvas" width="600" height="180"></canvas>
+            <small>Mit gedrückter Maustaste unterschreiben. Die Unterschrift ist endgültig und wird im System gespeichert.</small>
+            <div class="sigrow"><button id="sig-clear" class="tb-btn">Löschen</button><span class="spacer"></span><button id="sig-cancel" class="tb-btn">Abbrechen</button><button id="sig-ok" class="tb-btn primary">Unterschreiben</button></div>
+            <div id="sig-error" class="error hidden"></div>
         </div>
     </div>
     <script src="app.js"></script>

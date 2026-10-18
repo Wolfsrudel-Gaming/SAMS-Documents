@@ -24,7 +24,9 @@
  *   printer_jobs   {printer_id, token?}                            → abholbereite Aufträge
  *   job_pickup     {job_id, printer_id, token?, license, player}   → Items für ox_inventory
  *   jobs_since     {since_id}  (-1 = Startwert holen)              → neue Aufträge (für Benachrichtigungen)
- *   document_item  {token}                                         → Ansichts-URL eines Dokument-Items
+ *   document_item  {token}                                         → Ansichts-URL eines Dokument-Items, Stand der Unterschriften
+ *   doc_sign       {token, field, signature (PNG data-URL), signer_name, signer_citizen_id, player, license} → im Spiel unterschreiben
+ *   doc_finalize   {token, signer_name, player, license}           → Dokument abschließen (keine weiteren Unterschriften)
  *   duty_set       {token, on}                                     → Dienst beginnen/beenden
  *   duty_status    {token}                                         → im Dienst? seit wann?
  *   rx_check       {tokens: [sams_token, …]}                       → Rezepte mit Positionen und Einlösbarkeit
@@ -205,11 +207,32 @@ switch ($action) {
         ], $rows)]);
         // no break
     case 'document_item':
-        $doc = one('SELECT number, status FROM documents WHERE view_token = ?', [$in('token')]);
-        if (!$doc || $in('token') === '') {
-            respond(['ok' => false]);
+        $doc = $in('token') !== '' ? one('SELECT * FROM documents WHERE view_token = ?', [$in('token')]) : null;
+        if (!$doc) {
+            respond(['ok' => false, 'error' => 'Dokument nicht gefunden.']);
         }
-        respond(['ok' => true, 'number' => $doc['number'], 'revoked' => $doc['status'] === 'revoked', 'url' => document_view_url($in('token'), $in('variant'))]);
+        set_faction_context((int) $doc['faction_id']);
+        respond(['ok' => true, 'number' => $doc['number'], 'revoked' => $doc['status'] === 'revoked', 'url' => document_view_url($in('token'), $in('variant')),
+            'signing' => doc_sign_public($doc)]);
+        // no break
+
+    // ------------------------------------------------ Unterschrift im Spiel
+    // Die Resource prüft vorher, dass der Spieler das Blatt besitzt oder es ihm gezeigt wurde.
+    case 'doc_sign':
+    case 'doc_finalize':
+        $doc = $in('token') !== '' ? one('SELECT * FROM documents WHERE view_token = ?', [$in('token')]) : null;
+        if (!$doc) {
+            respond(['ok' => false, 'error' => 'Dokument nicht gefunden.']);
+        }
+        set_faction_context((int) $doc['faction_id']);
+        $signer = ['name' => $in('signer_name') ?: $in('player'), 'citizen_id' => $in('signer_citizen_id'), 'source' => 'game', 'player' => $in('player'), 'license' => $in('license')];
+        $err = $action === 'doc_sign'
+            ? doc_sign($doc, $in('field'), (string) ($body['signature'] ?? ''), $signer)
+            : doc_finalize($doc, null, 'im Spiel von ' . ($signer['name'] ?: 'unbekannt'));
+        if ($err !== '') {
+            respond(['ok' => false, 'error' => $err]);
+        }
+        respond(['ok' => true, 'signing' => doc_sign_public(one('SELECT * FROM documents WHERE id = ?', [$doc['id']]))]);
         // no break
 
     // -------------------------------------------------------- Dienstzeit

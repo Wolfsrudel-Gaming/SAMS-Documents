@@ -6,6 +6,7 @@
 local sessions = {} ---@type table<number, { token: string, user: table }>
 local onDuty = {} ---@type table<number, boolean>
 local printers = {} ---@type table<number, table>
+local shownTo = {} ---@type table<number, table<string, number>> gezeigte Dokumente (Unterschrift erlaubt bis)
 
 -- ---------------------------------------------------------------- Hilfen --
 
@@ -174,6 +175,7 @@ AddEventHandler('playerDropped', function()
     end
     sessions[src] = nil
     onDuty[src] = nil
+    shownTo[src] = nil
 end)
 
 -- ---------------------------------------------------------------- Drucker --
@@ -292,11 +294,58 @@ RegisterNetEvent('sams:document:show', function(target, token, variant, label)
     end
     local data = Api.post('document_item', { token = token, variant = variant or '' })
     if data and data.ok then
+        -- Wem ein Dokument gezeigt wird, darf es 10 Minuten lang unterschreiben (z. B. Patient/in unterschreibt den Revers)
+        shownTo[target] = shownTo[target] or {}
+        shownTo[target][token] = os.time() + 600
         TriggerClientEvent('sams:document:view', target, {
             url = data.url, label = type(label) == 'string' and label:sub(1, 120) or data.number,
-            from = GetPlayerName(src), shown = true, revoked = data.revoked,
+            from = GetPlayerName(src), shown = true, revoked = data.revoked, token = token, variant = variant, signing = data.signing,
         })
     end
+end)
+
+-- ------------------------------------------------- Unterschrift im Spiel --
+
+local function ownsDocument(src, token)
+    local count = exports.ox_inventory:Search(src, 'count', Config.DocumentItem, { sams_token = token })
+    return count and count > 0
+end
+
+local function signerOf(src)
+    local pd = SamsPlayerData and SamsPlayerData(src)
+    if pd and pd.first_name ~= '' then
+        return (pd.first_name .. ' ' .. (pd.last_name or '')):gsub('%s+$', ''), pd.citizen_id or ''
+    end
+    return GetPlayerName(src), ''
+end
+
+--- Unterschriftsfeld auf dem Blatt unterschreiben: Besitzer/in des Blatts oder wem es gerade gezeigt wird.
+lib.callback.register('sams:document:sign', function(src, token, field, png)
+    if type(token) ~= 'string' or #token < 32 or type(field) ~= 'string' or type(png) ~= 'string' or #png > 150000 then
+        return { error = Config.Text.signInvalid }
+    end
+    local granted = shownTo[src] and shownTo[src][token] and shownTo[src][token] > os.time()
+    if not granted and not ownsDocument(src, token) then
+        return { error = Config.Text.signNoAccess }
+    end
+    local name, cid = signerOf(src)
+    local data = Api.post('doc_sign', { token = token, field = field:sub(1, 64), signature = png, signer_name = name, signer_citizen_id = cid,
+        player = GetPlayerName(src), license = license(src) })
+    if not data then return { error = Config.Text.offline } end
+    if not data.ok then return { error = data.error } end
+    return { ok = true, signing = data.signing }
+end)
+
+--- Dokument abschließen (nur wer das Blatt besitzt): keine weiteren Unterschriften möglich.
+lib.callback.register('sams:document:finalize', function(src, token)
+    if type(token) ~= 'string' or not ownsDocument(src, token) then
+        return { error = Config.Text.signNoAccess }
+    end
+    local name = signerOf(src)
+    local data = Api.post('doc_finalize', { token = token, signer_name = name, player = GetPlayerName(src), license = license(src) })
+    if not data then return { error = Config.Text.offline } end
+    if not data.ok then return { error = data.error } end
+    return { ok = true, signing = data.signing }
 end)
 
 -- ------------------------------------------------------------- Fahndung --

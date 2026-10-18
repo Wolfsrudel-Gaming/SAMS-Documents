@@ -52,3 +52,18 @@ html, body { margin: 0; height: 100%; background: transparent; font-family: "Seg
 .revoked { background: #b3261e; color: #fff; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 2px; letter-spacing: .1em; }
 .paper-wrap { flex: 1; background: #fff; border-radius: 3px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
 #v-frame { width: 100%; height: 100%; border: 0; background: #f4f1ea; }
+
+/* ---------------- Unterschrift ---------------- */
+.sbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; color: #fff; font-size: 12px; }
+.sbar .tb-btn { background: rgba(0, 0, 0, .3); }
+.sbar .tb-btn.sign { background: #1b2d78; border-color: #3a52b0; }
+.sbar .done { background: rgba(46, 125, 50, .85); padding: 2px 8px; border-radius: 3px; }
+.sbar .final { background: #2e7d32; font-weight: 700; padding: 2px 8px; border-radius: 3px; }
+#sigmodal { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, .55); z-index: 20; }
+.sigbox { background: #f4f1ea; color: #1c2b3b; border-radius: 6px; padding: 14px; width: min(640px, 92vw); display: flex; flex-direction: column; gap: 8px; box-shadow: 0 20px 60px rgba(0, 0, 0, .6); }
+#sig-canvas { width: 100%; aspect-ratio: 600 / 180; background: #fff; border: 1px dashed #8a96a3; border-radius: 3px; cursor: crosshair; touch-action: none; }
+.sigbox small { color: #5b6773; }
+.sigrow { display: flex; gap: 6px; align-items: center; }
+.sigbox .tb-btn { color: #1c2b3b; background: #e2e6ea; border-color: #c6cfd8; padding: 4px 12px; }
+.sigbox .tb-btn.primary { background: #1b2d78; border-color: #1b2d78; color: #fff; }
+.sigbox .error { color: #b3261e; font-size: 12px; }

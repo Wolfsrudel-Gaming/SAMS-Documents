@@ -67,7 +67,9 @@ $states = [
                 <?php if ($patient): ?><dt>Ausgestellt für</dt><dd><?= e(initials_name($patient)) ?><?= !empty($patient['dob']) ? ', geb. ' . e(fmt_date($patient['dob'], 'Y')) : '' ?></dd><?php endif; ?>
                 <?php if (!empty($issuer['cosigner'])): ?><dt>Gegengezeichnet</dt><dd><?= e(user_display($issuer['cosigner'])) ?><?= !empty($issuer['cosigner']['rank_name']) ? ', ' . e($issuer['cosigner']['rank_name']) : '' ?></dd><?php endif; ?>
                 <?php foreach (document_addenda((int) $doc['id']) as $i => $a): ?><dt>Nachtrag Nr. <?= $i + 1 ?></dt><dd><?= e(fmt_datetime($a['created_at'])) ?> · <?= e(user_display($a['author'])) ?></dd><?php endforeach; ?>
-                <?php if ($state === 'revoked'): ?><dt>Storniert am</dt><dd><?= e(fmt_datetime($doc['revoked_at'])) ?></dd><?php endif; ?>
+                <?php $signs = all('SELECT label, created_at FROM document_signatures WHERE document_id = ? ORDER BY id', [$doc['id']]); foreach ($signs as $sg): ?><dt>Unterschrieben</dt><dd><?= e($sg['label']) ?> · <?= e(fmt_datetime($sg['created_at'])) ?></dd><?php endforeach; ?>
+                <?php if (!empty($doc['finalized_at'])): ?><dt>Abgeschlossen</dt><dd><?= e(fmt_datetime($doc['finalized_at'])) ?><?= doc_hash_valid($doc) ? ' · unverändert' : ' · <strong>Inhalt weicht vom Abschluss ab</strong>' ?></dd><?php endif; ?>
+<?php if ($state === 'revoked'): ?><dt>Storniert am</dt><dd><?= e(fmt_datetime($doc['revoked_at'])) ?></dd><?php endif; ?>
             </dl>
             <p class="muted small">Vergleichen Sie Dokument-Nr. und Angaben mit dem vorliegenden Original. Aus Datenschutzgründen werden keine medizinischen Inhalte angezeigt.</p>
             <?php endif; ?>

@@ -71,6 +71,7 @@ local function playerData(src)
 end
 
 exports('GetPlayerData', playerData)
+SamsPlayerData = playerData -- für main.lua (Unterschriften)
 
 -- -------------------------------------------------------------- Rechnungen --
 

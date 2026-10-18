@@ -36,6 +36,10 @@ function render_document(array $doc, array $opts = []): string
             require SAMS_ROOT . '/app/templates/' . $type['template'] . '.php';
             return ob_get_clean();
         });
+        // Empfangsbestätigung (im Spiel unterschrieben) als Zusatzblatt
+        if (!empty($d[IC_RECEIPT_FIELD])) {
+            $html .= receipt_sheet($doc);
+        }
         // Nachträge werden als eigenes Blatt angehängt (Original bleibt unverändert)
         if (empty($opts['no_addenda'])) {
             foreach (document_addenda((int) ($doc['id'] ?? 0)) as $i => $addendum) {

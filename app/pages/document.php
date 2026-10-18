@@ -68,6 +68,22 @@ if (is_post() && post('action') === 'game_bill') {
     redirect(url('document', ['id' => $id]));
 }
 
+if (is_post() && in_array(post('action'), ['ic_sign', 'finalize'], true)) {
+    csrf_check();
+    if (post('action') === 'finalize') {
+        if (!doc_can_finalize($doc)) {
+            forbidden('Abschließen darf die ausstellende Person oder die Leitung.');
+        }
+        $err = doc_finalize($doc, (int) $me['id'], trim('im System von ' . $me['name'] . ' ' . (string) post('note')));
+        flash($err ? 'error' : 'success', $err ?: 'Dokument abgeschlossen. Es kann nicht mehr unterschrieben oder geändert werden.');
+    } else {
+        $err = doc_sign($doc, (string) post('field'), (string) post('signature'), ['name' => (string) post('signer_name'), 'citizen_id' => (string) post('signer_citizen_id'),
+            'source' => 'web', 'user_id' => (int) $me['id']]);
+        flash($err ? 'error' : 'success', $err ?: 'Unterschrift gespeichert.');
+    }
+    redirect(url('document', ['id' => $id]) . '#signatures');
+}
+
 if (is_post() && in_array(post('action'), ['share', 'share_revoke'], true)) {
     csrf_check();
     require_perm('documents.share');
@@ -298,6 +314,44 @@ ob_start(); ?>
 <div class="doc-stage" id="doc-stage"><?= $html ?></div>
 
 <?php if ($gameNotify): ?><span hidden data-game-notify="<?= e($gameNotify['type']) ?>" data-payload="<?= e(json_encode($gameNotify['payload'])) ?>"></span><?php endif; ?>
+
+<?php $sign = doc_sign_state($doc); if ($doc['status'] !== 'revoked' || array_filter($sign['fields'], fn($f) => $f['signed'])): $pat = $doc['patient_snapshot']; ?>
+<section class="card no-print" id="signatures">
+    <div class="card-head"><h2>Unterschriften</h2>
+        <?php if ($sign['final']): ?><span class="badge green">abgeschlossen <?= e(fmt_datetime($doc['finalized_at'])) ?></span><?= !$doc['final_hash'] || doc_hash_valid(one('SELECT * FROM documents WHERE id = ?', [$id])) ? '' : ' <span class="badge red">Prüfsumme weicht ab</span>' ?>
+        <?php else: ?><span class="badge orange"><?= $sign['open'] ?> offen</span><?php endif; ?></div>
+    <p class="hint"><?= $sign['receipt'] ? 'Diese Dokumentart hat kein eigenes Unterschriftsfeld. Die Empfänger/in kann den Empfang auf dem Ausdruck im Spiel oder hier bestätigen.' : 'Unterschriften werden auf dem Ausdruck im Spiel (Dokument benutzen → Unterschreiben) oder hier im Tablet geleistet.' ?>
+        Jede Unterschrift ist sofort endgültig. Sind alle Felder unterschrieben, wird das Dokument automatisch abgeschlossen.</p>
+    <table class="list compact">
+        <tbody>
+        <?php foreach ($sign['fields'] as $f): $l = $f['log']; ?>
+            <tr><td><strong><?= e($f['label']) ?></strong></td>
+                <td><?php if ($f['signed']): ?><img src="<?= e($doc['data'][$f['name']]) ?>" alt="" style="height:38px;vertical-align:middle">
+                    <small class="muted"><?= $l ? e($l['signer_name']) . ' · ' . e(fmt_datetime($l['created_at'])) . ' · ' . ($l['source'] === 'game' ? 'im Spiel' . ($l['player'] ? ' (' . e($l['player']) . ')' : '') : 'Tablet/Browser') : 'beim Ausstellen' ?></small>
+                <?php else: ?><span class="muted">offen</span><?php endif; ?></td>
+                <td class="right"><?php if (!$f['signed'] && !$sign['final'] && $doc['status'] !== 'revoked'): ?><button type="button" class="btn small" onclick="document.getElementById('sigform-<?= e($f['name']) ?>').hidden = false; this.hidden = true">Hier unterschreiben lassen</button><?php endif; ?></td></tr>
+            <?php if (!$f['signed'] && !$sign['final'] && $doc['status'] !== 'revoked'): ?>
+            <tr id="sigform-<?= e($f['name']) ?>" hidden><td colspan="3">
+                <form method="post" class="form-grid" onsubmit="if (!this.signature.value) { alert('Bitte zuerst unterschreiben.'); return false; } return confirm('Unterschrift endgültig speichern? Sie kann danach nicht mehr geändert werden.')">
+                    <?= csrf_field() ?><input type="hidden" name="action" value="ic_sign"><input type="hidden" name="field" value="<?= e($f['name']) ?>">
+                    <div class="field w-half"><label>Name der unterschreibenden Person</label><input name="signer_name" required maxlength="190" value="<?= e(str_contains($f['name'], 'patient') || $sign['receipt'] || str_contains($f['name'], 'betroffen') || str_contains($f['name'], 'mandant') ? patient_name($pat ?: null) : '') ?>"></div>
+                    <div class="field w-half"><label>Bürger-ID (optional)</label><input name="signer_citizen_id" maxlength="64" value="<?= e($pat['citizen_id'] ?? '') ?>"></div>
+                    <div class="field w-full"><div class="sigpad" data-input="sig-<?= e($f['name']) ?>"><canvas width="600" height="180"></canvas><button type="button" class="btn small sig-clear">Löschen</button></div>
+                        <input type="hidden" id="sig-<?= e($f['name']) ?>" name="signature"></div>
+                    <div class="form-actions"><button class="btn primary">Unterschrift speichern</button></div>
+                </form></td></tr>
+            <?php endif; ?>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php if (!$sign['final'] && $doc['status'] !== 'revoked' && doc_can_finalize($doc)): ?>
+    <form method="post" class="inline-form" onsubmit="return confirm('Dokument abschließen? Offene Unterschriftsfelder bleiben leer, das Dokument ist danach endgültig.')"><?= csrf_field() ?><input type="hidden" name="action" value="finalize">
+        <input name="note" maxlength="120" placeholder="Vermerk (z. B. Unterschrift verweigert)"><button class="btn small">Abschließen</button></form>
+    <?php elseif ($sign['final']): ?>
+        <p class="small muted">Abgeschlossen: <?= e($doc['finalized_note']) ?><?= $doc['final_hash'] ? ' · Prüfsumme <span class="mono">' . e(substr($doc['final_hash'], 0, 16)) . '…</span>' : '' ?></p>
+    <?php endif; ?>
+</section>
+<?php endif; ?>
 
 <?php if (can('documents.print')): $variants = print_variants($doc['type']); $statusLabels = ['queued' => ['orange', 'wartet am Drucker'], 'printed' => ['green', 'abgeholt'], 'cancelled' => ['grey', 'abgebrochen']]; ?>
 <section class="card no-print" id="print">

@@ -100,6 +100,13 @@ Einstellen im Websystem unter *Einstellungen → Spielserver*:
 
 Für andere Resourcen: `exports.sams_tablet:GetPlayerData(source)` (serverseitig), `exports.sams_tablet:showRecord()` (clientseitig).
 
+## Unterschreiben auf dem Ausdruck
+
+- Dokument-Item benutzen → unten auf dem Klemmbrett erscheinen die offenen Unterschriftsfelder („✍ Unterschrift betroffene Person“). Anklicken, mit der Maus unterschreiben, „Unterschreiben“.
+- Unterschreiben darf, wer das Blatt im Inventar hat oder wem es gerade gezeigt wurde (10 Minuten lang). Der Name kommt aus ESX (Vor- und Nachname des Charakters), sonst der Spielername.
+- Jede Unterschrift ist sofort endgültig und im Websystem gespeichert – alle Ausdrucke zeigen sie. Sind alle Felder unterschrieben, ist das Dokument abgeschlossen. „Abschließen“ (zweimal klicken) beendet es vorher, z. B. wenn die Unterschrift verweigert wird; das darf nur, wer das Blatt besitzt.
+- Dokumente ohne eigenes Unterschriftsfeld können als „Empfang bestätigt“ unterschrieben werden (Zusatzblatt).
+
 ## Apotheke
 
 - Ein ausgedrucktes Rezept (Dokument-Item) wird an einer Apotheke aus `Config.Pharmacies` eingelöst – per ox_target am Apotheken-Ped oder mit Taste E.

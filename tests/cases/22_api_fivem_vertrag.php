@@ -17,12 +17,14 @@ $cases = [
     'wanted_check' => ['token' => $bad, 'plate' => 'XX'],
     'person_check' => ['citizen_id' => ''],
     'bill_result' => ['id' => 999999, 'result' => 'paid'],
+    'doc_sign' => ['token' => $bad, 'field' => 'x', 'signature' => ''],
+    'doc_finalize' => ['token' => $bad],
 ];
 foreach ($cases as $action => $body) {
     [$st, $r] = api($action, $body);
     check($st === 200 && ($r['ok'] ?? null) === false, "$action: fachlicher Fehler → HTTP 200 mit ok:false (war HTTP $st)");
 }
-foreach (['job_pickup', 'rx_redeem', 'wanted_check', 'person_check', 'bill_result'] as $action) {
+foreach (['job_pickup', 'rx_redeem', 'wanted_check', 'person_check', 'bill_result', 'doc_sign', 'doc_finalize', 'document_item'] as $action) {
     [, $r] = api($action, $cases[$action]);
     check(is_string($r['error'] ?? null) && $r['error'] !== '', "$action: Fehlertext im JSON vorhanden");
 }

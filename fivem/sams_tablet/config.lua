@@ -104,4 +104,8 @@ Config.Text = {
     billReceived = 'Neue Rechnung: %s über $%s. Bezahlen im Rechnungsmenü.',
     wantedDuty = 'Fahndungsabfragen nur im Dienst.',
     vehicleOwner = '%s: %s · Halter/in %s (%s)',
+    signed = 'Unterschrift gespeichert.',
+    finalized = 'Dokument abgeschlossen – es kann nicht mehr geändert werden.',
+    signNoAccess = 'Du hast dieses Dokument nicht (mehr) vor dir.',
+    signInvalid = 'Die Unterschrift konnte nicht übertragen werden.',
 }
