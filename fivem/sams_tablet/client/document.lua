@@ -13,11 +13,12 @@ end
 local function openViewer(data, own)
     viewing = data
     viewing.own = own
-    StartPropAnim(Config.Anim.clipboard)
+    -- Ausweise als Karte in der Hand, alles andere auf dem Klemmbrett
+    StartPropAnim(data.card and Config.Anim.card or Config.Anim.clipboard)
     SetNuiFocus(true, true)
     SendNUIMessage({
         action = 'viewDocument', url = data.url, label = data.label, from = data.from,
-        canShow = own, revoked = data.revoked, signing = data.signing, canFinalize = own,
+        canShow = own, revoked = data.revoked, signing = data.signing, canFinalize = own, card = data.card,
     })
 end
 
@@ -31,7 +32,7 @@ exports('useDocument', function(_, slot)
     if not info then
         return Notify(Config.Text.offline, 'error')
     end
-    openViewer({ url = info.url, label = meta.label or info.number, token = meta.sams_token, variant = meta.sams_variant, revoked = info.revoked, signing = info.signing }, true)
+    openViewer({ url = info.url, label = meta.label or info.number, token = meta.sams_token, variant = meta.sams_variant, revoked = info.revoked, signing = info.signing, card = info.card }, true)
 end)
 
 -- Jemand zeigt mir ein Dokument

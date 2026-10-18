@@ -24,7 +24,14 @@ function doc_sign_fields(array $doc): array
             $out[$f['name']] = (string) ($f['label'] ?? 'Unterschrift');
         }
     }
-    return $out ?: [IC_RECEIPT_FIELD => 'Unterschrift Empfänger/in (Empfang bestätigt)'];
+    // Karten (z. B. Dienstausweis) bekommen keine Empfangsbestätigung
+    return $out ?: (doc_is_card($doc) ? [] : [IC_RECEIPT_FIELD => 'Unterschrift Empfänger/in (Empfang bestätigt)']);
+}
+
+/** Dokumentart wird als Karte (Vorder-/Rückseite) dargestellt? */
+function doc_is_card(array $doc): bool
+{
+    return !empty((doc_type((string) $doc['type']) ?? [])['card']);
 }
 
 /** Stand der Unterschriften: final, Felder mit Status und Protokoll. */

@@ -315,7 +315,7 @@ ob_start(); ?>
 
 <?php if ($gameNotify): ?><span hidden data-game-notify="<?= e($gameNotify['type']) ?>" data-payload="<?= e(json_encode($gameNotify['payload'])) ?>"></span><?php endif; ?>
 
-<?php $sign = doc_sign_state($doc); if ($doc['status'] !== 'revoked' || array_filter($sign['fields'], fn($f) => $f['signed'])): $pat = $doc['patient_snapshot']; ?>
+<?php $sign = doc_sign_state($doc); if ($sign['fields'] && ($doc['status'] !== 'revoked' || array_filter($sign['fields'], fn($f) => $f['signed']))): $pat = $doc['patient_snapshot']; ?>
 <section class="card no-print" id="signatures">
     <div class="card-head"><h2>Unterschriften</h2>
         <?php if ($sign['final']): ?><span class="badge green">abgeschlossen <?= e(fmt_datetime($doc['finalized_at'])) ?></span><?= !$doc['final_hash'] || doc_hash_valid(one('SELECT * FROM documents WHERE id = ?', [$id])) ? '' : ' <span class="badge red">Prüfsumme weicht ab</span>' ?>

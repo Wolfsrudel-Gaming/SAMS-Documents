@@ -119,6 +119,10 @@ Einschalten im Websystem unter *Einstellungen → Spielserver → „Sky Ambulan
 
 Hinweis: Die Vitalwerte stammen aus dem Spiel des Patienten und dienen nur der Dokumentation.
 
+## Dienstausweis als Karte
+
+Dienstausweise erscheinen nicht auf dem Klemmbrett, sondern als Karte in der Hand (Animation `Config.Anim.card`). Klicken dreht die Karte um (Vorder-/Rückseite), Ziehen mit der Maus neigt und dreht sie frei, Leertaste/Pfeiltasten drehen ebenfalls. Beim „Zeigen“ sieht die andere Person die Karte genauso. Welche Dokumentarten als Karte gelten, steht in der Dokumentart (`'card' => true`).
+
 ## Unterschreiben auf dem Ausdruck
 
 - Dokument-Item benutzen → unten auf dem Klemmbrett erscheinen die offenen Unterschriftsfelder („✍ Unterschrift betroffene Person“). Anklicken, mit der Maus unterschreiben, „Unterschreiben“.

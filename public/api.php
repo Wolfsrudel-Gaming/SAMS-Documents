@@ -218,7 +218,7 @@ switch ($action) {
         }
         set_faction_context((int) $doc['faction_id']);
         respond(['ok' => true, 'number' => $doc['number'], 'revoked' => $doc['status'] === 'revoked', 'url' => document_view_url($in('token'), $in('variant')),
-            'signing' => doc_sign_public($doc)]);
+            'signing' => doc_sign_public($doc), 'card' => doc_is_card($doc)]);
         // no break
 
     // ------------------------------------------------ Unterschrift im Spiel

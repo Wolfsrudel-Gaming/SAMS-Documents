@@ -311,7 +311,7 @@ RegisterNetEvent('sams:document:show', function(target, token, variant, label)
         shownTo[target][token] = os.time() + 600
         TriggerClientEvent('sams:document:view', target, {
             url = data.url, label = type(label) == 'string' and label:sub(1, 120) or data.number,
-            from = GetPlayerName(src), shown = true, revoked = data.revoked, token = token, variant = variant, signing = data.signing,
+            from = GetPlayerName(src), shown = true, revoked = data.revoked, token = token, variant = variant, signing = data.signing, card = data.card,
         })
     end
 end)

@@ -178,6 +178,7 @@ function document_types_extra(): array
             'patient'  => 'none',
             'subject'  => 'employee',
             'template' => 'dienstausweis',
+            'card'     => true, // im Spiel als drehbare Karte statt Blatt auf dem Klemmbrett
             'kinds'    => '*',
             'valid'    => 'valid_until',
             'fields'   => [

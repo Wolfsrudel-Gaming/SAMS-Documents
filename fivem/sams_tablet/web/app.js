@@ -100,7 +100,7 @@
     function renderSigning(sig, canFinalize, revoked) {
         var bar = $('v-sign');
         bar.innerHTML = '';
-        if (!sig || !sig.fields || revoked) { show('v-sign', false); return; }
+        if (!sig || !sig.fields || !sig.fields.length || revoked) { show('v-sign', false); return; }
         var add = function (el) { bar.appendChild(el); return el; };
         var mk = function (tag, cls, text) { var el = document.createElement(tag); if (cls) { el.className = cls; } el.textContent = text; return el; };
         if (sig.final) {
@@ -192,6 +192,8 @@
     function openViewer(d) {
         state.viewer = { url: d.url, signing: d.signing, canFinalize: !!d.canFinalize };
         renderSigning(d.signing, !!d.canFinalize, !!d.revoked);
+        // Karten (Dienstausweis) ohne Klemmbrett anzeigen
+        $('viewer').classList.toggle('card-mode', !!d.card);
         $('v-label').textContent = d.label || 'Dokument';
         $('v-from').textContent = d.from ? 'gezeigt von ' + d.from : '';
         show('v-revoked', !!d.revoked);

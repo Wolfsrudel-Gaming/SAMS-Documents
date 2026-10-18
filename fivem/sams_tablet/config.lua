@@ -68,6 +68,11 @@ Config.Anim = {
         dict = 'missfam4', clip = 'base',
         prop = 'p_amb_clipboard_01', bone = 36029, pos = vec3(0.16, 0.08, 0.1), rot = vec3(-130.0, -50.0, 0.0),
     },
+    -- Ausweis/Karte vorzeigen (Dienstausweis)
+    card = {
+        dict = 'paper_1_rcm_alt1-9', clip = 'player_one_dual-9',
+        prop = 'prop_franklin_dl', bone = 57005, pos = vec3(0.1, 0.02, -0.03), rot = vec3(-90.0, 170.0, 78.0),
+    },
     printer = { scenario = 'PROP_HUMAN_PARKING_METER' },
 }
 
