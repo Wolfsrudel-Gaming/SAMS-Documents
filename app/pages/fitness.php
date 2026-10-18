@@ -40,6 +40,10 @@ if (is_post()) {
             'valid_until' => $valid, 'examiner' => mb_substr(trim((string) post('examiner')), 0, 190), 'recorded_by' => $me['id']]);
         audit('fitness.record', 'user', (int) $user['id'], FITNESS_KINDS[$kind][1] . ': ' . FITNESS_RESULTS[$result][1]);
         flash('success', 'Nachweis eingetragen.');
+    } elseif ($action === 'standard') {
+        save_setting('fitness_standard', mb_substr(trim((string) post('standard')), 0, 190));
+        audit('fitness.standard', 'settings', 0, (string) post('standard'));
+        flash('success', 'Untersuchungsstandard gespeichert. Er steht ab jetzt auf den Bescheinigungen.');
     } elseif ($action === 'revoke' && ($r = fone('fitness_records', (int) post('id'))) && !$r['document_id']) {
         q('UPDATE fitness_records SET revoked = 1 WHERE id = ?', [$r['id']]);
         audit('fitness.revoke', 'user', (int) $r['user_id'], FITNESS_KINDS[$r['kind']][1] ?? $r['kind']);
@@ -87,6 +91,16 @@ ob_start(); ?>
             <td class="right"><?php if ($manage && !$r['document_id'] && !$r['revoked']): ?><form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="revoke"><input type="hidden" name="id" value="<?= (int) $r['id'] ?>"><button class="btn small" onclick="return confirm('Nachweis entfernen?')">Entfernen</button></form><?php endif; ?></td></tr><?php endforeach; ?>
         <?php if (!$history): ?><tr><td colspan="6" class="muted">Noch keine Nachweise.</td></tr><?php endif; ?>
     </tbody></table></div>
+<?php $reqs = sv_requirements(); ?>
+<div class="card"><div class="card-head"><h2>Untersuchungsstandard: <?= e(fitness_standard_name()) ?></h2></div>
+    <p class="muted small">Nach diesem Standard untersucht der Rettungsdienst mit dem <em>Untersuchungsbogen Sonderverwendungsfähigkeit</em>. Mindestanforderungen je Verwendung (Profil PULHES: P, U, L, S mindestens 1 · H, E mindestens 2):</p>
+    <table class="list compact"><thead><tr><th>Anforderung</th><th>Mindestanforderung</th><?php foreach ($cols as $k): ?><th title="<?= e(FITNESS_KINDS[$k][0]) ?>"><?= e(FITNESS_KINDS[$k][1]) ?></th><?php endforeach; ?></tr></thead><tbody>
+    <?php foreach ($reqs as [$label, $norm, $for]): if (!array_intersect($for, $cols)) continue; ?><tr><td class="small"><?= e($label) ?></td><td class="small"><?= e($norm) ?></td><?php foreach ($cols as $k): ?><td><?= in_array($k, $for, true) ? '●' : '' ?></td><?php endforeach; ?></tr><?php endforeach; ?>
+    </tbody></table>
+    <?php if ($manage): ?><form method="post" class="form-grid" style="margin-top:.8rem"><?= csrf_field() ?><input type="hidden" name="action" value="standard">
+        <div class="field w-two-thirds"><label>Bezeichnung auf den Bescheinigungen</label><input name="standard" maxlength="190" value="<?= e(setting('fitness_standard', '')) ?>" placeholder="<?= e(SV_STANDARD_DEFAULT) ?>"></div>
+        <div class="form-actions"><button class="btn">Speichern</button></div></form><?php endif; ?>
+</div>
 </section>
 <?php if ($manage): ?>
 <section>

@@ -72,3 +72,44 @@ $sams->post('/index.php?p=document&id=' . $doc['id'], ['action' => 'revoke', 're
 check((int) tval('SELECT revoked FROM fitness_records WHERE id = ?', [$rec['id']]) === 1, 'Storno zieht den Nachweis zurück');
 $c->get('/index.php?p=fitness');
 check($c->has('zurückgezogen'), 'TAS sieht den zurückgezogenen Nachweis');
+
+// Untersuchungsbogen Sonderverwendungsfähigkeit → Bescheinigung an die Leitung der TAS
+$c->post('/index.php?p=fitness', ['action' => 'standard', 'standard' => 'TAS-Standard SR-1 (Spezialkräfte)']);
+$c->get('/index.php?p=fitness');
+check($c->has('TAS-Standard SR-1') && $c->has('Druckkammertest') && $c->has('Mindestanforderung'), 'TAS legt ihren Untersuchungsstandard fest, Anforderungen je Verwendung sichtbar');
+$sams->get('/index.php?p=document_new&type=sv_untersuchung&patient=' . $pid);
+check($sams->has('Untersuchungsbogen Sonderverwendungsfähigkeit') && $sams->has('Tonaudiogramm') && $sams->has('PULHES'), 'Untersuchungsbogen beim SAMS');
+$sv = ['d[anlass]' => 'Einstellungsuntersuchung', 'd[exam_date]' => date('Y-m-d'), 'd[groesse]' => '182', 'd[gewicht]' => '80', 'd[rr_sys]' => '125', 'd[rr_dia]' => '80', 'd[puls]' => '58',
+    'd[visus_sc_r]' => '1,0', 'd[visus_sc_l]' => '0,9', 'd[visus_cc_r]' => '1,0', 'd[visus_cc_l]' => '1,0', 'd[farbsinn]' => 'normal', 'd[stereo]' => 'normal', 'd[gesichtsfeld]' => 'normal',
+    'd[hr_500]' => '10', 'd[hr_1000]' => '10', 'd[hr_2000]' => '15', 'd[hr_4000]' => '30', 'd[hl_500]' => '10', 'd[hl_1000]' => '15', 'd[hl_2000]' => '20', 'd[hl_4000]' => '35',
+    'd[druckausgleich]' => 'beidseits frei', 'd[ekg]' => 'unauffällig', 'd[ergo_watt]' => '280', 'd[ergo_befund]' => 'unauffällig', 'd[fvc]' => '98', 'd[fev1]' => '95', 'd[tiffeneau]' => '82',
+    'd[roentgen]' => 'ohne Befund', 'd[labor]' => 'ohne Befund', 'd[drogen]' => 'negativ', 'd[lauf]' => '12:40', 'd[liegestuetz]' => '40', 'd[situps]' => '70', 'd[klimmzug]' => '12',
+    'd[schwimmen]' => '10:50', 'd[streckentauchen]' => '30', 'd[druckkammer]' => 'bestanden', 'd[huet]' => 'bestanden', 'd[psych]' => 'unauffällig',
+    'd[pulhes_p]' => '1', 'd[pulhes_u]' => '1', 'd[pulhes_l]' => '1', 'd[pulhes_h]' => '2', 'd[pulhes_e]' => '1', 'd[pulhes_s]' => '1',
+    'd[v_g31]' => 'geeignet', 'd[v_hems]' => 'bedingt', 'd[v_allg]' => 'geeignet', 'd[gesamt]' => 'bedingt', 'd[einschraenkungen]' => 'Windeneinsatz erst nach Nachschulung HUET in 3 Monaten',
+    'd[bemerkung]' => 'Z. n. Trommelfellperforation rechts 2019, folgenlos verheilt'];
+$sams->post('/index.php?p=document_new&type=sv_untersuchung', ['type' => 'sv_untersuchung', 'patient_id' => (string) $pid, 'action' => 'issue', 'sig_mode' => 'live', 'live_signature' => TEST_SIGNATURE] + $sv);
+$svDoc = trow("SELECT * FROM documents WHERE type = 'sv_untersuchung' AND patient_id = ?", [$pid]);
+$certId = (int) (json_decode((string) ($svDoc['data'] ?? '{}'), true)['_certificate'] ?? 0);
+$cert = trow('SELECT * FROM documents WHERE id = ?', [$certId]);
+check($svDoc && $cert && $cert['type'] === 'einsatztauglichkeit' && $cert['valid_until'] === date('Y-m-d', strtotime('+12 months')), 'Bescheinigung automatisch erzeugt, kürzeste Regelfrist');
+check(!str_contains((string) $cert['data'], 'Trommelfellperforation') && !str_contains((string) $cert['data'], '"liegestuetz"') && str_contains((string) $cert['data'], 'Tonaudiometrie') && str_contains((string) $cert['data'], 'Leitung Technische Abteilung Spezialrettung'), 'Bescheinigung ohne Befunde, an die Leitung der TAS');
+check((int) tval('SELECT COUNT(*) FROM fitness_records WHERE document_id = ? AND faction_id = ?', [$certId, $tas]) === 3
+    && tval("SELECT result FROM fitness_records WHERE document_id = ? AND kind = 'hems'", [$certId]) === 'bedingt', 'Ergebnis je Verwendung an die TAS');
+$v = (new Client(TEST_BASE))->get('/doc.php?flat=1&t=' . $svDoc['view_token']);
+check($v->has('Abgleich mit dem Standard') && $v->has('✗ nicht erfüllt') && $v->has('Liegestütze') && $v->has('VERTRAULICH'), 'Bogen gleicht Messwerte mit dem Standard ab');
+$c->get('/index.php?p=shared&id=' . $certId);
+check($c->status === 200 && $c->has('EINGESCHRÄNKT VERWENDUNGSFÄHIG') && $c->has('P1 U1 L1 H2 E1 S1') && $c->has('TAS-Standard SR-1') && !$c->has('Trommelfellperforation') && !$c->has('12:40'), 'TAS-Leitung erhält Bescheinigung mit Profil und Standard');
+check((new Client(TEST_BASE))->login('tas.chief')->get('/index.php?p=shared&id=' . $svDoc['id'])->status !== 200, 'Untersuchungsbogen bleibt beim SAMS');
+$sams->get('/index.php?p=document&id=' . $svDoc['id']);
+check($sams->has('Vertrauliche ärztliche Unterlage') && $sams->has($cert['number']), 'SAMS sieht Bogen mit Verweis auf die Bescheinigung');
+if ($shot = getenv('SAMS_SHOT_DIR')) {
+    $ct = (string) tval('SELECT view_token FROM documents WHERE id = ?', [$certId]);
+    $js = "const {chromium}=require('/opt/node22/lib/node_modules/playwright');(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1000,height:1400}});"
+        . "await p.goto('" . TEST_BASE . "/doc.php?flat=1&t=" . $svDoc['view_token'] . "');await p.waitForTimeout(300);await p.screenshot({path:'$shot/sv_bogen.png',fullPage:true});"
+        . "await p.goto('" . TEST_BASE . "/doc.php?flat=1&t=$ct');await p.waitForTimeout(300);await p.screenshot({path:'$shot/sv_cert.png',fullPage:true});"
+        . "await b.close();})();";
+    file_put_contents("$shot/sv.js", $js);
+    exec('node ' . escapeshellarg("$shot/sv.js") . ' 2>&1', $svOut);
+    echo implode("\n", $svOut);
+}

@@ -340,6 +340,10 @@ ob_start(); ?>
         <?php if (can('documents.issue.dienstausweis')): ?><form method="post" class="inline"><?= csrf_field() ?><button class="btn small" name="action" value="embed_photo">Erneut versuchen</button></form><?php endif; ?></div>
 <?php endif; ?>
 <div class="doc-stage" id="doc-stage"><?= $html ?></div>
+<?php if ($doc['type'] === 'sv_untersuchung'): $cert = !empty($doc['data']['_certificate']) ? one('SELECT id, number FROM documents WHERE id = ?', [(int) $doc['data']['_certificate']]) : null; ?>
+<div class="flash <?= $cert ? 'success' : 'warn' ?> no-print">Vertrauliche ärztliche Unterlage – nicht an die Dienststelle weitergeben.
+    <?= $cert ? 'Die Bescheinigung ohne Befunde wurde automatisch ausgestellt: <a href="' . e(url('document', ['id' => $cert['id']])) . '">' . e($cert['number']) . '</a>.' : 'Keine Bescheinigung erzeugt: bitte mindestens eine Verwendung beurteilen.' ?></div>
+<?php endif; ?>
 <?php if ($doc['type'] === 'einsatztauglichkeit'): $sent = all('SELECT r.*, u.name, f.name AS faction FROM fitness_records r JOIN users u ON u.id = r.user_id JOIN factions f ON f.id = r.faction_id WHERE r.document_id = ?', [$id]); ?>
 <div class="flash <?= $sent ? 'success' : 'warn' ?> no-print"><?php if ($sent): ?>Ergebnis (ohne Befunde) übermittelt an: <?= e(implode(', ', array_map(fn($r) => $r['faction'] . ' – ' . $r['name'] . ($r['revoked'] ? ' (zurückgezogen)' : ''), $sent))) ?>.
     <?php else: ?>Keiner Dienststelle zugeordnet: Weder Bürger-ID noch Name der Akte passen zu einem Konto einer Dienststelle mit Tauglichkeitsverwaltung. Die Bescheinigung kann unten manuell für die Behörde freigegeben werden.<?php endif; ?></div>

@@ -421,3 +421,16 @@
 .contract-signs .sig-stamp.round { width: 28mm; right: 0; }
 .contract-place .hand-filled { display: inline-flex; min-width: 60mm; }
 .paper.custom-form .psec { background: #4a5563; }
+
+/* Untersuchungsbogen Sonderverwendungsfähigkeit */
+.sv .tbl { font-size: 7.6pt; margin: 0; }
+.sv .tbl th, .sv .tbl td { border: .25mm solid #444; padding: .4mm 1.2mm; text-align: left; }
+.sv .sv-audio td, .sv .sv-audio th:not(:first-child) { text-align: center; }
+.sv-ok { color: #1e6b3a; font-weight: 700; } .sv-bad { color: #a00; font-weight: 700; } .sv-na { color: #888; }
+.sv-row-bad td { background: #fde7e9; }
+.sv-note { margin: 1.5mm 0 0; color: #444; }
+.sv-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 1mm 0 3mm; }
+.sv-table th, .sv-table td { border: .3mm solid #333; padding: 1.2mm 2mm; text-align: left; }
+.sv-table td.r-geeignet { color: #1e6b3a; font-weight: 700; } .sv-table td.r-bedingt { color: #8a5a00; font-weight: 700; }
+.sv-table td.r-befristet, .sv-table td.r-nicht { color: #a00; font-weight: 700; }
+.sv-profile { font-family: "Courier New", monospace; font-size: 12pt; font-weight: 700; letter-spacing: .12em; }

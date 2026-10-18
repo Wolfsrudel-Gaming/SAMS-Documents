@@ -104,6 +104,7 @@ Gelände-, Wasser- und Luftrettung, Vermisstensuche, Bergung und Absicherung (z.
 - Unter **Tauglichkeit** siehst du, welche Untersuchungen (Atemschutz, Tauchen, Höhe, Luftrettung, Wasser) gültig sind und wann sie ablaufen.
 - Die Leitung fordert Untersuchungen beim Rettungsdienst an. Das Ergebnis kommt automatisch – die Befunde bleiben beim Arzt (Schweigepflicht).
 - Damit die Zuordnung klappt, trägt die Leitung am Konto die **Bürger-ID** aus dem Spiel ein.
+- Der Rettungsdienst untersucht mit dem **Untersuchungsbogen Sonderverwendungsfähigkeit** nach unserem Standard (Anforderungen je Verwendung stehen unter *Tauglichkeit*). Die Leitung erhält die **Bescheinigung über die Sonderverwendungsfähigkeit** mit Profil (PULHES), Beurteilung je Verwendung und Einschränkungen.
 MD,
     ],
     'government' => $all + [

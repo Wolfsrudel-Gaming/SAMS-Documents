@@ -194,7 +194,7 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
     }
     fire_document_issued($id, $type['key'], $data); // Brandschau → Prüftermine im Objektplan
     rescue_document_issued($id, $type['key'], $data, (int) $issuer['id']); // Flugbericht → Flugbuch
-    fitness_document_issued($id, $type['key'], $data, $patient, $issuer); // Einsatztauglichkeit → Dienststelle
+    fitness_document_issued($id, $type['key'], $data, $patient, $issuer, $liveSignature); // Einsatztauglichkeit → Dienststelle
     if (!empty($data['_dispatch'])) {
         q('UPDATE dispatch_incidents SET document_id = ? WHERE id = ? AND faction_id = ?', [$id, (int) $data['_dispatch'], fid()]);
     }

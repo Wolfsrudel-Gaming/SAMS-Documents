@@ -400,6 +400,9 @@ function document_types_all(): array
         ],
 
         // ------------------------------------------------------------------
+        'sv_untersuchung' => sv_document_type(),
+
+        // ------------------------------------------------------------------
         'einsatztauglichkeit' => [
             'title'    => 'Bescheinigung über die Einsatztauglichkeit',
             'short'    => 'Einsatztauglichkeit',
