@@ -104,7 +104,23 @@ function portal_documents(array $c): array
         return [];
     }
     $hidden = portal_hidden_types();
-    return array_values(array_filter(all('SELECT * FROM documents WHERE patient_id = ? ORDER BY issued_at DESC', [$c['patient_id']]), fn($d) => !in_array($d['type'], $hidden, true)));
+    $own = array_filter(all('SELECT * FROM documents WHERE patient_id = ? ORDER BY issued_at DESC', [$c['patient_id']]), fn($d) => !in_array($d['type'], $hidden, true));
+    // Bescheide anderer Behörden zur selben Bürger-ID (Bußgeld, Waffenschein, Ladung, Urteil, Genehmigung …)
+    $cid = (string) scalar('SELECT citizen_id FROM patients WHERE id = ?', [$c['patient_id']]);
+    $other = $cid === '' ? [] : all('SELECT d.* FROM documents d JOIN patients p ON p.id = d.patient_id WHERE p.citizen_id = ? AND d.patient_id <> ? AND d.faction_id <> 1
+        AND d.type IN (' . implode(',', array_map(fn($t) => "'$t'", PORTAL_CROSS_TYPES)) . ') ORDER BY d.issued_at DESC LIMIT 50', [$cid, $c['patient_id']]);
+    $all = array_merge($own, $other);
+    usort($all, fn($a, $b) => strcmp($b['issued_at'], $a['issued_at']));
+    return array_values($all);
+}
+
+/** Dokumentarten anderer Behörden, die Bürger im Portal sehen (an sie gerichtete Bescheide und Erlaubnisse). */
+const PORTAL_CROSS_TYPES = ['rechnung', 'pd_waffenschein', 'pd_platzverweis', 'doj_ladung', 'doj_strafbefehl', 'doj_urteil', 'fd_bescheinigung', 'gov_bescheid', 'gov_genehmigung', 'gov_bescheinigung', 'gov_gewerbe'];
+
+/** Fraktionen, bei denen man sich über das Portal bewerben kann. */
+function portal_factions(): array
+{
+    return array_values(array_filter(factions(), fn($f) => module_enabled('portal', (int) $f['id'])));
 }
 
 /** Offene Vorgänge für das Personal (Navigation). */
@@ -115,10 +131,10 @@ function portal_open_count(): int
     }
     $n = 0;
     if (can('portal.manage')) {
-        $n += (int) scalar("SELECT COUNT(*) FROM appointments WHERE status = 'requested'") + (int) scalar("SELECT COUNT(*) FROM portal_requests WHERE status = 'open'");
+        $n += (int) scalar("SELECT COUNT(*) FROM appointments WHERE status = 'requested' AND " . fw()) + (int) scalar("SELECT COUNT(*) FROM portal_requests WHERE status = 'open' AND " . fw());
     }
     if (can('portal.applications')) {
-        $n += (int) scalar("SELECT COUNT(*) FROM applications WHERE status = 'new'");
+        $n += (int) scalar("SELECT COUNT(*) FROM applications WHERE status = 'new' AND " . fw());
     }
     return $n;
 }

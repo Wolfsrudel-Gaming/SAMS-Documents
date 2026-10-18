@@ -105,9 +105,14 @@ if ($c && is_post()) {
             'experience' => mb_substr(trim((string) post('experience')), 0, 5000), 'motivation' => mb_substr(trim((string) post('motivation')), 0, 5000),
             'availability' => mb_substr(trim((string) post('availability')), 0, 190),
         ];
+        // „Fraktion|Bereich“ aus der Auswahl
+        [$applyFaction, $applyDep] = array_pad(explode('|', (string) post('department'), 2), 2, '');
+        $pf = array_column(portal_factions(), null, 'id');
+        $row['faction_id'] = isset($pf[(int) $applyFaction]) ? (int) $applyFaction : 1;
+        $row['department'] = mb_substr(trim($applyDep), 0, 120);
         if ($row['ic_name'] === '' || $row['age'] < 16 || mb_strlen($row['motivation']) < 50) {
             flash('error', 'Bitte Namen, Alter (mind. 16) und eine Motivation mit mindestens 50 Zeichen angeben.');
-        } elseif (scalar("SELECT COUNT(*) FROM applications WHERE citizen_id = ? AND status IN ('new', 'invited')", [$c['id']])) {
+        } elseif (scalar("SELECT COUNT(*) FROM applications WHERE citizen_id = ? AND faction_id = ? AND status IN ('new', 'invited')", [$c['id'], $row['faction_id']])) {
             flash('error', 'Du hast bereits eine laufende Bewerbung.');
         } else {
             insert('applications', $row + ['citizen_id' => $c['id'], 'created_at' => now()]);
@@ -266,20 +271,22 @@ if (!isset($tabs[$page])) {
             <section class="card">
                 <h2>Meine Bewerbungen</h2>
                 <?php foreach ($apps as $a): ?>
-                    <p><strong><?= e($a['department'] ?: 'Allgemein') ?></strong> · <?= e(fmt_date($a['created_at'])) ?> <?= portal_status_badge($a['status']) ?></p>
+                    <p><strong><?= e((faction_by_id((int) $a['faction_id'])['short'] ?? '') . ' · ' . ($a['department'] ?: 'Allgemein')) ?></strong> · <?= e(fmt_date($a['created_at'])) ?> <?= portal_status_badge($a['status']) ?></p>
                 <?php endforeach; ?>
                 <?php if (!$apps): ?><p class="muted">Du hast dich noch nicht beworben.</p><?php endif; ?>
             </section>
             <form method="post" class="card form-grid">
-                <h2>Bewerbung beim <?= e(org('org_short')) ?></h2>
+                <h2>Bewerbung</h2>
                 <?= csrf_field() ?><input type="hidden" name="do" value="apply">
                 <div class="field w-half"><label>Name im Spiel</label><input name="ic_name" value="<?= e($c['ic_name']) ?>" required></div>
                 <div class="field w-quarter"><label>Alter (Charakter)</label><input type="number" name="age" min="16" max="120" required></div>
                 <div class="field w-quarter"><label>Telefon</label><input name="phone" value="<?= e($c['phone']) ?>"></div>
-                <div class="field w-half"><label>Gewünschter Bereich</label><select name="department"><option value="">egal</option><?php foreach (db_column_list('SELECT name FROM departments WHERE active = 1 ORDER BY sort, name') as $d): ?><option><?= e($d) ?></option><?php endforeach; ?></select></div>
+                <div class="field w-half"><label>Behörde und Bereich</label><select name="department" required>
+                    <?php foreach (portal_factions() as $pf): ?><optgroup label="<?= e($pf['name']) ?>"><option value="<?= (int) $pf['id'] ?>|">egal</option>
+                        <?php foreach (db_column_list('SELECT name FROM departments WHERE active = 1 AND faction_id = ' . (int) $pf['id'] . ' ORDER BY sort, name') as $d): ?><option value="<?= (int) $pf['id'] ?>|<?= e($d) ?>"><?= e($d) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select></div>
                 <div class="field w-half"><label>Verfügbarkeit</label><input name="availability" placeholder="z. B. abends unter der Woche"></div>
                 <div class="field w-full"><label>Erfahrung (im Spiel und im RP)</label><textarea name="experience" rows="3"></textarea></div>
-                <div class="field w-full"><label>Warum möchtest du zum <?= e(org('org_short')) ?>? (mind. 50 Zeichen)</label><textarea name="motivation" rows="5" required minlength="50"></textarea></div>
+                <div class="field w-full"><label>Warum möchtest du zu uns? (mind. 50 Zeichen)</label><textarea name="motivation" rows="5" required minlength="50"></textarea></div>
                 <div class="form-actions"><button class="btn primary">Bewerbung absenden</button></div>
             </form>
         </div>

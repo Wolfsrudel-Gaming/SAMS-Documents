@@ -3,7 +3,7 @@ defined('SAMS_ROOT') || exit;
 /** Bürgerportal bearbeiten: Terminanfragen, Anträge, Bewerbungen, Bürgerkonten. */
 $me = current_user();
 $tabs = [];
-if (can('portal.manage')) {
+if (can('portal.manage') && fid() === 1) { // Termine und Anträge gehen an die Hauptfraktion
     $tabs += ['appointments' => 'Termine', 'requests' => 'Anträge', 'citizens' => 'Bürgerkonten'];
 }
 if (can('portal.applications')) {
@@ -17,7 +17,7 @@ if (is_post()) {
     $id = (int) post('id');
     $note = mb_substr(trim((string) post('note')), 0, 2000);
     $do = (string) post('do');
-    if ($tab === 'appointments' && can('portal.manage') && ($a = one('SELECT * FROM appointments WHERE id = ?', [$id]))) {
+    if ($tab === 'appointments' && can('portal.manage') && ($a = fone('appointments', $id))) {
         $when = preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', (string) post('scheduled_at')) ? str_replace('T', ' ', (string) post('scheduled_at')) . ':00' : null;
         if ($do === 'confirm' && !$when) {
             flash('error', 'Bitte Datum und Uhrzeit für den Termin angeben.');
@@ -33,7 +33,7 @@ if (is_post()) {
             }
             flash('success', 'Termin aktualisiert.');
         }
-    } elseif ($tab === 'requests' && can('portal.manage') && ($r = one('SELECT * FROM portal_requests WHERE id = ?', [$id]))) {
+    } elseif ($tab === 'requests' && can('portal.manage') && ($r = fone('portal_requests', $id))) {
         $status = in_array(post('status'), ['open', 'in_progress', 'done', 'rejected'], true) ? (string) post('status') : $r['status'];
         update('portal_requests', $id, ['status' => $status, 'reply' => $note !== '' ? $note : $r['reply'], 'handled_by' => $me['id'], 'handled_at' => now()]);
         audit('portal.request', 'request', $id, (REQUEST_KINDS[$r['kind']] ?? $r['kind']) . ' → ' . $status);
@@ -41,7 +41,7 @@ if (is_post()) {
             notify_dm((string) $cit['discord_id'], 'Dein Antrag beim ' . org('org_short') . ' („' . (REQUEST_KINDS[$r['kind']] ?? $r['kind']) . '“) wurde ' . ($status === 'done' ? 'bearbeitet' : 'abgelehnt') . '. Details im Bürgerportal: ' . base_url() . '/portal.php?page=requests');
         }
         flash('success', 'Antrag aktualisiert.');
-    } elseif ($tab === 'applications' && can('portal.applications') && ($ap = one('SELECT * FROM applications WHERE id = ?', [$id]))) {
+    } elseif ($tab === 'applications' && can('portal.applications') && ($ap = fone('applications', $id))) {
         $status = in_array(post('status'), ['new', 'invited', 'accepted', 'rejected'], true) ? (string) post('status') : $ap['status'];
         update('applications', $id, ['status' => $status, 'staff_note' => $note !== '' ? $note : $ap['staff_note'], 'handled_by' => $me['id'], 'handled_at' => now()]);
         audit('portal.application', 'application', $id, $ap['ic_name'] . ' → ' . $status);
@@ -61,7 +61,7 @@ if (is_post()) {
     redirect(url('portal_admin', array_filter(['tab' => $tab, 'all' => $showAll ? 1 : null])));
 }
 
-$openFilter = fn(string $col, array $open) => $showAll ? '' : " WHERE $col IN ('" . implode("','", $open) . "')";
+$openFilter = fn(string $alias, array $open) => ' WHERE ' . fw($alias) . ($showAll ? '' : " AND $alias.status IN ('" . implode("','", $open) . "')");
 $dt = fn($v) => $v ? str_replace(' ', 'T', substr((string) $v, 0, 16)) : '';
 
 ob_start(); ?>
@@ -73,7 +73,7 @@ ob_start(); ?>
 
 <?php if ($tab === 'appointments'):
     $rows = all('SELECT a.*, c.ic_name, c.discord_name, c.phone, p.first_name, p.last_name, p.id AS pid FROM appointments a JOIN citizens c ON c.id = a.citizen_id
-        LEFT JOIN patients p ON p.id = a.patient_id' . str_replace('WHERE status', 'WHERE a.status', $openFilter('status', ['requested', 'confirmed'])) . ' ORDER BY a.status = \'requested\' DESC, COALESCE(a.scheduled_at, a.created_at) LIMIT 200'); ?>
+        LEFT JOIN patients p ON p.id = a.patient_id' . $openFilter('a', ['requested', 'confirmed']) . ' ORDER BY a.status = \'requested\' DESC, COALESCE(a.scheduled_at, a.created_at) LIMIT 200'); ?>
     <?php foreach ($rows as $a): ?>
         <div class="card portal-item">
             <div class="card-head"><h2><?= e($a['kind']) ?></h2><?= portal_status_badge($a['status']) ?></div>
@@ -98,7 +98,7 @@ ob_start(); ?>
 
 <?php elseif ($tab === 'requests'):
     $rows = all('SELECT r.*, c.ic_name, c.discord_name, p.first_name, p.last_name, p.id AS pid FROM portal_requests r JOIN citizens c ON c.id = r.citizen_id
-        LEFT JOIN patients p ON p.id = r.patient_id' . str_replace('WHERE status', 'WHERE r.status', $openFilter('status', ['open', 'in_progress'])) . ' ORDER BY r.id DESC LIMIT 200'); ?>
+        LEFT JOIN patients p ON p.id = r.patient_id' . $openFilter('r', ['open', 'in_progress']) . ' ORDER BY r.id DESC LIMIT 200'); ?>
     <?php foreach ($rows as $r): ?>
         <div class="card portal-item">
             <div class="card-head"><h2><?= e(REQUEST_KINDS[$r['kind']] ?? $r['kind']) ?><?= $r['subject'] ? ' – ' . e($r['subject']) : '' ?></h2><?= portal_status_badge($r['status']) ?></div>
@@ -116,7 +116,7 @@ ob_start(); ?>
     <?php if (!$rows): ?><div class="card muted">Keine offenen Anträge.</div><?php endif; ?>
 
 <?php elseif ($tab === 'applications'):
-    $rows = all('SELECT a.*, c.discord_name, c.discord_id FROM applications a JOIN citizens c ON c.id = a.citizen_id' . str_replace('WHERE status', 'WHERE a.status', $openFilter('status', ['new', 'invited'])) . ' ORDER BY a.id DESC LIMIT 200'); ?>
+    $rows = all('SELECT a.*, c.discord_name, c.discord_id FROM applications a JOIN citizens c ON c.id = a.citizen_id' . $openFilter('a', ['new', 'invited']) . ' ORDER BY a.id DESC LIMIT 200'); ?>
     <?php foreach ($rows as $a): ?>
         <div class="card portal-item">
             <div class="card-head"><h2><?= e($a['ic_name']) ?> <small class="muted"><?= (int) $a['age'] ?> Jahre<?= $a['department'] ? ' · ' . e($a['department']) : '' ?></small></h2><?= portal_status_badge($a['status']) ?></div>

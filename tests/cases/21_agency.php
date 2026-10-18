@@ -74,3 +74,17 @@ $chief->get('/index.php?p=document&id=' . $otherSams);
 $chief->post('/index.php?p=document&id=' . $otherSams, ['action' => 'share', 'kind' => 'faction', 'target_faction_id' => (string) $doj, 'hours' => '24', 'purpose' => 'Gutachten']);
 check($judge->get('/index.php?p=shared')->has('Gutachten') && $judge->get('/index.php?p=shared&id=' . $otherSams)->status === 200, 'Freigabe an die Justiz');
 check($officer->get('/index.php?p=shared&id=' . $otherSams)->status === 404, 'Polizei sieht die Freigabe an die Justiz nicht');
+// Bürgerportal: Bescheide anderer Behörden zur eigenen Bürger-ID, Bewerbung bei einer Behörde
+$b = new Client(TEST_BASE);
+$b->get('/portal.php');
+$b->post('/portal.php?action=devlogin', ['discord_id' => '123456789012', 'name' => 'Bürger Test']);
+$bussgeld = (string) tval("SELECT number FROM documents WHERE faction_id = ? AND type = 'rechnung' ORDER BY id DESC LIMIT 1", [$pd]);
+$festnahme = (string) tval("SELECT number FROM documents WHERE faction_id = ? AND type = 'pd_festnahme' ORDER BY id DESC LIMIT 1", [$pd]);
+$b->get('/portal.php?page=documents');
+check($bussgeld !== '' && $b->has($bussgeld) && !$b->has($festnahme), 'Portal zeigt den Bußgeldbescheid der Polizei, aber keine internen Protokolle');
+texec('UPDATE factions SET modules = ? WHERE id = ?', [json_encode(['records', 'billing', 'wanted', 'requests', 'portal']), $pd]);
+$b->get('/portal.php?page=apply');
+check($b->has('Los Santos Police Department') && $b->has('Streifendienst'), 'Bewerbung bei der Polizei möglich');
+$b->post('/portal.php', ['do' => 'apply', 'ic_name' => 'Bürger Test', 'age' => '25', 'department' => $pd . '|Streifendienst', 'motivation' => str_repeat('Ich möchte für Recht und Ordnung sorgen. ', 3)]);
+check((int) tval("SELECT faction_id FROM applications WHERE department = 'Streifendienst' ORDER BY id DESC LIMIT 1") === $pd, 'Bewerbung landet bei der Polizei');
+check($chief->get('/index.php?p=portal_admin&tab=applications')->has('Streifendienst') === false, 'Rettungsdienst sieht die Polizeibewerbung nicht');
