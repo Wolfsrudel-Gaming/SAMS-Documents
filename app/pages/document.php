@@ -68,6 +68,25 @@ if (is_post() && post('action') === 'game_bill') {
     redirect(url('document', ['id' => $id]));
 }
 
+// Ausweis mit Foto-URL: Bild nachträglich herunterladen und fest im Dokument speichern
+if (is_post() && post('action') === 'embed_photo') {
+    csrf_check();
+    require_perm('documents.issue.' . $doc['type']);
+    $raw = json_decode((string) $doc['data'], true) ?: [];
+    $photoUrl = (string) ($raw['photo'] ?? '');
+    @unlink(storage_path('photos/' . sha1($photoUrl) . '.img.fail')); // sofort neu versuchen
+    $img = preg_match('#^https?://#i', $photoUrl) && empty($doc['finalized_at']) ? remote_image_data_uri($photoUrl) : '';
+    if ($img !== '') {
+        $raw['photo_file'] = $img;
+        update('documents', $id, ['data' => json_encode($raw, JSON_UNESCAPED_UNICODE)]);
+        audit('document.photo_embedded', 'document', $id, $doc['number']);
+        flash('success', 'Foto heruntergeladen und im Ausweis gespeichert.');
+    } else {
+        flash('error', 'Foto konnte nicht geladen werden: ' . (remote_image_error($photoUrl) ?: 'keine gültige Adresse'));
+    }
+    redirect(url('document', ['id' => $id]));
+}
+
 if (is_post() && in_array(post('action'), ['ic_sign', 'finalize'], true)) {
     csrf_check();
     if (post('action') === 'finalize') {
@@ -311,9 +330,13 @@ ob_start(); ?>
 </section>
 <?php endif; ?>
 
+<?php if ($doc['type'] === 'dienstausweis' && empty($doc['data']['photo_file']) && ($doc['data']['photo'] ?? '') !== '' && remote_image_error((string) $doc['data']['photo']) === '' && can('documents.issue.dienstausweis')): ?>
+    <form method="post" class="flash warn no-print inline-form"><?= csrf_field() ?>Das Foto ist nur verlinkt. <button class="btn small" name="action" value="embed_photo">Foto herunterladen und im Ausweis speichern</button></form>
+<?php endif; ?>
 <?php if ($doc['type'] === 'dienstausweis' && empty($doc['data']['photo_file']) && ($photoUrl = (string) ($doc['data']['photo'] ?? '')) !== '' && ($photoErr = remote_image_error($photoUrl)) !== ''): ?>
     <div class="flash warn no-print">Das Foto konnte vom Server nicht geladen werden (<?= e($photoErr) ?>). Im Browser ist es evtl. sichtbar, beim „Als Bild speichern“ und im Spiel fehlt es dann.
-        Am sichersten: Ausweis neu ausstellen und das Foto <strong>hochladen</strong> statt eine URL anzugeben<?= can('documents.issue.dienstausweis') ? ' – <a href="' . e(url('document_new', ['type' => 'dienstausweis', 'from' => $id])) . '">als Vorlage verwenden</a>' : '' ?>.</div>
+        Am sichersten: Ausweis neu ausstellen und das Foto <strong>hochladen</strong> statt eine URL anzugeben<?= can('documents.issue.dienstausweis') ? ' – <a href="' . e(url('document_new', ['type' => 'dienstausweis', 'from' => $id])) . '">als Vorlage verwenden</a>' : '' ?>.
+        <?php if (can('documents.issue.dienstausweis')): ?><form method="post" class="inline"><?= csrf_field() ?><button class="btn small" name="action" value="embed_photo">Erneut versuchen</button></form><?php endif; ?></div>
 <?php endif; ?>
 <div class="doc-stage" id="doc-stage"><?= $html ?></div>
 

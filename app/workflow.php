@@ -125,6 +125,11 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
     if (($type['template'] ?? '') === 'custom') {
         $data['_tpl'] = custom_template_snapshot($type); // Vorlage einfrieren
     }
+    // Foto-URL (z. B. Dienstausweis): Bild herunterladen und fest im Dokument speichern
+    $fieldNames = array_column($type['fields'] ?? [], 'name');
+    if (in_array('photo_file', $fieldNames, true) && empty($data['photo_file']) && preg_match('#^https?://#i', (string) ($data['photo'] ?? ''))) {
+        $data['photo_file'] = remote_image_data_uri((string) $data['photo']);
+    }
     $issuerSnap = issuer_snapshot($issuer);
     if ($liveSignature !== '') {
         $issuerSnap['signature'] = $liveSignature;

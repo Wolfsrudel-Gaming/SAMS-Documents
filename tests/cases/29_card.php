@@ -30,6 +30,7 @@ $admin->post('/index.php?p=document_new&type=dienstausweis', ['type' => 'diensta
     'd[valid_until]' => date('Y-m-d', strtotime('+1 year')), 'd[photo]' => $fotoUrl]);
 $fid = (int) (preg_match('/p=document&id=(\d+)/', $admin->url, $m) ? $m[1] : 0);
 check($fid > 0 && $admin->has('src="data:image/png;base64,') && !$admin->has('src="' . $fotoUrl), 'Foto eingebettet (auch für „Als Bild speichern“)');
+check(str_starts_with((string) (json_decode((string) tval('SELECT data FROM documents WHERE id = ?', [$fid]), true)['photo_file'] ?? ''), 'data:image/png;base64,'), 'Foto beim Ausstellen heruntergeladen und fest im Dokument gespeichert');
 proc_terminate($imgServer);
 $ftoken = tval('SELECT view_token FROM documents WHERE id = ?', [$fid]);
 check((new Client(TEST_BASE))->get('/doc.php?t=' . $ftoken)->has('src="data:image/png;base64,'), 'Foto bleibt nach dem ersten Laden verfügbar (Zwischenspeicher), auch wenn die Quelle weg ist');

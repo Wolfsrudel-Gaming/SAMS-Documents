@@ -183,6 +183,31 @@
         clear.addEventListener('click', function () { input.value = ''; file.value = ''; preview.hidden = true; clear.hidden = true; input.dispatchEvent(new Event('change', { bubbles: true })); });
     });
 
+    // Foto-URL: Bild gleich im Browser laden und ins Bildfeld übernehmen (klappt, wenn die Bildseite es erlaubt);
+    // sonst lädt der Server es beim Ausstellen herunter und speichert es im Dokument
+    document.querySelectorAll('input[name="d[photo]"]').forEach(function (urlInput) {
+        var fileInput = document.querySelector('[data-image-input]');
+        if (!fileInput) { return; }
+        var wrap = fileInput.closest('.image-field'), hidden = document.getElementById(fileInput.dataset.imageInput);
+        urlInput.addEventListener('change', function () {
+            var url = urlInput.value.trim();
+            if (!/^https?:\/\//i.test(url) || hidden.value) { return; }
+            fetch(url, { mode: 'cors' }).then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.blob(); }).then(function (blob) {
+                var img = new Image(), obj = URL.createObjectURL(blob);
+                img.onload = function () {
+                    var s = Math.min(1, 480 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+                    c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                    hidden.value = c.toDataURL('image/jpeg', 0.85);
+                    var pv = wrap.querySelector('.image-preview'); pv.src = hidden.value; pv.hidden = false; wrap.querySelector('.image-clear').hidden = false;
+                    URL.revokeObjectURL(obj);
+                    hidden.dispatchEvent(new Event('change', { bubbles: true }));
+                };
+                img.src = obj;
+            }).catch(function () { /* Bildseite erlaubt es nicht – der Server übernimmt beim Ausstellen */ });
+        });
+    });
+
     // Körperschema: Klick setzt nummerierte Markierung
     document.querySelectorAll('.bodymap-editor').forEach(function (wrap) {
         var svg = wrap.querySelector('svg');
