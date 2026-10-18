@@ -235,9 +235,38 @@ const STAMP_PROFILES = [
     'government' => ['color' => '#2f5d50', 'emblem' => 'columns', 'seal_label' => 'AMTSSIEGEL', 'caption' => 'Unterschrift und Amtsstempel', 'head' => 'Verwaltungsleitung'],
 ];
 
-/** Stempelprofil der aktuellen Fraktion (beim Rendern: Fraktion des Dokuments). */
-function stamp_profile(): array
+/** Übergeordnete Verwaltung (Hauptadministrator): Vorgaben, änderbar unter Einstellungen → Administration. */
+const ADMIN_STAMP_DEFAULTS = [
+    'admin_org_name' => 'Zentrale Behördenverwaltung', 'admin_seal_text' => 'STATE OF SAN ANDREAS', 'admin_seal_bottom' => 'BEHÖRDENVERWALTUNG · LOS SANTOS',
+    'admin_title' => 'Administrator/in', 'admin_department' => 'Personal- und Organisationsverwaltung', 'admin_stamp_color' => '#3f2a6e',
+];
+
+function admin_stamp_setting(string $key): string
 {
+    return (string) (setting($key, '') ?: (ADMIN_STAMP_DEFAULTS[$key] ?? ''));
+}
+
+/** Wurde das Dokument vom Hauptadministrator ausgestellt? (auch ältere Dokumente ohne Kennzeichen im Snapshot) */
+function doc_admin_issued(array $doc): bool
+{
+    static $memo = [];
+    $u = $doc['issuer_snapshot'] ?? [];
+    if (array_key_exists('superadmin', $u)) {
+        return (bool) $u['superadmin'];
+    }
+    $id = (int) ($u['id'] ?? 0);
+    return $id > 0 && ($memo[$id] ??= (bool) scalar('SELECT is_superadmin FROM users WHERE id = ?', [$id]));
+}
+
+/** Stempelprofil: Verwaltung bei Dokumenten des Hauptadministrators, sonst die Fraktion des Dokuments. */
+function stamp_profile(?array $doc = null): array
+{
+    if ($doc && doc_admin_issued($doc)) {
+        $c = admin_stamp_setting('admin_stamp_color');
+        return ['color' => preg_match('/^#[0-9a-f]{6}$/i', $c) ? $c : ADMIN_STAMP_DEFAULTS['admin_stamp_color'], 'emblem' => 'state', 'seal_label' => 'AMTSSIEGEL',
+            'caption' => 'Unterschrift und Siegel der ' . admin_stamp_setting('admin_org_name'), 'head' => 'Verwaltung', 'admin' => true,
+            'seal_text' => admin_stamp_setting('admin_seal_text'), 'seal_bottom' => admin_stamp_setting('admin_seal_bottom')];
+    }
     $p = STAMP_PROFILES[faction_kind()] ?? STAMP_PROFILES['medical'];
     $c = (string) setting('stamp_color', '');
     if (preg_match('/^#[0-9a-f]{6}$/i', $c)) {
@@ -250,8 +279,12 @@ function stamp_profile(): array
 function doc_signature(array $doc, string $stamp = 'rect', string $caption = '', bool $withPlace = true): string
 {
     $u = $doc['issuer_snapshot'] ?? [];
-    $medicalDoctor = faction_kind() === 'medical' && (($u['doctor_number'] ?? '') !== '' || in_array($u['role'] ?? '', ['doctor', 'admin'], true));
-    $caption = $caption ?: ($medicalDoctor ? 'Unterschrift und Stempel des Arztes / der Ärztin' : ($stamp !== '' ? stamp_profile()['caption'] : 'Unterschrift'));
+    $admin = doc_admin_issued($doc);
+    $medicalDoctor = !$admin && faction_kind() === 'medical' && (($u['doctor_number'] ?? '') !== '' || in_array($u['role'] ?? '', ['doctor', 'admin'], true));
+    $caption = $caption ?: ($medicalDoctor ? 'Unterschrift und Stempel des Arztes / der Ärztin' : ($stamp !== '' || $admin ? stamp_profile($doc)['caption'] : 'Unterschrift'));
+    if ($admin) {
+        $u['rank_name'] = ($u['admin_title'] ?? '') ?: admin_stamp_setting('admin_title') . ' · ' . admin_stamp_setting('admin_org_name');
+    }
     $rot = doc_rand($doc, 'sig', -4, 3);
     ob_start(); ?>
     <div class="sigblock">
@@ -306,10 +339,20 @@ function doctor_stamp_svg(array $doc): string
     $id = 'ink' . substr(md5(($doc['verify_code'] ?? '') . 'rect' . mt_rand()), 0, 8);
     $seed = (int) (doc_rand($doc, 'seed', 1, 900));
     $rot = doc_rand($doc, 'stamprot', -5, 4);
-    $profile = stamp_profile();
+    $profile = stamp_profile($doc);
     $color = $profile['color'];
     $place = trim(org('org_street') . ' · ' . org('city'), ' ·');
-    if (faction_kind() === 'medical') {
+    if (!empty($profile['admin'])) {
+        // Verwaltungsstempel: keiner Fraktion untergeordnet
+        $lines = [
+            ['t' => admin_stamp_setting('admin_seal_text'), 'c' => 'head'],
+            ['t' => admin_stamp_setting('admin_org_name'), 'c' => ''],
+            ['t' => admin_stamp_setting('admin_department'), 'c' => 'small'],
+            ['t' => user_display($u), 'c' => 'big'],
+            ['t' => ($u['admin_title'] ?? '') ?: admin_stamp_setting('admin_title'), 'c' => ''],
+            ['t' => mb_strtoupper(org('city')), 'c' => 'small'],
+        ];
+    } elseif (faction_kind() === 'medical') {
         $lines = [
             ['t' => user_display($u), 'c' => 'big'],
             ['t' => $u['department'] ?? '', 'c' => ''],
@@ -334,7 +377,7 @@ function doctor_stamp_svg(array $doc): string
     $svg = '<svg class="stamp-svg" viewBox="0 0 250 ' . $h . '" style="transform:rotate(' . $rot . 'deg)" xmlns="http://www.w3.org/2000/svg">'
         . '<defs>' . ink_filter($id, $seed) . '</defs><g filter="url(#' . $id . ')" fill="' . e($color) . '" stroke="' . e($color) . '">'
         . '<rect x="2" y="2" width="246" height="' . ($h - 4) . '" rx="3" fill="none" stroke-width="1.6"/>'
-        . (faction_kind() !== 'medical' ? '<rect x="5" y="5" width="240" height="' . ($h - 10) . '" rx="2" fill="none" stroke-width="0.6"/>' : '');
+        . (faction_kind() !== 'medical' || !empty($profile['admin']) ? '<rect x="5" y="5" width="240" height="' . ($h - 10) . '" rx="2" fill="none" stroke-width="0.6"/>' : '');
     $y = 17;
     foreach ($lines as $l) {
         $size = $l['c'] === 'big' ? 12.5 : ($l['c'] === 'small' ? 8.8 : ($l['c'] === 'head' ? 9.2 : 9.8));
@@ -377,6 +420,25 @@ function seal_emblem(string $emblem, string $pid): string
             return '<path d="M-36 -12 L0 -34 L36 -12 Z"/><rect x="-36" y="-10" width="72" height="4"/>'
                 . '<rect x="-30" y="-4" width="7" height="28"/><rect x="-15" y="-4" width="7" height="28"/><rect x="8" y="-4" width="7" height="28"/><rect x="23" y="-4" width="7" height="28"/>'
                 . '<rect x="-38" y="25" width="76" height="4"/><rect x="-42" y="30" width="84" height="4"/>';
+        case 'state': // Verwaltung: Stern im Lorbeerkranz (Staatswappen, keiner Behörde zugeordnet)
+            $pts = [];
+            for ($i = 0; $i < 10; $i++) {
+                $r = $i % 2 ? 8.5 : 21;
+                $a = deg2rad(-90 + $i * 36);
+                $pts[] = round(cos($a) * $r, 1) . ',' . round(sin($a) * $r - 1, 1);
+            }
+            // Kranz: Blätter tangential entlang eines Bogens, links und rechts gespiegelt
+            $wreath = '<path d="M -10 31 A 32 32 0 0 1 -31 -8" fill="none" stroke-width="1.6"/><path d="M 10 31 A 32 32 0 0 0 31 -8" fill="none" stroke-width="1.6"/>';
+            for ($i = 0; $i < 7; $i++) {
+                $deg = 245 - $i * 17; // linker Bogen von unten nach oben
+                foreach ([$deg, 180 - $deg] as $k => $d) {
+                    $x = round(cos(deg2rad($d)) * 32, 1);
+                    $y = round(-sin(deg2rad($d)) * 32, 1);
+                    $rot = round(-$d + ($k === 0 ? -28 : 28), 1);
+                    $wreath .= '<ellipse cx="' . $x . '" cy="' . $y . '" rx="2.3" ry="5.6" transform="rotate(' . $rot . ' ' . $x . ' ' . $y . ') translate(' . ($k === 0 ? -3 : 3) . ' 0)"/>';
+                }
+            }
+            return '<polygon points="' . implode(' ', $pts) . '"/>' . $wreath;
         default: // Star of Life (Rettungsdienst)
             return '<g id="' . $pid . 'arm"><rect x="-7" y="-36" width="14" height="72" rx="1"/></g>'
                 . '<use href="#' . $pid . 'arm" transform="rotate(60)"/><use href="#' . $pid . 'arm" transform="rotate(-60)"/>'
@@ -388,14 +450,14 @@ function seal_emblem(string $emblem, string $pid): string
 /** Runder Dienstsiegel-Stempel (Wappen und Farbe passend zur Fraktion). $color '' = Farbe der Fraktion. */
 function seal_svg(array $doc, string $color = ''): string
 {
-    $profile = stamp_profile();
-    $color = $color !== '' ? $color : $profile['color'];
+    $profile = stamp_profile($doc);
+    $color = $color !== '' && empty($profile['admin']) ? $color : $profile['color'];
     $id = 'ink' . substr(md5(($doc['verify_code'] ?? '') . 'seal' . mt_rand()), 0, 8);
     $pid = 'arc' . substr($id, 3);
     $seed = (int) (doc_rand($doc, 'seed2', 1, 900));
     $rot = doc_rand($doc, 'sealrot', -18, 18);
-    $text = mb_strtoupper(org('seal_text'));
-    $bottom = mb_strtoupper(org('city')) . ' · ' . mb_strtoupper(org('org_short'));
+    $text = mb_strtoupper($profile['seal_text'] ?? org('seal_text'));
+    $bottom = mb_strtoupper($profile['seal_bottom'] ?? (org('city') . ' · ' . org('org_short')));
     return '<svg class="seal-svg" viewBox="0 0 200 200" style="transform:rotate(' . $rot . 'deg)" xmlns="http://www.w3.org/2000/svg">'
         . '<defs>' . ink_filter($id, $seed)
         . '<path id="' . $pid . 't" d="M 26 104 A 74 74 0 1 1 174 104"/>'
@@ -407,11 +469,11 @@ function seal_svg(array $doc, string $color = ''): string
         . '<text font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" stroke="none">'
         . '<textPath href="#' . $pid . 't" startOffset="3" textLength="220" lengthAdjust="spacingAndGlyphs">' . e($text) . '</textPath></text>'
         . '<text font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="700" letter-spacing="2" stroke="none">'
-        . '<textPath href="#' . $pid . 'b" startOffset="50%" text-anchor="middle">' . e($bottom) . '</textPath></text>'
+        . '<textPath href="#' . $pid . 'b" startOffset="50%" text-anchor="middle"' . (mb_strlen($bottom) > 22 ? ' textLength="168" lengthAdjust="spacingAndGlyphs"' : '') . '>' . e($bottom) . '</textPath></text>'
         . '<text x="29" y="105" font-size="12" stroke="none" text-anchor="middle">★</text><text x="171" y="105" font-size="12" stroke="none" text-anchor="middle">★</text>'
         // Wappen der Fraktion
         . '<g transform="translate(100 96)" stroke="none">' . seal_emblem($profile['emblem'], $pid) . '</g>'
-        . '<text x="100" y="146" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="8" stroke="none" letter-spacing="1">' . e($profile['seal_label']) . '</text>'
+        . '<text x="100" y="146" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="' . (mb_strlen($profile['seal_label']) > 13 ? 6.4 : 8) . '" stroke="none" letter-spacing="' . (mb_strlen($profile['seal_label']) > 13 ? 0.4 : 1) . '">' . e($profile['seal_label']) . '</text>'
         . '</g></svg>';
 }
 

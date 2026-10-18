@@ -48,3 +48,30 @@ if ($shot = getenv('SAMS_SHOT_DIR')) {
     exec('node ' . escapeshellarg("$shot/stamps.js") . ' 2>&1', $stampOut);
     echo implode("\n", $stampOut);
 }
+
+// Hauptadministrator: Siegel/Stempel der übergeordneten Verwaltung, keiner Fraktion zugeordnet
+$adm = (new Client(TEST_BASE))->login('admin');
+$chiefId = (int) tval("SELECT id FROM users WHERE username = 'chief.miller'");
+$adm->get('/index.php?p=dashboard');
+$adm->post('/index.php?p=factions', ['action' => 'switch', 'faction_id' => (string) $pd]);
+$adm->get('/index.php?p=document_new&type=dienstausweis&employee=' . $chiefId);
+$adm->post('/index.php?p=document_new&type=dienstausweis', ['type' => 'dienstausweis', 'employee_id' => (string) $chiefId, 'action' => 'issue', 'sig_mode' => 'live', 'live_signature' => TEST_SIGNATURE,
+    'd[valid_until]' => date('Y-m-d', strtotime('+2 years'))]);
+$aid = (int) (preg_match('/p=document&id=(\d+)/', $adm->url, $m) ? $m[1] : 0);
+$ad = trow('SELECT * FROM documents WHERE id = ?', [$aid]);
+$av = (new Client(TEST_BASE))->get('/doc.php?flat=1&t=' . $ad['view_token']);
+check($aid && (int) $ad['faction_id'] === $pd && $av->has('idcard front'), 'Dienstausweis der Polizei-Leitung (Ausweis gehört zur Polizei)');
+check($av->has('AMTSSIEGEL') && $av->has('STATE OF SAN ANDREAS') && $av->has('fill="#3f2a6e"') && !$av->has('DIENSTSIEGEL'), 'Siegel der übergeordneten Verwaltung statt Polizeisiegel');
+check(!empty(json_decode($ad['issuer_snapshot'], true)['superadmin']), 'Kennzeichen im Dokument eingefroren');
+check(!(new Client(TEST_BASE))->get('/doc.php?flat=1&t=' . $docs['police'][1])->has('STATE OF SAN ANDREAS'), 'Dokumente anderer Aussteller behalten ihr Behördensiegel');
+$adm->get('/index.php?p=settings');
+check($adm->has('Administration (übergeordnet') && !(new Client(TEST_BASE))->login('chief.miller')->get('/index.php?p=settings')->has('Administration (übergeordnet'), 'Verwaltungsstempel nur für den Hauptadministrator einstellbar');
+if ($shot = getenv('SAMS_SHOT_DIR')) {
+    $js = "const {chromium}=require('/opt/node22/lib/node_modules/playwright');(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:900,height:900},deviceScaleFactor:5});"
+        . "await p.goto('" . TEST_BASE . "/doc.php?flat=1&t=" . $ad['view_token'] . "');await p.waitForTimeout(300);const e=await p.\$('.idcard.back');await e.screenshot({path:'$shot/admin_card_back.png'});"
+        . "const s=await p.\$('.id-seal');await s.screenshot({path:'$shot/admin_seal.png'});await b.close();})();";
+    file_put_contents("$shot/admin.js", $js);
+    exec('node ' . escapeshellarg("$shot/admin.js") . ' 2>&1', $adminOut);
+    echo implode("\n", $adminOut);
+}
+$adm->post('/index.php?p=factions', ['action' => 'switch', 'faction_id' => '1']);

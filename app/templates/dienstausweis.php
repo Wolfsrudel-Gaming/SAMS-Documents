@@ -43,7 +43,7 @@ $access = opt_label($type, 'access', $d['access'] ?? []);
         <p class="id-note">Dieser Ausweis ist Eigentum der <?= e(org('org_name')) ?> und nur in Verbindung mit einem amtlichen Lichtbildausweis gültig. Bei Verlust bitte sofort melden. Finder werden gebeten, ihn an <?= e(org('org_street')) ?>, <?= e(org('org_city')) ?> zurückzugeben.</p>
         <div class="id-back-foot">
             <?= qr_html($doc, 'qr id-qr') ?>
-            <div class="id-issuer"><?= signature_html($u, doc_rand($doc, 'idsig', -4, 3)) ?><span><?= e(user_display($u)) ?> · ausgestellt <?= e(fmt_date($doc['issued_at'] ?? now())) ?></span></div>
+            <div class="id-issuer"><?= signature_html($u, doc_rand($doc, 'idsig', -4, 3)) ?><span><?= e(user_display($u)) ?><?= doc_admin_issued($doc) ? ' · ' . e(admin_stamp_setting('admin_org_name')) : '' ?> · ausgestellt <?= e(fmt_date($doc['issued_at'] ?? now())) ?></span></div>
             <div class="id-seal"><?= seal_svg($doc) ?></div>
         </div>
         <div class="id-code mono"><?= e($doc['number'] ?? '') ?> · <?= e(chunk_split($doc['verify_code'] ?? '', 4, ' ')) ?></div>

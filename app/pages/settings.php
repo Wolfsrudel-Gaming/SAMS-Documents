@@ -87,6 +87,17 @@ $keys = [
     ],
 ];
 // Weitere Fraktionen pflegen nur ihre eigenen Angaben; systemweite Einstellungen bleiben der Hauptfraktion vorbehalten
+// Übergeordnete Verwaltung: nur für den Hauptadministrator (gilt für alle Dokumente, die er ausstellt)
+if (!empty(current_user()['is_superadmin'])) {
+    $keys['Administration (übergeordnet, Stempel des Hauptadministrators)'] = [
+        'admin_org_name'    => ['Bezeichnung der Verwaltung', ADMIN_STAMP_DEFAULTS['admin_org_name']],
+        'admin_department'  => ['Abteilung (Stempel)', ADMIN_STAMP_DEFAULTS['admin_department']],
+        'admin_title'       => ['Funktion unter der Unterschrift', ADMIN_STAMP_DEFAULTS['admin_title']],
+        'admin_seal_text'   => ['Umschrift Siegel oben', ADMIN_STAMP_DEFAULTS['admin_seal_text']],
+        'admin_seal_bottom' => ['Umschrift Siegel unten', ADMIN_STAMP_DEFAULTS['admin_seal_bottom']],
+        'admin_stamp_color' => ['Stempelfarbe', ADMIN_STAMP_DEFAULTS['admin_stamp_color'], 'color'],
+    ];
+}
 // Werkzeuge nur zeigen, wenn die Fraktion das passende Modul nutzt
 foreach (['license_types' => 'licenses', 'evidence_storage' => 'evidence', 'custody_cells' => 'custody', 'custody_unit_minutes' => 'custody', 'court_rooms' => 'court'] as $sk => $sm) {
     if (!module_enabled($sm)) {
@@ -104,7 +115,7 @@ if (is_post()) {
     foreach ($keys as $group) {
         foreach ($group as $k => $_) {
             $v = mb_substr((string) post($k), 0, 300);
-            if ((str_starts_with($k, 'theme_') || $k === 'stamp_color') && $v !== '' && !preg_match('/^#[0-9a-f]{6}$/i', $v)) {
+            if ((str_starts_with($k, 'theme_') || in_array($k, ['stamp_color', 'admin_stamp_color'], true)) && $v !== '' && !preg_match('/^#[0-9a-f]{6}$/i', $v)) {
                 $v = '';
             }
             if (in_array($k, ['portal_appointment_kinds', 'license_types', 'evidence_storage', 'custody_cells', 'court_rooms'], true)) {

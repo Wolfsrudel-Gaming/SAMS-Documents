@@ -864,7 +864,9 @@ function issuer_snapshot(array $u): array
         'doctor_number' => $u['doctor_number'],
         'signature'     => $u['signature'],
         'location'      => location_snapshot(user_location_id($u)),
-    ];
+        // Hauptadministrator: Dokumente tragen Siegel/Stempel der übergeordneten Verwaltung (keiner Fraktion zugeordnet)
+        'superadmin'    => !empty($u['is_superadmin']),
+    ] + (!empty($u['is_superadmin']) ? ['admin_title' => admin_stamp_setting('admin_title')] : []);
 }
 
 function patient_snapshot(?array $p): ?array
