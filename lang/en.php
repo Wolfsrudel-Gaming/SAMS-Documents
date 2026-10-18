@@ -2,7 +2,7 @@
 /** English user interface (German text => English). Missing entries stay German. */
 return [
     // Navigation
-    'Klinik' => 'Clinic', 'Verwaltung' => 'Administration', 'Extern' => 'External',
+    'Klinik' => 'Clinic', 'Dienst' => 'Service', 'Verwaltung' => 'Administration', 'Extern' => 'External',
     'Übersicht' => 'Overview', 'Schwarzes Brett' => 'Notice board', 'Nachrichten' => 'Messages', 'Patientenakten' => 'Patient records',
     'Dokumente' => 'Documents', 'Neues Dokument' => 'New document', 'Entwürfe & Freigaben' => 'Drafts & approvals', 'Rechnungen' => 'Invoices',
     'Dienstzeiten' => 'Duty times', 'Dienstplan' => 'Duty roster', 'Medikamente & BtM' => 'Medication & narcotics', 'Ausbildung' => 'Training',

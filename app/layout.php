@@ -5,7 +5,7 @@ $user = current_user();
 $current = $_GET['p'] ?? 'dashboard';
 $orgShort = org('org_short');
 $navGroups = [
-    'Klinik' => [
+    (faction_kind() === 'medical' ? 'Klinik' : 'Dienst') => [
         'dashboard'    => ['Übersicht', '', 'home'],
         'board'        => ['Schwarzes Brett', 'board.view|board.manage', 'docs'],
         'messages'     => ['Nachrichten', 'messages.use', 'external'],
@@ -70,7 +70,7 @@ $active = $activeMap[$current] ?? $current;
     <form class="quicksearch" action="index.php" role="search">
         <input type="hidden" name="p" value="search">
         <?= icon('search') ?>
-        <input name="q" id="quicksearch" placeholder="<?= e(t('Suchen: Patient, Diagnose, Dokument-Nr., Wiki, Personal …')) ?>" autocomplete="off">
+        <input name="q" id="quicksearch" placeholder="<?= e(faction_kind() === 'medical' ? t('Suchen: Patient, Diagnose, Dokument-Nr., Wiki, Personal …') : 'Suchen: Name, Bürger-ID, Dokument-Nr., Wiki, Personal …') ?>" autocomplete="off">
         <kbd>F2</kbd>
     </form>
     <?php if (!empty($user['is_superadmin']) && count(factions()) > 1): ?>
