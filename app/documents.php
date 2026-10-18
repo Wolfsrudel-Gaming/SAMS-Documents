@@ -487,7 +487,7 @@ function document_types_all(): array
         ],
     ];
 
-    $types = array_merge($types, document_types_extra(), document_types_factions());
+    $types = array_merge($types, document_types_extra(), document_types_medical(), document_types_factions());
     foreach (custom_doc_types() as $row) {
         $types[$row['type_key']] = custom_type_definition($row);
     }

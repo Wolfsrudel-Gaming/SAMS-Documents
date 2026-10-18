@@ -334,6 +334,9 @@ function create_faction(string $name, string $short, string $kind, string $color
                 'sort' => ($i + 1) * 10, 'active' => 1, 'created_at' => $now, 'updated_at' => $now]);
         }
         faction_seed_content($id, $kind);
+        if ($kind === 'medical') {
+            seed_medical_content($id);
+        }
         set_faction_context($prev);
         db()->commit();
     } catch (Throwable $e) {
@@ -521,4 +524,45 @@ function case_labels(?string $kind = null): array
         'government' => ['incident' => 'Anliegen', 'incident_ph' => 'Worum geht es?', 'diagnosis' => 'Ergebnis / Bescheid', 'diagnosis_ph' => ''],
         default => ['incident' => 'Hergang / Anlass', 'incident_ph' => 'Was ist passiert? Wie wurde der Patient vorgefunden?', 'diagnosis' => 'Diagnose(n)', 'diagnosis_ph' => 'Eine Diagnose pro Zeile, gern mit ICD-10 (z. B. S52.5 Distale Radiusfraktur)'],
     };
+}
+
+/**
+ * Fachinhalte für den Rettungsdienst einspielen (Wiki-Seiten, Lehrgänge mit Modulen und Prüfungsfragen).
+ * Nur Fehlendes wird angelegt – eigene Änderungen bleiben erhalten. Gibt [Wiki, Lehrgänge] zurück.
+ */
+function seed_medical_content(int $factionId): array
+{
+    $now = now();
+    $dir = SAMS_ROOT . '/database/content/';
+    $wiki = 0;
+    foreach (['medical_wiki_a.php', 'medical_wiki_b.php'] as $file) {
+        foreach (is_file($dir . $file) ? require $dir . $file : [] as $pg) {
+            $slug = wiki_slug($pg['title']);
+            if (!scalar('SELECT id FROM wiki_pages WHERE faction_id = ? AND slug = ?', [$factionId, $slug])) {
+                insert('wiki_pages', ['faction_id' => $factionId, 'slug' => $slug, 'title' => $pg['title'], 'category' => $pg['category'], 'content' => trim($pg['content']),
+                    'pinned' => 0, 'created_at' => $now, 'updated_at' => $now]);
+                $wiki++;
+            }
+        }
+    }
+    $courses = 0;
+    $sort = (int) scalar('SELECT COALESCE(MAX(sort), 0) FROM training_courses WHERE faction_id = ?', [$factionId]);
+    foreach (is_file($dir . 'medical_training.php') ? require $dir . 'medical_training.php' : [] as $c) {
+        if (scalar('SELECT id FROM training_courses WHERE faction_id = ? AND title = ?', [$factionId, $c['title']])) {
+            continue;
+        }
+        $qual = $c['qualification'] ? scalar('SELECT id FROM qualifications WHERE faction_id = ? AND name = ?', [$factionId, $c['qualification']]) : null;
+        $cid = insert('training_courses', ['faction_id' => $factionId, 'title' => $c['title'], 'description' => $c['description'], 'qualification_id' => $qual ?: null,
+            'pass_percent' => $c['pass_percent'], 'question_count' => $c['question_count'], 'time_limit' => $c['time_limit'], 'hours' => $c['hours'],
+            'active' => 1, 'sort' => $sort += 10, 'created_at' => $now, 'updated_at' => $now]);
+        foreach (array_values($c['modules']) as $i => [$mtitle, $mcontent]) {
+            insert('training_modules', ['course_id' => $cid, 'title' => $mtitle, 'content' => trim($mcontent), 'sort' => ($i + 1) * 10]);
+        }
+        foreach (array_values($c['questions']) as $i => [$q, $opts, $correct, $expl]) {
+            insert('training_questions', ['course_id' => $cid, 'question' => $q, 'options' => json_encode(array_values($opts), JSON_UNESCAPED_UNICODE),
+                'correct' => json_encode(array_values($correct)), 'explanation' => $expl, 'sort' => ($i + 1) * 10]);
+        }
+        $courses++;
+    }
+    return [$wiki, $courses];
 }
