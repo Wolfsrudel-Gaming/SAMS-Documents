@@ -277,6 +277,13 @@ function game_record_summary(array $p): array
     }
     $open = (int) scalar("SELECT COUNT(*) FROM cases WHERE patient_id = ? AND status = 'open'", [$p['id']]);
     $add(term('cases'), $open ? $open . ' offen' : '');
+    if (in_array(faction_kind(), ['police', 'justice'], true) && $p['citizen_id'] !== '') {
+        foreach (licenses_for_citizen((string) $p['citizen_id']) as $l) {
+            $add($l['type'], (LICENSE_STATUS[$l['state']][1] ?? $l['state']) . ($l['expires_on'] ? ' (bis ' . fmt_date($l['expires_on']) . ')' : ''));
+        }
+        $reg = criminal_record((string) $p['citizen_id']);
+        $add('Strafregister', $reg ? count($reg) . ' Einträge, zuletzt ' . $reg[0]['kind'] . ' am ' . fmt_date($reg[0]['date']) : '');
+    }
     if (module_enabled('wanted') && $p['citizen_id'] !== '' && ($hits = wanted_lookup((string) $p['citizen_id']))) {
         $add('Fahndung', count($hits) . ' offen' . (array_filter($hits, fn($w) => $w['source'] === 'warrant') ? ' (Haftbefehl)' : ''));
     }

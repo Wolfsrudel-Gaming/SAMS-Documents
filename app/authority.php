@@ -318,3 +318,17 @@ function joint_open_count(): int
         return 0;
     }
 }
+
+/** Hinweis an die Lizenzstelle, wenn eine Lizenz in 14 Tagen abläuft (läuft im Cron je Fraktion). */
+function license_cron(): int
+{
+    if (!module_enabled('licenses')) {
+        return 0;
+    }
+    $rows = all("SELECT * FROM licenses WHERE status = 'valid' AND reminded = 0 AND expires_on <> '' AND expires_on <= ? AND " . fw(), [date('Y-m-d', time() + 14 * 86400)]);
+    foreach ($rows as $l) {
+        q('UPDATE licenses SET reminded = 1 WHERE id = ?', [$l['id']]);
+        notify_users_with('licenses.manage', 'licenses', $l['type'] . ' von ' . $l['name'] . ' läuft am ' . fmt_date($l['expires_on']) . ' ab', url('licenses', ['filter' => 'expiring']));
+    }
+    return count($rows);
+}

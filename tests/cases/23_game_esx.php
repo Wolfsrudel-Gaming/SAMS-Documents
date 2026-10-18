@@ -14,7 +14,7 @@ $admin->get('/index.php?p=settings');
 check($admin->has('Spielserver') && $admin->has('Society-Konto') && $admin->has('Umfang'), 'Einstellungen: Bereich Spielserver und Umfang sichtbar');
 $admin->post('/index.php?p=settings', ['game_society' => 'society_ems!', 'game_jobs' => 'ambulance, ems', 'ingame_cmd_akte' => 'patient akte', 'ingame_akte_distance' => '50',
     'game_billing' => '1', 'game_akte' => '1', 'game_akte_duty' => '1', 'game_akte_job' => 'quatsch', 'ingame_framework' => 'esx',
-    'modules_form' => '1', 'modules[]' => ['records', 'billing', 'stock', 'portal', 'requests']]);
+    'modules_form' => '1', 'modules[]' => ['records', 'billing', 'stock', 'portal', 'requests', 'joint']]);
 [, $cfg] = api('game_config', []);
 $sams = array_values(array_filter($cfg['factions'], fn($f) => $f['id'] === 1))[0];
 check($sams['society'] === 'society_ems' && $sams['jobs'] === ['ambulance', 'ems'] && $cfg['commands']['akte'] === 'patientakte' && $cfg['akte_distance'] == 10, 'Einstellungen bereinigt übernommen');
