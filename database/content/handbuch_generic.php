@@ -99,6 +99,11 @@ Gelände-, Wasser- und Luftrettung, Vermisstensuche, Bergung und Absicherung (z.
 - Einsatzbericht Spezialrettung, Suchprotokoll, Tauchprotokoll, Flugbericht, Bergungsprotokoll, Wachbericht, Kostenbescheid.
 - Gerettete Personen übergebt ihr an den Rettungsdienst (SAMS) – dort entsteht die Patientenakte. Für größere Lagen gibt es gemeinsame Einsatzberichte.
 - Flugbericht mit Kennung und Flugzeit trägt den Flug automatisch ins **Flugbuch** ein.
+
+## Tauglichkeit
+- Unter **Tauglichkeit** siehst du, welche Untersuchungen (Atemschutz, Tauchen, Höhe, Luftrettung, Wasser) gültig sind und wann sie ablaufen.
+- Die Leitung fordert Untersuchungen beim Rettungsdienst an. Das Ergebnis kommt automatisch – die Befunde bleiben beim Arzt (Schweigepflicht).
+- Damit die Zuordnung klappt, trägt die Leitung am Konto die **Bürger-ID** aus dem Spiel ein.
 MD,
     ],
     'government' => $all + [

@@ -21,6 +21,7 @@ if (is_post() && post('action') === 'revoke') {
         audit('document.revoke', 'document', $id, $reason);
         wanted_close_for_document($id, 'Dokument storniert: ' . $reason);
         game_bill_cancel_for($id);
+        fitness_revoke_for($id);
         notify_webhook('documents', log_embed('🚫 ' . ($type['title'] ?? 'Dokument') . ' storniert', '', 0xb3261e, [
             ['name' => 'Nummer', 'value' => $doc['number'], 'inline' => true], ['name' => 'Storniert von', 'value' => user_display($me), 'inline' => true]]));
         flash('success', 'Dokument wurde storniert. Die Echtheitsprüfung zeigt es ab sofort als ungültig an.');
@@ -339,6 +340,10 @@ ob_start(); ?>
         <?php if (can('documents.issue.dienstausweis')): ?><form method="post" class="inline"><?= csrf_field() ?><button class="btn small" name="action" value="embed_photo">Erneut versuchen</button></form><?php endif; ?></div>
 <?php endif; ?>
 <div class="doc-stage" id="doc-stage"><?= $html ?></div>
+<?php if ($doc['type'] === 'einsatztauglichkeit'): $sent = all('SELECT r.*, u.name, f.name AS faction FROM fitness_records r JOIN users u ON u.id = r.user_id JOIN factions f ON f.id = r.faction_id WHERE r.document_id = ?', [$id]); ?>
+<div class="flash <?= $sent ? 'success' : 'warn' ?> no-print"><?php if ($sent): ?>Ergebnis (ohne Befunde) übermittelt an: <?= e(implode(', ', array_map(fn($r) => $r['faction'] . ' – ' . $r['name'] . ($r['revoked'] ? ' (zurückgezogen)' : ''), $sent))) ?>.
+    <?php else: ?>Keiner Dienststelle zugeordnet: Weder Bürger-ID noch Name der Akte passen zu einem Konto einer Dienststelle mit Tauglichkeitsverwaltung. Die Bescheinigung kann unten manuell für die Behörde freigegeben werden.<?php endif; ?></div>
+<?php endif; ?>
 
 <?php if ($gameNotify): ?><span hidden data-game-notify="<?= e($gameNotify['type']) ?>" data-payload="<?= e(json_encode($gameNotify['payload'])) ?>"></span><?php endif; ?>
 

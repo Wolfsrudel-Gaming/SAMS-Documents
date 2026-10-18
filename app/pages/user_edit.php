@@ -24,7 +24,7 @@ $departments = all('SELECT * FROM departments WHERE ' . fw() . ' ORDER BY sort, 
 $assignableDeps = array_map(fn($d) => (int) $d['id'], assignable_departments());
 $qualifications = all('SELECT * FROM qualifications WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name');
 
-$fields = ['username', 'name', 'title', 'badge_number', 'department', 'doctor_number', 'phone', 'discord_id'];
+$fields = ['username', 'name', 'title', 'badge_number', 'department', 'doctor_number', 'phone', 'discord_id', 'citizen_id'];
 $data = $user ?? array_fill_keys($fields, '') + ['rank_id' => $ranks ? end($ranks)['id'] : null, 'active' => 1];
 $userDeps = $user ? user_department_ids($id) : [];
 $userQuals = $user ? user_qualification_ids($id) : [];
@@ -34,7 +34,7 @@ $errors = [];
 function user_change_summary(array $old, array $new, array $oldDeps, array $newDeps, array $oldQ, array $newQ): string
 {
     $labels = ['username' => 'Benutzer', 'name' => 'Name', 'title' => 'Titel', 'badge_number' => 'Dienstnr.', 'department' => 'Fachrichtung',
-        'doctor_number' => 'Arzt-Nr.', 'phone' => 'Telefon', 'discord_id' => 'Discord-ID'];
+        'doctor_number' => 'Arzt-Nr.', 'phone' => 'Telefon', 'discord_id' => 'Discord-ID', 'citizen_id' => 'Bürger-ID'];
     $out = [];
     foreach ($labels as $k => $l) {
         if ((string) ($old[$k] ?? '') !== (string) ($new[$k] ?? '')) {
@@ -276,6 +276,7 @@ ob_start(); ?>
     <h3 class="form-heading">Angaben auf Dokumenten</h3>
     <?php require __DIR__ . '/_user_fields.php'; ?>
     <div class="field w-third"><label>Discord-ID (optional)</label><input name="discord_id" value="<?= e($data['discord_id']) ?>" placeholder="z. B. 284019347762003968" inputmode="numeric"<?= $ro ? ' disabled' : '' ?>></div>
+    <div class="field w-third"><label>Bürger-ID im Spiel (optional)</label><input name="citizen_id" value="<?= e($data['citizen_id'] ?? '') ?>" maxlength="64" class="mono" placeholder="z. B. char1:abc123" title="Ordnet ärztliche Tauglichkeitsnachweise dem Konto zu"<?= $ro ? ' disabled' : '' ?>></div>
     <?php if (!$ro): ?>
     <div class="form-actions"><button class="btn primary"><?= $user ? 'Speichern' : 'Konto anlegen' ?></button></div>
     <?php endif; ?>

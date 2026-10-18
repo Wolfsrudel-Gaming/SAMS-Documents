@@ -57,6 +57,7 @@ $routes = [
     'equipment'       => 'equipment.view|equipment.manage',
     'dispatch'        => 'documents.view',
     'flightlog'       => 'flightlog.view|flightlog.manage',
+    'fitness'         => 'fitness.view|fitness.manage',
     'breathing'       => 'breathing.view|breathing.manage',
     'requests'        => 'requests.view|requests.manage',
     'btm'             => 'stock.view|btm.manage',

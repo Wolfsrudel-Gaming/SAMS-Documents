@@ -224,6 +224,9 @@ switch ($cmd) {
             if ($r = fire_cron()) {
                 $out($tag . "Geräte/Atemschutz: $r Hinweis(e) auf fällige Prüfungen.");
             }
+            if ($r = fitness_cron()) {
+                $out($tag . "Tauglichkeit: $r Nachweis(e) laufen bald ab.");
+            }
             if ($r = license_cron()) {
                 $out($tag . "Lizenzen: $r laufen bald ab.");
             }

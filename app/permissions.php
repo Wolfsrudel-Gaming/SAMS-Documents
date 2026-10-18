@@ -89,6 +89,8 @@ function permission_catalog(): array
             'breathing.manage' => 'Atemschutz-Nachweise pflegen (Eignung, Übungen, Einsätze)',
             'flightlog.view'   => 'Flugbuch ansehen',
             'flightlog.manage' => 'Flüge und Luftfahrzeuge eintragen, Wartung bestätigen',
+            'fitness.view'     => 'Eigene Tauglichkeitsnachweise ansehen',
+            'fitness.manage'   => 'Tauglichkeit aller Mitarbeitenden ansehen, Untersuchungen anfordern, Nachweise eintragen',
         ],
         'Gericht' => [
             'court.view'   => 'Gerichtskalender und Fristen ansehen',

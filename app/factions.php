@@ -31,6 +31,7 @@ const FACTION_MODULES = [
     'equipment' => 'Geräte & Prüffristen (Wartung, Prüfprotokolle)',
     'breathing' => 'Atemschutz-Nachweise (Eignung, Belastungsübung, Einsätze)',
     'flightlog' => 'Flugbuch und Luftfahrzeuge (Flugstunden, Wartung, Windeneinsätze)',
+    'fitness' => 'Tauglichkeit der Mitarbeitenden (ärztliche Einsatztauglichkeit, Fristen)',
 ];
 
 const FACTION_KINDS = [
@@ -54,13 +55,13 @@ const FACTION_KINDS = [
     ],
     'fire' => [
         'label' => 'Feuerwehr', 'logo' => 'assets/img/kinds/fire.svg', 'color' => '#a3161a',
-        'modules' => ['billing', 'requests', 'objects', 'joint', 'equipment', 'breathing'],
+        'modules' => ['billing', 'requests', 'objects', 'joint', 'equipment', 'breathing', 'fitness'],
         'terms' => ['record' => 'Akte', 'records' => 'Akten', 'person' => 'Betroffene/r', 'persons' => 'Betroffene',
             'case' => 'Einsatz', 'cases' => 'Einsätze', 'billing' => 'Gebührenbescheide', 'catalog' => 'Gebührenordnung', 'staff' => 'Personal'],
     ],
     'rescue' => [
         'label' => 'Spezialrettung (Gelände, Wasser, Luft)', 'logo' => 'assets/img/kinds/rescue.svg', 'color' => '#d35400',
-        'modules' => ['records', 'billing', 'requests', 'joint', 'equipment', 'flightlog'],
+        'modules' => ['records', 'billing', 'requests', 'joint', 'equipment', 'flightlog', 'fitness'],
         'terms' => ['record' => 'Einsatzakte', 'records' => 'Einsatzakten', 'person' => 'Gerettete/r', 'persons' => 'Gerettete',
             'case' => 'Einsatz', 'cases' => 'Einsätze', 'billing' => 'Kostenbescheide', 'catalog' => 'Kostenordnung', 'staff' => 'Personal'],
     ],
@@ -179,13 +180,13 @@ function faction_tier_permissions(string $tier): array
 {
     $trainee = ['patients.view', 'documents.view', 'duty.clock', 'duty.view', 'roster.view', 'roster.signup', 'training.view', 'wiki.view',
         'board.view', 'messages.use', 'stock.view', 'wanted.view', 'requests.view', 'evidence.view', 'vehicles.view', 'custody.view', 'court.view',
-        'licenses.view', 'objects.view', 'joint.view', 'equipment.view', 'breathing.view', 'flightlog.view'];
+        'licenses.view', 'objects.view', 'joint.view', 'equipment.view', 'breathing.view', 'flightlog.view', 'fitness.view'];
     $staff = array_merge($trainee, ['patients.edit', 'entries.create', 'attachments.upload', 'cases.manage', 'documents.revoke.own', 'documents.print',
         'documents.share', 'stock.dispense', 'wanted.manage', 'requests.manage', 'evidence.manage', 'vehicles.manage', 'custody.manage', 'court.manage',
         'licenses.manage', 'objects.manage', 'joint.write', 'equipment.manage', 'breathing.manage', 'flightlog.manage']);
     $senior = array_merge($staff, ['entries.confidential', 'documents.approve', 'documents.addendum', 'users.view', 'personnel.view', 'patients.archive']);
     $lead = array_merge($senior, ['entries.edit_all', 'entries.all_departments', 'documents.revoke.all', 'documents.drafts_all', 'patients.merge',
-        'users.create', 'users.edit', 'users.password_reset', 'users.deactivate', 'users.sessions', 'personnel.edit', 'duty.manage', 'roster.manage',
+        'users.create', 'users.edit', 'fitness.manage', 'users.password_reset', 'users.deactivate', 'users.sessions', 'personnel.edit', 'duty.manage', 'roster.manage',
         'training.manage', 'wiki.edit', 'lists.manage', 'board.manage', 'invoices.manage', 'stock.manage', 'btm.manage', 'stats.view', 'audit.view',
         'portal.manage', 'portal.applications', 'security.2fa_required']);
     $chief = array_merge($lead, ['patients.delete', 'users.2fa_reset', 'personnel.confidential', 'ranks.manage', 'departments.manage',
@@ -280,7 +281,7 @@ function permission_module(string $perm): ?string
         'invoices.' => 'billing', 'prices.' => 'billing', 'stock.' => 'stock', 'btm.' => 'stock',
         'wanted.' => 'wanted', 'portal.' => 'portal', 'requests.' => 'requests', 'evidence.' => 'evidence', 'vehicles.' => 'vehicles',
         'custody.' => 'custody', 'court.' => 'court', 'licenses.' => 'licenses', 'objects.' => 'objects', 'joint.' => 'joint',
-        'equipment.' => 'equipment', 'breathing.' => 'breathing', 'flightlog.' => 'flightlog',
+        'equipment.' => 'equipment', 'breathing.' => 'breathing', 'flightlog.' => 'flightlog', 'fitness.' => 'fitness',
     ];
     foreach ($map as $prefix => $module) {
         if (str_starts_with($perm, $prefix)) {

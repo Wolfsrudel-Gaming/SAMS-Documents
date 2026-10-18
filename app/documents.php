@@ -400,6 +400,32 @@ function document_types_all(): array
         ],
 
         // ------------------------------------------------------------------
+        'einsatztauglichkeit' => [
+            'title'    => 'Bescheinigung über die Einsatztauglichkeit',
+            'short'    => 'Einsatztauglichkeit',
+            'code'     => 'ET',
+            'category' => 'Behörden & Gutachten',
+            'role'     => 'doctor',
+            'patient'  => 'required',
+            'template' => 'einsatztauglichkeit',
+            'valid'    => 'valid_until',
+            'fields'   => [
+                ['name' => 'art', 'label' => 'Untersuchung', 'type' => 'select', 'required' => true, 'options' => fitness_kind_options()],
+                ['name' => 'dienststelle', 'label' => 'Dienststelle / Arbeitgeber', 'type' => 'text', 'placeholder' => 'z. B. TAS – Technische Abteilung Spezialrettung'],
+                ['name' => 'exam_date', 'label' => 'Untersucht am', 'type' => 'date', 'default' => 'today', 'required' => true, 'width' => 'half'],
+                ['name' => 'valid_until', 'label' => 'Gültig bis (leer = Regelfrist der Untersuchung)', 'type' => 'date', 'width' => 'half'],
+                ['name' => 'umfang', 'label' => 'Untersuchungsumfang', 'type' => 'checkboxes', 'options' => array_combine($u = ['Anamnese', 'Körperliche Untersuchung',
+                    'Seh- und Hörtest', 'Ruhe-EKG', 'Belastungs-EKG (Ergometrie)', 'Lungenfunktion (Spirometrie)', 'Röntgen Thorax', 'Labor',
+                    'HNO / Druckausgleich', 'Gleichgewicht / Höhentauglichkeit', 'Schwimm- und Ausdauernachweis', 'Psychische Belastbarkeit'], $u)],
+                ['name' => 'befund', 'label' => 'Befunde (vertraulich – kommen als vertraulicher Eintrag in die Akte, werden weder gedruckt noch übermittelt)', 'type' => 'textarea', 'rows' => 3],
+                ['type' => 'heading', 'label' => 'Ergebnis (wird der Dienststelle mitgeteilt)'],
+                ['name' => 'result', 'label' => 'Ergebnis', 'type' => 'radio', 'required' => true, 'options' => [
+                    'geeignet' => 'Tauglich', 'bedingt' => 'Tauglich mit Einschränkungen', 'befristet' => 'Vorübergehend nicht tauglich', 'nicht' => 'Dauerhaft nicht tauglich']],
+                ['name' => 'conditions', 'label' => 'Einschränkungen / Auflagen', 'type' => 'textarea', 'rows' => 2, 'placeholder' => 'z. B. nur mit Korrekturbrille, Tauchtiefe max. 20 m, Nachuntersuchung in 6 Monaten'],
+            ],
+        ],
+
+        // ------------------------------------------------------------------
         'todesbescheinigung' => [
             'title'    => 'Todesbescheinigung',
             'short'    => 'Todesbescheinigung',
