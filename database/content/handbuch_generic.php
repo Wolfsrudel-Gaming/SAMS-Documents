@@ -90,6 +90,17 @@ MD,
 - Verletzte Personen übergebt ihr an den Rettungsdienst – dort entsteht die Patientenakte.
 MD,
     ],
+    'rescue' => $all + [
+        'Handbuch: Spezialrettung' => <<<'MD'
+## Aufgaben
+Gelände-, Wasser- und Luftrettung, Vermisstensuche, Bergung und Absicherung (z. B. Strandwache).
+
+## Dokumente
+- Einsatzbericht Spezialrettung, Suchprotokoll, Tauchprotokoll, Flugbericht, Bergungsprotokoll, Wachbericht, Kostenbescheid.
+- Gerettete Personen übergebt ihr an den Rettungsdienst (SAMS) – dort entsteht die Patientenakte. Für größere Lagen gibt es gemeinsame Einsatzberichte.
+- Flugbericht mit Kennung und Flugzeit trägt den Flug automatisch ins **Flugbuch** ein.
+MD,
+    ],
     'government' => $all + [
         'Handbuch: Verwaltung' => <<<'MD'
 ## Dokumente

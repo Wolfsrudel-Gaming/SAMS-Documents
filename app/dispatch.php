@@ -14,9 +14,9 @@ const FMS_COLORS = [0 => 'red', 1 => 'green', 2 => 'green', 3 => 'orange', 4 => 
 const DISPATCH_PHASES = ['intake' => ['grey', 'Annahme'], 'dispatch' => ['orange', 'Disposition'], 'enroute' => ['orange', 'Anfahrt'], 'onscene' => ['red', 'vor Ort'],
     'closed' => ['green', 'abgeschlossen'], 'cancelled' => ['grey', 'abgebrochen']];
 /** Organisation in der Leitstelle je Fraktionsart (änderbar je Fraktion: Einstellungen → Spielserver). */
-const DISPATCH_DEFAULT_ORG = ['medical' => 'ems', 'police' => 'police', 'fire' => 'fire', 'justice' => '', 'government' => ''];
+const DISPATCH_DEFAULT_ORG = ['medical' => 'ems', 'police' => 'police', 'fire' => 'fire', 'justice' => '', 'government' => '', 'rescue' => 'tas'];
 /** Dokumentart für den Bericht aus einem Einsatz je Fraktionsart. */
-const DISPATCH_REPORT_TYPE = ['fire' => 'fd_einsatz', 'medical' => 'einsatzprotokoll', 'police' => 'pd_anzeige'];
+const DISPATCH_REPORT_TYPE = ['fire' => 'fd_einsatz', 'medical' => 'einsatzprotokoll', 'police' => 'pd_anzeige', 'rescue' => 'tas_einsatz'];
 
 function dispatch_org(?int $factionId = null): string
 {

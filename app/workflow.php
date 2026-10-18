@@ -193,6 +193,7 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
         wanted_from_warrant($id); // Fahndung bei allen Polizeibehörden
     }
     fire_document_issued($id, $type['key'], $data); // Brandschau → Prüftermine im Objektplan
+    rescue_document_issued($id, $type['key'], $data, (int) $issuer['id']); // Flugbericht → Flugbuch
     if (!empty($data['_dispatch'])) {
         q('UPDATE dispatch_incidents SET document_id = ? WHERE id = ? AND faction_id = ?', [$id, (int) $data['_dispatch'], fid()]);
     }

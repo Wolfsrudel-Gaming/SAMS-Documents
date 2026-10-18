@@ -232,6 +232,7 @@ const STAMP_PROFILES = [
     'police'     => ['color' => '#1d2f5e', 'emblem' => 'badge', 'seal_label' => 'DIENSTSIEGEL', 'caption' => 'Unterschrift und Dienststempel', 'head' => 'Behördenleitung'],
     'justice'    => ['color' => '#6b1e1e', 'emblem' => 'scales', 'seal_label' => 'GERICHTSSIEGEL', 'caption' => 'Unterschrift und Siegel', 'head' => 'Präsidium'],
     'fire'       => ['color' => '#a3161a', 'emblem' => 'maltese', 'seal_label' => 'DIENSTSIEGEL', 'caption' => 'Unterschrift und Dienststempel', 'head' => 'Leitung der Feuerwehr'],
+    'rescue'     => ['color' => '#b34700', 'emblem' => 'rescue', 'seal_label' => 'DIENSTSIEGEL', 'caption' => 'Unterschrift und Dienststempel', 'head' => 'Leitung Spezialrettung'],
     'government' => ['color' => '#2f5d50', 'emblem' => 'columns', 'seal_label' => 'AMTSSIEGEL', 'caption' => 'Unterschrift und Amtsstempel', 'head' => 'Verwaltungsleitung'],
 ];
 
@@ -420,6 +421,10 @@ function seal_emblem(string $emblem, string $pid): string
             return '<path d="M-36 -12 L0 -34 L36 -12 Z"/><rect x="-36" y="-10" width="72" height="4"/>'
                 . '<rect x="-30" y="-4" width="7" height="28"/><rect x="-15" y="-4" width="7" height="28"/><rect x="8" y="-4" width="7" height="28"/><rect x="23" y="-4" width="7" height="28"/>'
                 . '<rect x="-38" y="25" width="76" height="4"/><rect x="-42" y="30" width="84" height="4"/>';
+        case 'rescue': // Spezialrettung: Berg, Welle und Rotor
+            return '<path d="M-36 14 L-12 -22 L0 -6 L10 -18 L36 14 Z"/>'
+                . '<path d="M-36 24 c6 -5 12 -5 18 0 s12 5 18 0 s12 -5 18 0 s12 5 18 0" fill="none" stroke-width="4" stroke-linecap="round"/>'
+                . '<path d="M-26 -32 L26 -32 M0 -32 L0 -26" fill="none" stroke-width="3.4" stroke-linecap="round"/><circle cx="0" cy="-24" r="3"/>';
         case 'state': // Verwaltung: Stern im Lorbeerkranz (Staatswappen, keiner Behörde zugeordnet)
             $pts = [];
             for ($i = 0; $i < 10; $i++) {

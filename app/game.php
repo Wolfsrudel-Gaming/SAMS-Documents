@@ -7,7 +7,7 @@
 
 /** Vorgaben je Fraktionsart: ESX-Jobnamen (erster = Society-Konto). */
 const GAME_DEFAULT_JOBS = [
-    'medical' => ['ambulance'], 'police' => ['police', 'sheriff'], 'justice' => ['doj'], 'fire' => ['fire'], 'government' => ['gov'],
+    'medical' => ['ambulance'], 'police' => ['police', 'sheriff'], 'justice' => ['doj'], 'fire' => ['fire'], 'government' => ['gov'], 'rescue' => ['tas'],
 ];
 
 const GAME_BILL_STATUS = [

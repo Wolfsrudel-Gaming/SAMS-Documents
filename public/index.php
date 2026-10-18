@@ -56,6 +56,7 @@ $routes = [
     'joint_report'    => 'joint.view|joint.write',
     'equipment'       => 'equipment.view|equipment.manage',
     'dispatch'        => 'documents.view',
+    'flightlog'       => 'flightlog.view|flightlog.manage',
     'breathing'       => 'breathing.view|breathing.manage',
     'requests'        => 'requests.view|requests.manage',
     'btm'             => 'stock.view|btm.manage',

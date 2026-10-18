@@ -30,6 +30,7 @@ const FACTION_MODULES = [
     'joint'    => 'Gemeinsame Einsatzberichte mehrerer Behörden',
     'equipment' => 'Geräte & Prüffristen (Wartung, Prüfprotokolle)',
     'breathing' => 'Atemschutz-Nachweise (Eignung, Belastungsübung, Einsätze)',
+    'flightlog' => 'Flugbuch und Luftfahrzeuge (Flugstunden, Wartung, Windeneinsätze)',
 ];
 
 const FACTION_KINDS = [
@@ -56,6 +57,12 @@ const FACTION_KINDS = [
         'modules' => ['billing', 'requests', 'objects', 'joint', 'equipment', 'breathing'],
         'terms' => ['record' => 'Akte', 'records' => 'Akten', 'person' => 'Betroffene/r', 'persons' => 'Betroffene',
             'case' => 'Einsatz', 'cases' => 'Einsätze', 'billing' => 'Gebührenbescheide', 'catalog' => 'Gebührenordnung', 'staff' => 'Personal'],
+    ],
+    'rescue' => [
+        'label' => 'Spezialrettung (Gelände, Wasser, Luft)', 'logo' => 'assets/img/kinds/rescue.svg', 'color' => '#d35400',
+        'modules' => ['records', 'billing', 'requests', 'joint', 'equipment', 'flightlog'],
+        'terms' => ['record' => 'Einsatzakte', 'records' => 'Einsatzakten', 'person' => 'Gerettete/r', 'persons' => 'Gerettete',
+            'case' => 'Einsatz', 'cases' => 'Einsätze', 'billing' => 'Kostenbescheide', 'catalog' => 'Kostenordnung', 'staff' => 'Personal'],
     ],
     'government' => [
         'label' => 'Verwaltung / Sonstige', 'logo' => 'assets/img/kinds/government.svg', 'color' => '#2f5d50',
@@ -107,6 +114,16 @@ const FACTION_RANK_TEMPLATES = [
         ['Firefighter', 'FF', 30, '#e67e22', 'staff', ['fire']],
         ['Probationary Firefighter', 'PFF', 10, '#64717f', 'trainee', []],
     ],
+    'rescue' => [
+        ['Leitung Spezialrettung', 'LSR', 95, '#7a3b00', 'chief', ['rescue', 'pilot', 'lead', 'staff']],
+        ['Stellv. Leitung', 'SLR', 85, '#9c4a00', 'chief', ['rescue', 'pilot', 'lead', 'staff']],
+        ['Einsatzleiter/in', 'EL', 70, '#b85400', 'lead', ['rescue', 'pilot', 'lead']],
+        ['Pilot/in', 'PIL', 60, '#1f5f8b', 'senior', ['rescue', 'pilot']],
+        ['Luftretter/in', 'LR', 50, '#d35400', 'staff', ['rescue']],
+        ['Spezialretter/in', 'SR', 40, '#e67e22', 'staff', ['rescue']],
+        ['Rettungsschwimmer/in', 'RSW', 30, '#f39c12', 'staff', ['rescue']],
+        ['Anwärter/in', 'ANW', 10, '#64717f', 'trainee', []],
+    ],
     'government' => [
         ['Bürgermeister/in', 'BGM', 95, '#1f3d34', 'chief', ['gov', 'lead', 'staff']],
         ['Amtsleitung', 'AL', 75, '#2f5d50', 'lead', ['gov', 'lead', 'staff']],
@@ -120,6 +137,7 @@ const FACTION_DEPARTMENT_TEMPLATES = [
     'police'     => [['Streifendienst', 'PAT', '#1d3a6e'], ['Kriminalpolizei', 'CID', '#4a6b8a'], ['Verkehrspolizei', 'TRF', '#2f8f6f'], ['Spezialeinheit', 'SWAT', '#14202c'], ['Ausbildung', 'ACA', '#8a6d1d']],
     'justice'    => [['Gericht', 'CRT', '#5b3a1e'], ['Staatsanwaltschaft', 'DA', '#7a1f2b'], ['Anwaltschaft', 'BAR', '#2f5d50'], ['Justizverwaltung', 'ADM', '#64717f']],
     'fire'       => [['Brandbekämpfung', 'FIRE', '#a3161a'], ['Technische Hilfe', 'RES', '#d35400'], ['Vorbeugender Brandschutz', 'PREV', '#8a6d1d']],
+    'rescue'     => [['Geländerettung', 'GR', '#8a5a2b'], ['Wasserrettung & Tauchen', 'WR', '#1f6fb2'], ['Luftrettung', 'LR', '#d35400'], ['Suche & Ortung', 'SO', '#5b6b2e'], ['Ausbildung', 'AUS', '#8a6d1d']],
     'government' => [['Bürgeramt', 'BA', '#2f5d50'], ['Ordnungsamt', 'OA', '#5b6b2e']],
 ];
 
@@ -145,6 +163,11 @@ const FACTION_CATALOG_TEMPLATES = [
         ['F01', 'Fehlalarm Brandmeldeanlage', 'Einsätze', 500, 0], ['F02', 'Technische Hilfeleistung (je Stunde)', 'Einsätze', 300, 0], ['F03', 'Ölspurbeseitigung', 'Einsätze', 400, 0],
         ['F04', 'Brandschau', 'Vorbeugender Brandschutz', 250, 0], ['F05', 'Brandsicherheitswache (je Stunde)', 'Vorbeugender Brandschutz', 200, 0],
     ],
+    'rescue' => [
+        ['R01', 'Rettung / Bergung aus unwegsamem Gelände', 'Einsätze', 1500, 0], ['R02', 'Wasserrettung', 'Einsätze', 1200, 0], ['R03', 'Hubschraubereinsatz (je Minute)', 'Luftrettung', 150, 0],
+        ['R04', 'Windenbergung', 'Luftrettung', 2500, 0], ['R05', 'Vermisstensuche (je Stunde)', 'Suche', 400, 0], ['R06', 'Fahrzeugbergung aus Gewässer', 'Bergung', 3000, 0],
+        ['R07', 'Tierrettung', 'Einsätze', 300, 0], ['R08', 'Absicherung Veranstaltung / Strandwache (je Stunde)', 'Absicherung', 200, 0], ['R09', 'Mutwilliger Fehlalarm', 'Einsätze', 800, 0],
+    ],
     'government' => [
         ['G01', 'Gewerbeanmeldung', 'Gewerbe', 150, 0], ['G02', 'Gaststättenerlaubnis', 'Gewerbe', 750, 0], ['G03', 'Veranstaltungsgenehmigung', 'Genehmigungen', 400, 0],
         ['G04', 'Taxikonzession', 'Genehmigungen', 600, 0], ['G05', 'Beglaubigung', 'Bürgeramt', 50, 0], ['G06', 'Ausweisdokument', 'Bürgeramt', 100, 0],
@@ -156,10 +179,10 @@ function faction_tier_permissions(string $tier): array
 {
     $trainee = ['patients.view', 'documents.view', 'duty.clock', 'duty.view', 'roster.view', 'roster.signup', 'training.view', 'wiki.view',
         'board.view', 'messages.use', 'stock.view', 'wanted.view', 'requests.view', 'evidence.view', 'vehicles.view', 'custody.view', 'court.view',
-        'licenses.view', 'objects.view', 'joint.view', 'equipment.view', 'breathing.view'];
+        'licenses.view', 'objects.view', 'joint.view', 'equipment.view', 'breathing.view', 'flightlog.view'];
     $staff = array_merge($trainee, ['patients.edit', 'entries.create', 'attachments.upload', 'cases.manage', 'documents.revoke.own', 'documents.print',
         'documents.share', 'stock.dispense', 'wanted.manage', 'requests.manage', 'evidence.manage', 'vehicles.manage', 'custody.manage', 'court.manage',
-        'licenses.manage', 'objects.manage', 'joint.write', 'equipment.manage', 'breathing.manage']);
+        'licenses.manage', 'objects.manage', 'joint.write', 'equipment.manage', 'breathing.manage', 'flightlog.manage']);
     $senior = array_merge($staff, ['entries.confidential', 'documents.approve', 'documents.addendum', 'users.view', 'personnel.view', 'patients.archive']);
     $lead = array_merge($senior, ['entries.edit_all', 'entries.all_departments', 'documents.revoke.all', 'documents.drafts_all', 'patients.merge',
         'users.create', 'users.edit', 'users.password_reset', 'users.deactivate', 'users.sessions', 'personnel.edit', 'duty.manage', 'roster.manage',
@@ -257,7 +280,7 @@ function permission_module(string $perm): ?string
         'invoices.' => 'billing', 'prices.' => 'billing', 'stock.' => 'stock', 'btm.' => 'stock',
         'wanted.' => 'wanted', 'portal.' => 'portal', 'requests.' => 'requests', 'evidence.' => 'evidence', 'vehicles.' => 'vehicles',
         'custody.' => 'custody', 'court.' => 'court', 'licenses.' => 'licenses', 'objects.' => 'objects', 'joint.' => 'joint',
-        'equipment.' => 'equipment', 'breathing.' => 'breathing',
+        'equipment.' => 'equipment', 'breathing.' => 'breathing', 'flightlog.' => 'flightlog',
     ];
     foreach ($map as $prefix => $module) {
         if (str_starts_with($perm, $prefix)) {
@@ -439,6 +462,7 @@ const BILLING_LABELS = [
     'police' => ['title' => 'Bußgeldbescheid', 'item' => 'Tatbestand', 'items' => 'Tatbestände', 'date' => 'Tatzeit', 'intro' => 'Gegen Sie wird wegen der nachstehend aufgeführten Verstöße ein Bußgeld festgesetzt:', 'office' => 'Bußgeldstelle', 'total' => 'Festgesetzter Betrag'],
     'justice' => ['title' => 'Kostenrechnung', 'item' => 'Kostenposition', 'items' => 'Kosten', 'date' => 'Datum', 'intro' => 'In der oben bezeichneten Sache werden folgende Kosten erhoben:', 'office' => 'Kostenstelle', 'total' => 'Gesamtbetrag'],
     'fire' => ['title' => 'Gebührenbescheid', 'item' => 'Leistung', 'items' => 'Leistungen', 'date' => 'Einsatzdatum', 'intro' => 'Für den Einsatz werden nach der Gebührenordnung folgende Gebühren erhoben:', 'office' => 'Gebührenstelle', 'total' => 'Gebühr gesamt'],
+    'rescue' => ['title' => 'Kostenbescheid', 'item' => 'Leistung', 'items' => 'Leistungen', 'date' => 'Einsatzdatum', 'intro' => 'Für den Rettungs- bzw. Bergungseinsatz werden folgende Kosten erhoben:', 'office' => 'Kostenstelle', 'total' => 'Kosten gesamt'],
     'government' => ['title' => 'Gebührenbescheid', 'item' => 'Gebühr', 'items' => 'Gebühren', 'date' => 'Datum', 'intro' => 'Für die nachstehenden Amtshandlungen werden folgende Gebühren erhoben:', 'office' => 'Gebührenstelle', 'total' => 'Gebühr gesamt'],
 ];
 
@@ -504,6 +528,7 @@ function entry_types(?string $kind = null): array
         'justice' => ['Notiz', 'Eingang', 'Verhandlung', 'Beschluss', 'Urteil', 'Akteneinsicht', 'Vollstreckung', 'Telefonat', 'Sonstiges'],
         'fire' => ['Einsatz', 'Brandschau', 'Beratung', 'Notiz', 'Sonstiges'],
         'government' => ['Notiz', 'Antrag', 'Bescheid', 'Vorsprache', 'Telefonat', 'Sonstiges'],
+        'rescue' => ['Einsatz', 'Rettung', 'Suche', 'Bergung', 'Übergabe an SAMS', 'Notiz', 'Sonstiges'],
         default => ['Behandlung', 'Notfalleinsatz', 'Untersuchung', 'Verlaufsnotiz', 'Psychologisches Gespräch', 'Labor', 'Bildgebung', 'Operation', 'Medikation', 'Telefonat', 'Sonstiges'],
     };
 }
@@ -523,6 +548,7 @@ function entry_templates(?string $kind = null): array
         ],
         'fire' => ['Einsatz' => "Alarmierung:\nLage bei Eintreffen:\nMaßnahmen:\nEinsatzende:"],
         'government' => ['Antrag' => "Anliegen:\n\nUnterlagen:\n\nErgebnis:"],
+        'rescue' => ['Rettung' => "Einsatzort / Koordinaten:\nLage bei Eintreffen:\nRettungsweg / Technik:\nZustand der Person:\nÜbergabe (SAMS / selbstständig):"],
         default => [
             'SOAP' => "Anamnese:\n\nBefund:\n\nDiagnose:\n\nTherapie:\n\nProcedere:",
             'ABCDE' => "A – Atemwege:\nB – Atmung:\nC – Kreislauf:\nD – Neurologie:\nE – Exposure / Umgebung:",
@@ -537,6 +563,7 @@ function case_labels(?string $kind = null): array
         'police' => ['incident' => 'Sachverhalt', 'incident_ph' => 'Was ist passiert? Wer war beteiligt?', 'diagnosis' => 'Tatvorwurf / Delikte', 'diagnosis_ph' => 'Ein Delikt pro Zeile'],
         'justice' => ['incident' => 'Sachverhalt', 'incident_ph' => 'Gegenstand des Verfahrens', 'diagnosis' => 'Anklagepunkte / Gegenstand', 'diagnosis_ph' => 'Ein Punkt pro Zeile'],
         'fire' => ['incident' => 'Lage', 'incident_ph' => 'Lage bei Eintreffen', 'diagnosis' => 'Maßnahmen', 'diagnosis_ph' => 'Eine Maßnahme pro Zeile'],
+        'rescue' => ['incident' => 'Lage', 'incident_ph' => 'Wo und wie wurde die Person gefunden? Gelände, Gewässer, Wetter', 'diagnosis' => 'Maßnahmen / Rettungstechnik', 'diagnosis_ph' => 'Eine Maßnahme pro Zeile'],
         'government' => ['incident' => 'Anliegen', 'incident_ph' => 'Worum geht es?', 'diagnosis' => 'Ergebnis / Bescheid', 'diagnosis_ph' => ''],
         default => ['incident' => 'Hergang / Anlass', 'incident_ph' => 'Was ist passiert? Wie wurde der Patient vorgefunden?', 'diagnosis' => 'Diagnose(n)', 'diagnosis_ph' => 'Eine Diagnose pro Zeile, gern mit ICD-10 (z. B. S52.5 Distale Radiusfraktur)'],
     };

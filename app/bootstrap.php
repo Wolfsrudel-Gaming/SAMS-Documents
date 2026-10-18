@@ -64,6 +64,7 @@ require __DIR__ . '/signing.php';
 require __DIR__ . '/sky.php';
 require __DIR__ . '/fire.php';
 require __DIR__ . '/dispatch.php';
+require __DIR__ . '/rescue.php';
 
 set_exception_handler('handle_exception');
 set_error_handler(function (int $no, string $msg, string $file, int $line): bool {

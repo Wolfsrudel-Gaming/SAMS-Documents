@@ -202,6 +202,56 @@ function document_types_factions(): array
             $sel('anlass', 'Anlass', ['Einsatz', 'Übung', 'Fahrt', 'Wartung / Prüfung', 'Unbekannt']), $area('schaden', 'Schadensbeschreibung', ['required' => true, 'rows' => 3]),
             $radio('einsatzbereit', 'Einsatzbereitschaft', ['weiterhin einsatzbereit', 'eingeschränkt einsatzbereit', 'außer Dienst']), $area('massnahme', 'Veranlasste Maßnahmen', ['rows' => 2]),
         ], '', 'none', 'none'),
+        // ======================================================= Spezialrettung (TAS)
+        'tas_einsatz' => $def('Einsatzbericht Spezialrettung', 'Einsatzbericht', 'ER', 'rescue', 'rescue', 'Einsatz', 'protocol', [
+            $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $time('alarm', 'Alarmierung'), $time('ankunft', 'Eintreffen'), $time('ende', 'Einsatzende'),
+            $sel('art', 'Einsatzart', ['Geländerettung', 'Höhenrettung', 'Wasserrettung', 'Luftrettung / Windenbergung', 'Vermisstensuche', 'Tauchen / Bergung', 'Tierrettung', 'Absicherung'], ['required' => true]),
+            $t('ort', 'Einsatzort', ['width' => 'half', 'required' => true]), $t('koordinaten', 'Koordinaten / Planquadrat', ['width' => 'third']),
+            $area('lage', 'Lage bei Eintreffen (Gelände, Gewässer, Wetter)', ['required' => true]), $area('massnahmen', 'Maßnahmen und Rettungstechnik', ['required' => true]),
+            $t('kraefte', 'Eingesetzte Kräfte / Fahrzeuge / Boot / Luftfahrzeug'), ['name' => 'gerettet', 'label' => 'Gerettete Personen', 'type' => 'number', 'width' => 'quarter'],
+            $sel('verbleib', 'Verbleib', ['an SAMS übergeben', 'durch TAS in Klinik geflogen', 'selbstständig / unverletzt', 'verstorben – Polizei informiert', 'nicht aufgefunden'], ['width' => 'half']),
+            $check('polizei', 'Polizei informiert'), $check('fd', 'Feuerwehr beteiligt'), $area('besonderheiten', 'Besonderheiten / Gefahren', ['rows' => 2]),
+        ], '', 'optional'),
+        'tas_suche' => $def('Suchprotokoll Vermisstensuche', 'Suchprotokoll', 'SU', 'rescue', 'rescue', 'Suche & Ortung', 'protocol', [
+            $head('Vermisste Person'), $t('vermisst', 'Name (falls keine Akte gewählt)', ['width' => 'half']), $t('beschreibung', 'Personenbeschreibung / Kleidung', ['width' => 'half']),
+            $t('zuletzt_ort', 'Zuletzt gesehen (Ort)', ['width' => 'half', 'required' => true]), $date('zuletzt_datum', 'am'), $time('zuletzt_zeit', 'um'),
+            $t('meldende', 'Meldende Person / Stelle', ['width' => 'half']), $sel('kategorie', 'Personengruppe', ['Wanderer/in', 'Kind', 'Ältere Person / Demenz', 'Suizidgefahr', 'Wassersportler/in', 'Pilot/in / Absturz', 'Sonstige']),
+            $head('Suche'), $date('beginn', 'Suchbeginn', ['default' => 'today']), $time('beginn_zeit', 'um'), $area('sektoren', 'Suchgebiete / Sektoren und Ergebnis je Sektor', ['rows' => 5, 'required' => true]),
+            $area('mittel', 'Eingesetzte Mittel (Suchtrupps, Drohne/Wärmebild, Hubschrauber, Boot, Hunde)', ['rows' => 2]),
+            $radio('ergebnis', 'Ergebnis', ['lebend aufgefunden', 'verletzt aufgefunden – an SAMS', 'tot aufgefunden – Polizei informiert', 'Suche abgebrochen', 'ergebnislos'], ['required' => true]),
+            $t('fundort', 'Fundort / Uhrzeit', ['width' => 'half']), $check('polizei', 'Polizei (LSPD/BCSO) beteiligt'),
+        ], '', 'optional'),
+        'tas_tauch' => $def('Tauchprotokoll', 'Tauchprotokoll', 'TP', 'rescue', 'rescue', 'Tauchen', 'protocol', [
+            $t('gewaesser', 'Gewässer / Ort', ['width' => 'half', 'required' => true]), $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $t('zweck', 'Zweck', ['width' => 'quarter', 'placeholder' => 'Suche, Bergung, Übung']),
+            $t('taucher', 'Taucher/in', ['width' => 'third', 'required' => true]), $t('signalmann', 'Signalmann/-frau', ['width' => 'third', 'required' => true]), $t('sicherung', 'Sicherungstaucher/in', ['width' => 'third']),
+            $time('abtauchen', 'Abtauchen'), $time('auftauchen', 'Auftauchen'), $t('tiefe', 'Max. Tiefe (m)', ['width' => 'quarter']), $t('grundzeit', 'Grundzeit (min)', ['width' => 'quarter']),
+            $sel('sicht', 'Sicht', ['gut (> 5 m)', 'mittel (1–5 m)', 'schlecht (< 1 m)', 'null']), $sel('stroemung', 'Strömung', ['keine', 'schwach', 'mittel', 'stark']),
+            $t('druck', 'Flaschendruck Beginn / Ende (bar)', ['width' => 'third']), $area('ergebnis', 'Ergebnis / Fund', ['rows' => 3]), $check('vorfall', 'Tauchunfall / Auffälligkeit'),
+            $area('besonderheiten', 'Besonderheiten', ['rows' => 2]),
+        ], '', 'none', 'none'),
+        'tas_flug' => $def('Flugbericht', 'Flugbericht', 'FB', 'rescue', 'pilot', 'Luftrettung', 'protocol', [
+            $t('kennung', 'Luftfahrzeug (Rufname / Kennung)', ['width' => 'half', 'required' => true]), $date('datum', 'Datum', ['required' => true, 'default' => 'today']),
+            $t('crew', 'Besatzung (Windenoperator, Luftretter, Notarzt)', ['width' => 'half']), $t('auftrag', 'Auftrag', ['width' => 'half', 'required' => true]),
+            $t('start_ort', 'Start (Ort)', ['width' => 'third']), $time('start', 'Startzeit'), $t('lande_ort', 'Landung (Ort)', ['width' => 'third']), $time('landung', 'Landezeit'),
+            ['name' => 'flugzeit', 'label' => 'Flugzeit (Minuten)', 'type' => 'number', 'width' => 'quarter'], ['name' => 'winden', 'label' => 'Windeneinsätze', 'type' => 'number', 'width' => 'quarter'],
+            ['name' => 'landungen', 'label' => 'Landungen', 'type' => 'number', 'width' => 'quarter'], $sel('wetter', 'Wetter', ['VFR gut', 'VFR eingeschränkt', 'Grenzwetter', 'Nacht']),
+            $area('besonderheiten', 'Besonderheiten / technische Auffälligkeiten', ['rows' => 3]),
+        ], '', 'none', 'none'),
+        'tas_bergung' => $def('Bergungsprotokoll', 'Bergungsprotokoll', 'BP', 'rescue', 'rescue', 'Bergung', 'protocol', [
+            $sel('objekt', 'Geborgen wurde', ['Fahrzeug', 'Boot', 'Luftfahrzeug (Wrack)', 'Gegenstand / Beweismittel', 'verstorbene Person'], ['required' => true]),
+            $t('bezeichnung', 'Bezeichnung / Kennzeichen', ['width' => 'half']), $t('ort', 'Ort (Gewässer / Gelände)', ['width' => 'half', 'required' => true]), $date('datum', 'Datum', ['required' => true, 'default' => 'today']),
+            $area('methode', 'Bergungsmethode (Taucher, Hebesack, Seilwinde, Kran, Hubschrauber)', ['rows' => 3]), $check('polizei', 'Polizei / DOJ informiert'),
+            $sel('uebergabe', 'Übergeben an', ['Polizei (Asservat)', 'Halter/in', 'Abschleppdienst', 'Bestatter (nach Freigabe)', 'verbleibt am Ort']), $area('bemerkung', 'Bemerkungen / Schäden', ['rows' => 2]),
+            $sign('sig_uebernahme', 'Unterschrift übernehmende Stelle'),
+        ], '', 'none'),
+        'tas_wache' => $def('Wachbericht Strand / Gewässer', 'Wachbericht', 'WB', 'rescue', 'rescue', 'Wasserrettung', 'protocol', [
+            $t('abschnitt', 'Wachabschnitt', ['width' => 'half', 'required' => true, 'placeholder' => 'z. B. Vespucci Beach Turm 2']), $date('datum', 'Datum', ['required' => true, 'default' => 'today']),
+            $time('beginn', 'Beginn'), $time('ende', 'Ende'), $t('wachgaenger', 'Wachgänger/innen', ['width' => 'half']),
+            $sel('flagge', 'Flagge', ['Grün – Baden erlaubt', 'Gelb – eingeschränkt', 'Rot – Badeverbot']), $t('wetter', 'Wetter / Wasser', ['width' => 'third']),
+            ['name' => 'hilfeleistungen', 'label' => 'Hilfeleistungen', 'type' => 'number', 'width' => 'quarter'], ['name' => 'rettungen', 'label' => 'Rettungen aus dem Wasser', 'type' => 'number', 'width' => 'quarter'],
+            $area('vorkommnisse', 'Vorkommnisse', ['rows' => 4]),
+        ], '', 'none', 'none'),
+
         // ============================================================ Verwaltung
         'gov_bescheid' => $def('Bescheid', 'Bescheid', 'BS', 'government', 'gov', 'Bescheide', 'letter', [
             $az, $t('betreff', 'Betreff', ['required' => true]), $area('tenor', 'Entscheidung', ['required' => true]), $area('gruende', 'Begründung', ['rows' => 5]),
