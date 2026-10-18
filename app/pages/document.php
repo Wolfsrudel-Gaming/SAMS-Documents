@@ -311,6 +311,10 @@ ob_start(); ?>
 </section>
 <?php endif; ?>
 
+<?php if ($doc['type'] === 'dienstausweis' && empty($doc['data']['photo_file']) && ($photoUrl = (string) ($doc['data']['photo'] ?? '')) !== '' && ($photoErr = remote_image_error($photoUrl)) !== ''): ?>
+    <div class="flash warn no-print">Das Foto konnte vom Server nicht geladen werden (<?= e($photoErr) ?>). Im Browser ist es evtl. sichtbar, beim „Als Bild speichern“ und im Spiel fehlt es dann.
+        Am sichersten: Ausweis neu ausstellen und das Foto <strong>hochladen</strong> statt eine URL anzugeben<?= can('documents.issue.dienstausweis') ? ' – <a href="' . e(url('document_new', ['type' => 'dienstausweis', 'from' => $id])) . '">als Vorlage verwenden</a>' : '' ?>.</div>
+<?php endif; ?>
 <div class="doc-stage" id="doc-stage"><?= $html ?></div>
 
 <?php if ($gameNotify): ?><span hidden data-game-notify="<?= e($gameNotify['type']) ?>" data-payload="<?= e(json_encode($gameNotify['payload'])) ?>"></span><?php endif; ?>

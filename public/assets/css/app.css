@@ -662,3 +662,7 @@ form.inline { display: inline; }
 .wanted-card.expired { opacity: .65; }
 .wanted-card h2 small { margin-left: .4rem; font-weight: normal; }
 .wanted-alert a { margin-left: .4rem; }
+
+/* Bildfeld (Ausweisfoto) */
+.image-field { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.image-field .image-preview { width: 72px; height: 96px; object-fit: cover; border: 1px solid var(--line-soft); border-radius: 3px; }

@@ -6,6 +6,10 @@ $function = trim((string) ($d['function'] ?? '')) ?: ($emp['rank_name'] ?? '');
 $photo = preg_match('#^https?://#i', (string) ($d['photo'] ?? '')) ? (string) $d['photo'] : '';
 // Foto über den eigenen Server einbetten, damit es auch beim „Als Bild speichern“ erscheint (sonst Original-URL)
 $photo = $photo !== '' ? (remote_image_data_uri($photo) ?: $photo) : '';
+// Hochgeladenes Foto hat Vorrang
+if (preg_match('#^data:image/(png|jpeg|webp);base64,#', (string) ($d['photo_file'] ?? ''))) {
+    $photo = (string) $d['photo_file'];
+}
 $initials = implode('', array_map(fn($w) => mb_substr($w, 0, 1), array_slice(preg_split('/\s+/', trim((string) ($emp['name'] ?? '?'))), 0, 2)));
 $access = opt_label($type, 'access', $d['access'] ?? []);
 ?>

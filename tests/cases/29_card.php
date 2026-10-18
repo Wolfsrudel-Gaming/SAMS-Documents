@@ -37,6 +37,20 @@ $admin->get('/index.php?p=document_new&type=dienstausweis&employee=' . $nfsId);
 $admin->post('/index.php?p=document_new&type=dienstausweis', ['type' => 'dienstausweis', 'employee_id' => (string) $nfsId, 'action' => 'issue', 'sig_mode' => 'live', 'live_signature' => TEST_SIGNATURE,
     'd[valid_until]' => date('Y-m-d', strtotime('+1 year')), 'd[photo]' => 'http://127.0.0.1:1/gibtsnicht.png']);
 check($admin->status === 200 && $admin->has('gibtsnicht.png'), 'Nicht erreichbares Foto: Original-URL bleibt, keine Fehlerseite');
+check($admin->has('konnte vom Server nicht geladen werden') && $admin->has('keine Verbindung') && $admin->has('als Vorlage verwenden'), 'Grund wird angezeigt, mit Hinweis auf Foto-Upload');
+// Foto hochladen (im Browser verkleinert, als data-URI im Dokument)
+ob_start();
+imagejpeg(imagecreatetruecolor(60, 80));
+$jpeg = 'data:image/jpeg;base64,' . base64_encode((string) ob_get_clean());
+$admin->get('/index.php?p=document_new&type=dienstausweis&employee=' . $nfsId);
+check($admin->has('data-image-input'), 'Formular bietet Foto-Upload');
+$admin->post('/index.php?p=document_new&type=dienstausweis', ['type' => 'dienstausweis', 'employee_id' => (string) $nfsId, 'action' => 'issue', 'sig_mode' => 'live', 'live_signature' => TEST_SIGNATURE,
+    'd[valid_until]' => date('Y-m-d', strtotime('+1 year')), 'd[photo_file]' => $jpeg, 'd[photo]' => 'http://127.0.0.1:1/x.png']);
+check($admin->has('src="' . $jpeg . '"') && !$admin->has('konnte vom Server nicht geladen werden'), 'Hochgeladenes Foto hat Vorrang und erscheint ohne Umweg');
+$admin->get('/index.php?p=document_new&type=dienstausweis&employee=' . $nfsId);
+$admin->post('/index.php?p=document_new&type=dienstausweis', ['type' => 'dienstausweis', 'employee_id' => (string) $nfsId, 'action' => 'issue', 'sig_mode' => 'live', 'live_signature' => TEST_SIGNATURE,
+    'd[valid_until]' => date('Y-m-d', strtotime('+1 year')), 'd[photo_file]' => 'javascript:alert(1)']);
+check(!$admin->has('javascript:alert'), 'Nur echte Bilddaten werden angenommen');
 
 // Bildschirmfoto zur Sichtprüfung (nur wenn ein Ziel angegeben ist)
 if ($shot = getenv('SAMS_SHOT_DIR')) {

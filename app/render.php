@@ -476,42 +476,70 @@ function a4_close(): string
 /**
  * Fremdes Bild (z. B. Ausweisfoto per URL) über den eigenen Server laden und als data-URI einbetten.
  * Grund: Beim „Als Bild speichern“ (html2canvas) lässt der Browser Bilder fremder Seiten ohne CORS-Freigabe weg.
- * Das Bild wird neu kodiert (max. 600 px), in storage/photos zwischengespeichert; Fehlschläge werden 10 Minuten gemerkt.
- * Nur http(s) und nur öffentliche Adressen (kein Zugriff auf interne Dienste), höchstens 3 Weiterleitungen, 3 MB, 5 Sekunden.
+ * Das Bild wird neu kodiert (max. 600 px), in storage/photos zwischengespeichert; Fehlschläge werden 2 Minuten gemerkt
+ * (Grund steht in der .fail-Datei, siehe remote_image_error()).
+ * Nur http(s) und nur öffentliche Adressen (kein Zugriff auf interne Dienste), höchstens 3 Weiterleitungen, 3 MB, 8 Sekunden.
  */
 function remote_image_data_uri(string $url): string
 {
-    if (!preg_match('#^https?://#i', $url) || strlen($url) > 1000) {
+    if (!preg_match('#^https?://#i', $url) || strlen($url) > 2000) {
         return '';
     }
     $file = storage_path('photos/' . sha1($url) . '.img');
     if (is_file($file)) {
         return (string) file_get_contents($file);
     }
-    if (is_file($file . '.fail') && filemtime($file . '.fail') > time() - 600) {
+    if (is_file($file . '.fail') && filemtime($file . '.fail') > time() - 120) {
         return '';
     }
-    $data = '';
+    [$data, $error] = remote_image_fetch($url);
+    if ($data === '') {
+        @file_put_contents($file . '.fail', $error);
+        return '';
+    }
+    file_put_contents($file, $data);
+    @unlink($file . '.fail');
+    return $data;
+}
+
+/** Grund, warum ein Foto nicht eingebettet werden konnte ('' = kein Fehler bekannt). */
+function remote_image_error(string $url): string
+{
+    $fail = storage_path('photos/' . sha1($url) . '.img.fail');
+    return is_file($fail) ? ((string) file_get_contents($fail) ?: 'unbekannter Fehler') : '';
+}
+
+/** @return array{0: string, 1: string} [data-URI, Fehlergrund] */
+function remote_image_fetch(string $url): array
+{
     $current = $url;
-    for ($hop = 0; $hop < 4 && $data === ''; $hop++) {
+    for ($hop = 0; $hop < 4; $hop++) {
         $parts = parse_url($current);
-        $host = (string) ($parts['host'] ?? '');
+        $host = trim((string) ($parts['host'] ?? ''), '[]');
         $scheme = strtolower((string) ($parts['scheme'] ?? ''));
         if ($host === '' || !in_array($scheme, ['http', 'https'], true)) {
-            break;
+            return ['', 'ungültige Adresse'];
         }
-        $ip = filter_var($host, FILTER_VALIDATE_IP) ? $host : gethostbyname($host);
-        $public = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
-        if (!$public && !getenv('SAMS_ALLOW_LOCAL_FETCH')) {
-            break;
+        // Adresse auflösen (IPv4, sonst IPv6) und nur öffentliche Ziele erlauben
+        $ip = filter_var($host, FILTER_VALIDATE_IP) ? $host : (gethostbynamel($host)[0] ?? '');
+        if ($ip === '' && function_exists('dns_get_record')) {
+            $ip = (string) (@dns_get_record($host, DNS_AAAA)[0]['ipv6'] ?? '');
+        }
+        if ($ip === '') {
+            return ['', 'Rechnername nicht auflösbar (DNS) – hat der Webserver Internetzugang?'];
+        }
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) && !getenv('SAMS_ALLOW_LOCAL_FETCH')) {
+            return ['', 'interne Adresse nicht erlaubt'];
         }
         $port = (int) ($parts['port'] ?? ($scheme === 'https' ? 443 : 80));
-        $ch = curl_init($current);
         $body = '';
+        $ch = curl_init($current);
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => false, CURLOPT_FOLLOWLOCATION => false, CURLOPT_TIMEOUT => 5, CURLOPT_CONNECTTIMEOUT => 3,
-            CURLOPT_RESOLVE => [$host . ':' . $port . ':' . $ip], CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
-            CURLOPT_USERAGENT => 'SAMS/' . (defined('SAMS_VERSION') ? SAMS_VERSION : '1'), CURLOPT_HEADER => false,
+            CURLOPT_RETURNTRANSFER => false, CURLOPT_FOLLOWLOCATION => false, CURLOPT_TIMEOUT => 8, CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_RESOLVE => [$host . ':' . $port . ':' . (str_contains($ip, ':') ? '[' . $ip . ']' : $ip)], CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            // manche Bildseiten blockieren unbekannte Programme – wie ein Browser anfragen
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+            CURLOPT_HTTPHEADER => ['Accept: image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8'],
             CURLOPT_WRITEFUNCTION => function ($c, $chunk) use (&$body) {
                 $body .= $chunk;
                 return strlen($body) > 3 * 1024 * 1024 ? 0 : strlen($chunk); // zu groß → abbrechen
@@ -520,23 +548,22 @@ function remote_image_data_uri(string $url): string
         curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         $location = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+        $err = curl_error($ch);
         curl_close($ch);
         if ($status >= 300 && $status < 400 && $location !== '') {
             $current = $location;
             continue;
         }
-        if ($status !== 200 || $body === '') {
-            break;
+        if ($status === 0) {
+            return ['', 'keine Verbindung (' . ($err ?: 'Zeitüberschreitung') . ')'];
+        }
+        if ($status !== 200) {
+            return ['', 'HTTP ' . $status . ($status === 404 || $status === 403 ? ' – Link abgelaufen oder gesperrt? (Discord-Links verfallen nach einiger Zeit)' : '')];
         }
         $data = image_to_data_uri($body);
-        break;
+        return $data !== '' ? [$data, ''] : ['', 'keine Bilddatei (die Adresse muss direkt auf ein Bild zeigen, nicht auf eine Seite)'];
     }
-    if ($data === '') {
-        @touch($file . '.fail');
-        return '';
-    }
-    file_put_contents($file, $data);
-    return $data;
+    return ['', 'zu viele Weiterleitungen'];
 }
 
 /** Bilddaten prüfen, neu kodieren (ohne Metadaten), auf 600 px begrenzen und als data-URI liefern. */
@@ -546,8 +573,10 @@ function image_to_data_uri(string $bytes): string
     if (!$info || !in_array($info['mime'], ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], true) || $info[0] * $info[1] > 40_000_000) {
         return '';
     }
-    if (!function_exists('imagecreatefromstring') || !($img = @imagecreatefromstring($bytes))) {
-        return '';
+    $img = function_exists('imagecreatefromstring') ? @imagecreatefromstring($bytes) : false;
+    if (!$img) {
+        // GD kann das Format nicht (z. B. WebP ohne Unterstützung): Original einbetten, wenn es klein genug ist
+        return strlen($bytes) <= 1500000 ? 'data:' . $info['mime'] . ';base64,' . base64_encode($bytes) : '';
     }
     $w = imagesx($img);
     $h = imagesy($img);

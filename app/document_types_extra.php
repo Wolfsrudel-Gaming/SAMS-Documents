@@ -184,7 +184,8 @@ function document_types_extra(): array
             'fields'   => [
                 ['name' => 'function', 'label' => 'Funktion auf dem Ausweis', 'type' => 'text', 'placeholder' => 'leer = Rang des Mitarbeiters', 'width' => 'half'],
                 ['name' => 'valid_until', 'label' => 'Gültig bis', 'type' => 'date', 'required' => true, 'width' => 'half'],
-                ['name' => 'photo', 'label' => 'Foto-URL (optional, sonst Initialen)', 'type' => 'text', 'placeholder' => 'https://…/foto.png'],
+                ['name' => 'photo_file', 'label' => 'Foto hochladen (empfohlen)', 'type' => 'image', 'width' => 'half', 'hint' => 'Wird verkleinert und im Ausweis gespeichert – erscheint immer, auch beim „Als Bild speichern“.'],
+                ['name' => 'photo', 'label' => 'oder Foto-URL (optional, sonst Initialen)', 'type' => 'text', 'placeholder' => 'https://…/foto.png', 'width' => 'half'],
                 ['name' => 'access', 'label' => 'Zugangsberechtigungen', 'type' => 'checkboxes', 'options' => [
                     'klinik' => 'Klinik', 'op' => 'OP-Bereich', 'intensiv' => 'Intensivstation', 'btm' => 'BtM-Schrank', 'heli' => 'Hubschrauberlandeplatz', 'leitung' => 'Verwaltung / Leitung']],
                 ['name' => 'blood_type', 'label' => 'Blutgruppe (Rückseite)', 'type' => 'text', 'width' => 'half'],

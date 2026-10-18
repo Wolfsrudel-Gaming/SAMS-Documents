@@ -693,6 +693,16 @@ function render_field(array $f, $value): string
             $html .= '</tbody></table><button type="button" class="btn small row-add">+ Zeile</button>';
             break;
 
+        case 'image':
+            // Bild hochladen: wird im Browser verkleinert und als data-URI im Dokument gespeichert (kein fremder Server nötig)
+            $html = '<span class="label">' . e($f['label']) . '</span>'
+                . '<div class="image-field"><img class="image-preview" src="' . e(is_string($value) ? $value : '') . '" alt=""' . ($value ? '' : ' hidden') . '>'
+                . '<input type="file" accept="image/png,image/jpeg,image/webp" data-image-input="' . e($id) . '">'
+                . '<button type="button" class="btn small image-clear"' . ($value ? '' : ' hidden') . '>Entfernen</button></div>'
+                . '<input type="hidden" id="' . e($id) . '" name="d[' . e($name) . ']" value="' . e(is_string($value) ? $value : '') . '">'
+                . (!empty($f['hint']) ? '<div class="hint">' . e($f['hint']) . '</div>' : '');
+            break;
+
         case 'bodymap':
             $html = '<span class="label">' . e($f['label']) . '</span>'
                 . '<div class="bodymap-editor" data-input="' . e($id) . '">' . bodymap_svg(is_array($value) ? $value : [], true) . '</div>'
@@ -779,6 +789,9 @@ function collect_fields(array $fields, array $input): array
                 break;
             case 'signature':
                 $v = is_string($raw) && preg_match('#^data:image/png;base64,[A-Za-z0-9+/=]+$#', $raw) && strlen($raw) < 400000 ? $raw : '';
+                break;
+            case 'image':
+                $v = is_string($raw) && preg_match('#^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$#', $raw) && strlen($raw) < 700000 ? $raw : '';
                 break;
             default:
                 $v = is_string($raw) ? trim($raw) : '';

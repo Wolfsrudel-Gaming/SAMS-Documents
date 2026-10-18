@@ -159,6 +159,30 @@
         return out.toDataURL('image/png');
     }
 
+    // Bildfeld (z. B. Ausweisfoto): im Browser auf max. 480 px verkleinern und als data-URI speichern
+    document.querySelectorAll('[data-image-input]').forEach(function (file) {
+        var wrap = file.closest('.image-field'), input = document.getElementById(file.dataset.imageInput);
+        var preview = wrap.querySelector('.image-preview'), clear = wrap.querySelector('.image-clear');
+        file.addEventListener('change', function () {
+            var f = file.files && file.files[0];
+            if (!f) { return; }
+            var img = new Image(), url = URL.createObjectURL(f);
+            img.onload = function () {
+                var s = Math.min(1, 480 / Math.max(img.width, img.height));
+                var c = document.createElement('canvas');
+                c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                input.value = c.toDataURL('image/jpeg', 0.85);
+                preview.src = input.value; preview.hidden = false; clear.hidden = false;
+                URL.revokeObjectURL(url);
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            };
+            img.onerror = function () { alert('Das Bild konnte nicht gelesen werden.'); };
+            img.src = url;
+        });
+        clear.addEventListener('click', function () { input.value = ''; file.value = ''; preview.hidden = true; clear.hidden = true; input.dispatchEvent(new Event('change', { bubbles: true })); });
+    });
+
     // Körperschema: Klick setzt nummerierte Markierung
     document.querySelectorAll('.bodymap-editor').forEach(function (wrap) {
         var svg = wrap.querySelector('svg');
