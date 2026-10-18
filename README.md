@@ -64,6 +64,8 @@ Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt au
 - **Dienstplan**: Schichten mit Mindest-/Höchstbesetzung, selbst eintragen oder einteilen lassen, Tausch („zur Übernahme anbieten“), Erinnerung 1 Stunde vorher, Warnung bei Unterbesetzung, Abgleich mit der gestempelten Dienstzeit, Vorwoche übernehmen
 - **Medikamentenbestand & BtM-Buch**: Artikel mit Mindestbestand, Zugang/Entnahme/Verwurf/Korrektur mit lückenlosem Protokoll; Betäubungsmittel nur mit Patient bzw. Zeuge, Karteikarte je BtM mit Monatsübertrag, Bestandsprüfung und Druckansicht
 - **Rezepte einlösen**: in der Klinik oder in der **Apotheke im Spiel** gegen ox_inventory-Items; BtM nur auf BtM-Rezept, Gültigkeit (28 bzw. 7 Tage), jede Position nur einmal
+- **Mehrere Fraktionen** (*Verwaltung → Fraktionen*, nur Hauptadministrator): Rettungsdienst, Polizei, Justiz, Feuerwehr und Verwaltung in einer Installation – streng getrennt, jeweils mit eigenen Rängen, Briefkopf, Logo, Dokumentarten (z. B. Festnahmeprotokoll, Bußgeldbescheid mit Strafkatalog, Haftbefehl, Urteil, Einsatzbericht, Genehmigung) und Handbuch
+- **Zusammenarbeit der Behörden**: Fahndung (Haftbefehle der Justiz landen automatisch bei der Polizei), Behördenanfragen mit Dokumentfreigabe, Freigabe an eine ganze Behörde, Kennzeichenabfrage im Spiel (`/kennzeichen`)
 - **Standorte**: mehrere Häuser (z. B. Sandy Shores, Paleto Bay) mit eigenem Briefkopf; beim Ausstellen wählbar, im Dokument eingefroren
 - **Handbuch** für Mitarbeitende im Wiki (Kategorie „Handbuch“, frei anpassbar) und **Oberfläche auf Deutsch oder Englisch** (*Einstellungen → Sprache*; weitere Sprachen über `lang/<sprache>.php`)
 - **Anhänge, Benachrichtigungen, Suche**: Fotos/Scans/PDF an Akten und Fällen, Glocke mit persönlichen Benachrichtigungen (optional per Discord-DM), Volltextsuche über alle Bereiche, doppelte Akten zusammenführen
@@ -234,7 +236,7 @@ GET  api.php?action=documents&citizen_id=ABC12345 → Dokumente eines Bürgers
 GET  api.php?action=printers                      → Drucker in der Spielwelt
 POST api.php?action=tablet_login | tablet_session | tablet_launch | tablet_logout
 POST api.php?action=printer_jobs | job_pickup | jobs_since | document_item
-POST api.php?action=duty_set | duty_status | rx_check | rx_redeem
+POST api.php?action=duty_set | duty_status | rx_check | rx_redeem | wanted_check | person_check
 Header: X-API-Key: <api_key>
 ```
 

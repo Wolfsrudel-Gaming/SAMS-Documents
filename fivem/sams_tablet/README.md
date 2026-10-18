@@ -66,6 +66,13 @@ exports.sams_tablet:SetOnDuty(source, true)
 AddEventHandler('sams:dutyChanged', function(src, onDuty) ... end)
 ```
 
+## Fahndung (Polizei)
+
+- `/kennzeichen` fragt das Fahrzeug vor dir ab, `/kennzeichen ABC123` ein bestimmtes Kennzeichen (`Config.WantedCommand`, nur im Dienst, wenn `Config.WantedRequiresDuty`).
+- Erlaubt für Konten mit dem Recht „Fahndungen einsehen“ (Polizei). Treffer zeigen Grund, Gefährlichkeit und ob ein Haftbefehl der Justiz vorliegt.
+- Für eigene MDT-Scripte (serverseitig): `exports.sams_tablet:CheckWanted(kennzeichen, buergerId)` und `exports.sams_tablet:CheckPerson(buergerId)` (Fahndung, Führerschein-/Waffenscheinstatus, gültige Erlaubnisse).
+- Dienstzeit, Drucker und Dokumente funktionieren für alle Fraktionen gleich – jede Fraktion stellt ihre Drucker im eigenen Websystem-Bereich auf.
+
 ## Apotheke
 
 - Ein ausgedrucktes Rezept (Dokument-Item) wird an einer Apotheke aus `Config.Pharmacies` eingelöst – per ox_target am Apotheken-Ped oder mit Taste E.

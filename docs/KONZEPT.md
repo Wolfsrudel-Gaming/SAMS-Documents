@@ -161,9 +161,15 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 
 - Mehrere **Standorte** mit eigenem Briefkopf (wird beim Ausstellen ins Dokument eingefroren), **Handbuch** im Wiki, **Mehrsprachigkeit** der Oberfläche (Deutsch/Englisch, erweiterbar über `lang/<sprache>.php`) *(v1.20.0)*
 
-### Fraktionen (vorbereitet)
-- Tabelle `factions` und `faction_id` an Konten, Akten, Einträgen, Dokumenten, Wiki-Seiten und Standorten – heute gilt überall Fraktion 1 (SAMS).
-- Für LSPD/DOJ/Feuerwehr als eigene Bereiche fehlt noch: Fraktion je Konto wählen, alle Listen und Suchen nach `faction_id` filtern, eigene Dokumentarten und Briefköpfe je Fraktion. Behörden lesen bis dahin über Freigaben und Behördenkonten mit.
+### Mehrere Fraktionen ✅ *v1.21.0*
+- Eine Installation, mehrere Fraktionen (Rettungsdienst, Polizei, Justiz, Feuerwehr, Verwaltung). Der Hauptadministrator legt sie unter *Verwaltung → Fraktionen* an und wechselt oben die Ansicht.
+- Strikte Trennung: Konten, Ränge, Abteilungen, Akten, Fälle, Dokumente, Wiki, Dienstplan, Kataloge, Drucker, Einstellungen (Briefkopf, Logo, Farben, Discord-Webhooks, Rollen-Sync) gehören je einer Fraktion. Fremde Daten nur über Freigaben, Anfragen und Fahndung.
+- Module je Fraktion (Akten, Abrechnung, Medikamente, Fahndung, Bürgerportal, Behördenanfragen) – Rechte nicht aktiver Module greifen nicht.
+- Beim Anlegen: Ränge mit passenden Rechten, Abteilungen, Briefkopf, Logo, Startkatalog, Handbuch.
+- Polizei: Personenakten mit Aliasnamen, Gefährdungshinweisen, Führerschein-/Waffenscheinstatus, Fahrzeugen; Strafanzeige, Festnahme-, Durchsuchungs-, Sicherstellungs-, Vernehmungsprotokoll, Unfallbericht, Platzverweis, Ermittlungsbericht, Waffenschein; Bußgeldbescheid mit Straf-/Bußgeldkatalog und Haft-Einheiten; Fahndung.
+- Justiz: Verfahren, Anklageschrift, Strafbefehl, Urteil, Haftbefehl, Durchsuchungsbeschluss, Ladung, Beschluss, Vollmacht; Kostenrechnung.
+- Feuerwehr: Einsatzbericht, Brandschaubericht, Brandschutzbescheinigung, Gebührenbescheid. Verwaltung: Bescheid, Genehmigung/Lizenz, Gewerbeanmeldung, Bescheinigung.
+- Zusammenarbeit: Haftbefehle erscheinen automatisch in der Fahndung aller Polizeibehörden (und enden bei Aufhebung), Behördenanfragen mit Dokumentfreigabe, Freigabe an eine ganze Behörde, Kennzeichen-/Personenabfrage im Spiel, Bürgerportal zeigt Bescheide aller Behörden und nimmt Bewerbungen je Behörde an.
 
 ### Später
 - Leitstelle: als eigenes Addon (Notrufe aus dem Spiel, Live-Karte, Fahrzeugstatus, Disponent und Selbstdisposition)
