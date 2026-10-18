@@ -4,6 +4,8 @@ defined('SAMS_ROOT') || exit;
 $emp = $d['_employee'] ?? [];
 $function = trim((string) ($d['function'] ?? '')) ?: ($emp['rank_name'] ?? '');
 $photo = preg_match('#^https?://#i', (string) ($d['photo'] ?? '')) ? (string) $d['photo'] : '';
+// Foto über den eigenen Server einbetten, damit es auch beim „Als Bild speichern“ erscheint (sonst Original-URL)
+$photo = $photo !== '' ? (remote_image_data_uri($photo) ?: $photo) : '';
 $initials = implode('', array_map(fn($w) => mb_substr($w, 0, 1), array_slice(preg_split('/\s+/', trim((string) ($emp['name'] ?? '?'))), 0, 2)));
 $access = opt_label($type, 'access', $d['access'] ?? []);
 ?>

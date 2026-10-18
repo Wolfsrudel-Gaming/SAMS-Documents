@@ -472,3 +472,93 @@ function a4_close(): string
 {
     return '</section>';
 }
+
+/**
+ * Fremdes Bild (z. B. Ausweisfoto per URL) über den eigenen Server laden und als data-URI einbetten.
+ * Grund: Beim „Als Bild speichern“ (html2canvas) lässt der Browser Bilder fremder Seiten ohne CORS-Freigabe weg.
+ * Das Bild wird neu kodiert (max. 600 px), in storage/photos zwischengespeichert; Fehlschläge werden 10 Minuten gemerkt.
+ * Nur http(s) und nur öffentliche Adressen (kein Zugriff auf interne Dienste), höchstens 3 Weiterleitungen, 3 MB, 5 Sekunden.
+ */
+function remote_image_data_uri(string $url): string
+{
+    if (!preg_match('#^https?://#i', $url) || strlen($url) > 1000) {
+        return '';
+    }
+    $file = storage_path('photos/' . sha1($url) . '.img');
+    if (is_file($file)) {
+        return (string) file_get_contents($file);
+    }
+    if (is_file($file . '.fail') && filemtime($file . '.fail') > time() - 600) {
+        return '';
+    }
+    $data = '';
+    $current = $url;
+    for ($hop = 0; $hop < 4 && $data === ''; $hop++) {
+        $parts = parse_url($current);
+        $host = (string) ($parts['host'] ?? '');
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if ($host === '' || !in_array($scheme, ['http', 'https'], true)) {
+            break;
+        }
+        $ip = filter_var($host, FILTER_VALIDATE_IP) ? $host : gethostbyname($host);
+        $public = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+        if (!$public && !getenv('SAMS_ALLOW_LOCAL_FETCH')) {
+            break;
+        }
+        $port = (int) ($parts['port'] ?? ($scheme === 'https' ? 443 : 80));
+        $ch = curl_init($current);
+        $body = '';
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => false, CURLOPT_FOLLOWLOCATION => false, CURLOPT_TIMEOUT => 5, CURLOPT_CONNECTTIMEOUT => 3,
+            CURLOPT_RESOLVE => [$host . ':' . $port . ':' . $ip], CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_USERAGENT => 'SAMS/' . (defined('SAMS_VERSION') ? SAMS_VERSION : '1'), CURLOPT_HEADER => false,
+            CURLOPT_WRITEFUNCTION => function ($c, $chunk) use (&$body) {
+                $body .= $chunk;
+                return strlen($body) > 3 * 1024 * 1024 ? 0 : strlen($chunk); // zu groß → abbrechen
+            },
+        ]);
+        curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $location = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+        curl_close($ch);
+        if ($status >= 300 && $status < 400 && $location !== '') {
+            $current = $location;
+            continue;
+        }
+        if ($status !== 200 || $body === '') {
+            break;
+        }
+        $data = image_to_data_uri($body);
+        break;
+    }
+    if ($data === '') {
+        @touch($file . '.fail');
+        return '';
+    }
+    file_put_contents($file, $data);
+    return $data;
+}
+
+/** Bilddaten prüfen, neu kodieren (ohne Metadaten), auf 600 px begrenzen und als data-URI liefern. */
+function image_to_data_uri(string $bytes): string
+{
+    $info = @getimagesizefromstring($bytes);
+    if (!$info || !in_array($info['mime'], ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], true) || $info[0] * $info[1] > 40_000_000) {
+        return '';
+    }
+    if (!function_exists('imagecreatefromstring') || !($img = @imagecreatefromstring($bytes))) {
+        return '';
+    }
+    $w = imagesx($img);
+    $h = imagesy($img);
+    $f = min(1, 600 / max($w, $h));
+    $out = imagecreatetruecolor(max(1, (int) round($w * $f)), max(1, (int) round($h * $f)));
+    imagealphablending($out, false);
+    imagesavealpha($out, true);
+    imagefill($out, 0, 0, imagecolorallocatealpha($out, 255, 255, 255, 127));
+    imagecopyresampled($out, $img, 0, 0, 0, 0, imagesx($out), imagesy($out), $w, $h);
+    ob_start();
+    $png = $info['mime'] === 'image/png' || $info['mime'] === 'image/gif';
+    $png ? imagepng($out, null, 6) : imagejpeg($out, null, 88);
+    return 'data:image/' . ($png ? 'png' : 'jpeg') . ';base64,' . base64_encode((string) ob_get_clean());
+}

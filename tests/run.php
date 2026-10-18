@@ -18,7 +18,7 @@ define('TEST_BASE', "http://127.0.0.1:$port");
 define('TEST_DB', "$tmp/test.sqlite");
 define('TEST_ROOT_STORAGE', "$tmp/storage");
 $env = [
-    'DB_DRIVER' => 'sqlite', 'DB_SQLITE_PATH' => TEST_DB, 'APP_URL' => TEST_BASE, 'APP_DEBUG' => 'true', 'APP_TIMEZONE' => 'Europe/Berlin',
+    'DB_DRIVER' => 'sqlite', 'DB_SQLITE_PATH' => TEST_DB, 'APP_URL' => TEST_BASE, 'APP_DEBUG' => 'true', 'SAMS_ALLOW_LOCAL_FETCH' => '1', 'APP_TIMEZONE' => 'Europe/Berlin',
     'API_KEY' => 'testkey', 'SESSION_SAMESITE' => 'Lax', 'PORTAL_DEV_LOGIN' => 'true', 'DISCORD_CLIENT_ID' => '', 'DISCORD_CLIENT_SECRET' => '',
     'DISCORD_BOT_TOKEN' => '', 'DISCORD_GUILD_ID' => '', 'UPDATE_WEBHOOK_SECRET' => 'testsecret', 'STORAGE_PATH' => "$tmp/storage",
 ];
