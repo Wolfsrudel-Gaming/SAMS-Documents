@@ -7,10 +7,13 @@ Bringt das SAMS-Dokumentensystem ins Spiel:
 - **Drucken:** Am Dokument „Im Spiel drucken“ → Drucker wählen. Am Drucker benutzen (ox_target oder Taste E) → Auftrag wählen → das Dokument landet als Item im Inventar.
 - **Dokument-Item:** Benutzen öffnet das Original-Dokument auf einem Klemmbrett (mit Animation). „Zeigen“ zeigt es dem nächsten Spieler in der Nähe. Weitergeben über das Inventar (ox_inventory). Stornierte Dokumente sind als STORNIERT erkennbar.
 
+- **ESX** (optional): Rechnungen ins Spiel (esx_billing), Spielerdaten und `/akte` am nächsten Spieler – siehe unten.
+
 ## Voraussetzungen
 
 - [ox_lib](https://github.com/overextended/ox_lib), [ox_inventory](https://github.com/overextended/ox_inventory)
 - optional [ox_target](https://github.com/overextended/ox_target) (sonst Interaktion per Taste E)
+- optional es_extended (ESX Legacy) mit esx_billing, esx_addonaccount und [oxmysql](https://github.com/overextended/oxmysql) für Rechnungen und `/akte`
 - SAMS-Websystem ab Version 1.4 über **HTTPS** erreichbar (das Tablet bettet die Seite ein; ohne HTTPS funktioniert die Anmeldung im Tablet nicht)
 
 ## Installation
@@ -38,11 +41,15 @@ Den API-Schlüssel zeigt das Einrichtungsskript des Websystems am Ende an. Alter
 | `Config.PrintDuration` | Dauer des Druckens (Fortschrittsbalken) |
 | `Config.WaypointOnPrint` | Wegpunkt zum Drucker setzen, wenn ein Auftrag bereitliegt |
 | `Config.PrinterBlip` | Kartensymbol für Drucker (nur für angemeldete Mitarbeitende, wenn im Websystem aktiviert) |
-| `Config.DutyCommand` | Befehl zum Stempeln (Standard `/dienst`, `nil` = aus) |
+| `Config.DutyCommand` | Befehl zum Stempeln (Standard `/dienst`, `nil` = aus; Name im Websystem einstellbar) |
+| `Config.AkteCommand` | Akte am nächsten Spieler (Standard `/akte`, `nil` = aus; Name im Websystem einstellbar) |
+| `Config.BillSender` | Absender-Kennung der Rechnungen in esx_billing |
 | `Config.DutyEndOnDisconnect` | Beim Verlassen des Servers automatisch ausstempeln |
 | `Config.Pharmacies` | Apotheken (Position, optional Ped und Kartensymbol), an denen Rezepte eingelöst werden |
 | `Config.Anim` | Animationen und Requisiten (Tablet, Klemmbrett, Drucker) |
 | `Config.Text` | Alle Texte |
+
+**Befehlsnamen, Society-Konten, Jobs und Schalter** stehen nicht in der `config.lua`, sondern im Websystem unter *Einstellungen → Spielserver* (je Fraktion bzw. für alle Fraktionen in der Hauptfraktion). Die Resource holt sie beim Start und danach alle 5 Minuten; neue Befehlsnamen gelten nach `restart sams_tablet`. Die Befehle in der `config.lua` sind nur der Notbetrieb, solange das Websystem nicht erreichbar ist (`nil` schaltet einen Befehl ganz ab).
 
 **Wer am Drucker abholen darf**, stellt die Leitung im Websystem unter *Drucker → Abholung* ein: nur der Auftraggeber, alle angemeldeten Mitarbeitenden oder jeder Spieler.
 
@@ -72,6 +79,26 @@ AddEventHandler('sams:dutyChanged', function(src, onDuty) ... end)
 - Erlaubt für Konten mit dem Recht „Fahndungen einsehen“ (Polizei). Treffer zeigen Grund, Gefährlichkeit und ob ein Haftbefehl der Justiz vorliegt.
 - Für eigene MDT-Scripte (serverseitig): `exports.sams_tablet:CheckWanted(kennzeichen, buergerId)` und `exports.sams_tablet:CheckPerson(buergerId)` (Fahndung, Führerschein-/Waffenscheinstatus, gültige Erlaubnisse).
 - Dienstzeit, Drucker und Dokumente funktionieren für alle Fraktionen gleich – jede Fraktion stellt ihre Drucker im eigenen Websystem-Bereich auf.
+
+## ESX: Rechnungen und Akte am Spieler
+
+Einstellen im Websystem unter *Einstellungen → Spielserver*:
+
+| Einstellung | Bedeutung |
+|---|---|
+| ESX-Jobs | Jobnamen der Fraktion (z. B. `ambulance`), für „nur mit passendem Job“ |
+| Society-Konto | Konto aus esx_addonaccount, auf das bezahlte Rechnungen gehen (z. B. `society_ambulance`) |
+| Rechnungen ins Spiel senden | Knopf „Ins Spiel senden“ an Rechnungen/Bußgeldern |
+| Akte am Spieler abrufen | `/akte`, optional nur im Dienst und/oder nur mit passendem Job |
+| alle Fraktionen | Framework, Befehlsnamen, Reichweite für `/akte`, Name der esx_billing-Tabelle, Abgleich-Intervall |
+
+**Rechnungen:** Am Dokument „Ins Spiel senden“. Die Resource legt den Eintrag in der Tabelle `billing` an (Empfänger = Bürger-ID der Akte, Ziel = Society-Konto), der Spieler wird benachrichtigt und bezahlt wie gewohnt über das Rechnungsmenü von esx_billing. Verschwindet der Eintrag (esx_billing löscht ihn beim Bezahlen), wird die Rechnung im Websystem als „im Spiel bezahlt“ verbucht. Wird die Rechnung im Websystem storniert oder bar bezahlt, entfernt die Resource den Eintrag im Spiel wieder. Hinweis: Wer Einträge in `billing` von Hand löscht (z. B. beim Löschen eines Charakters), löst damit ebenfalls „bezahlt“ aus.
+
+**Bürger-ID:** Für ESX ist das der `identifier` des Charakters (bei Multicharacter z. B. `char1:…`). Akten, die über `/akte` angelegt werden, bekommen ihn automatisch.
+
+**`/akte`:** Zeigt für den nächsten Spieler (Reichweite einstellbar) eine Kurzfassung der Akte der eigenen Fraktion – beim Rettungsdienst Blutgruppe, Allergien, Vorerkrankungen, Medikation, Patientenverfügung, Notfallkontakt, Hinweise und offene Fälle. „Akte im Tablet öffnen“ öffnet sie direkt; gibt es noch keine Akte, kann sie mit Bürger-ID, Name, Geburtsdatum und Geschlecht aus ESX angelegt werden (Recht „Akten anlegen und bearbeiten“). Die Spielerdaten liest der Server aus `xPlayer`, nie vom Client. Jeder Abruf steht im Zugriffsprotokoll.
+
+Für andere Resourcen: `exports.sams_tablet:GetPlayerData(source)` (serverseitig), `exports.sams_tablet:showRecord()` (clientseitig).
 
 ## Apotheke
 

@@ -16,7 +16,7 @@ if ($q !== '') {
     $params[] = like($q);
     $params[] = like($q);
 }
-$rows = all("SELECT d.* FROM documents d WHERE $where ORDER BY d.issued_at DESC LIMIT 500", $params);
+$rows = all("SELECT d.*, (SELECT g.status FROM game_bills g WHERE g.document_id = d.id ORDER BY g.id DESC LIMIT 1) AS game_status FROM documents d WHERE $where ORDER BY d.issued_at DESC LIMIT 500", $params);
 foreach ($rows as $i => $r) {
     $rows[$i]['due'] = invoice_due($r, json_decode((string) $r['data'], true) ?: []);
     $rows[$i]['p'] = json_decode((string) $r['patient_snapshot'], true) ?: [];
@@ -54,7 +54,7 @@ ob_start(); ?>
                 <td class="small"><?= e(fmt_date($r['issued_at'])) ?></td>
                 <td class="small<?= $overdue ? ' text-danger' : '' ?>"><?= $r['pay_status'] === 'paid' ? '–' : e(fmt_date($r['due'])) . ($overdue ? ' · überfällig' : '') ?></td>
                 <td class="right"><?= e(money($r['amount_cents'] / 100)) ?></td>
-                <td><?= pay_status_badge($r) ?></td>
+                <td><?= pay_status_badge($r) ?><?= $r['game_status'] && $r['game_status'] !== 'cancelled' ? ' ' . game_bill_badge(['status' => $r['game_status']]) : '' ?></td>
             </tr>
         <?php endforeach; ?>
         <?php if (!$rows): ?><tr><td colspan="6" class="muted">Keine Einträge gefunden.</td></tr><?php endif; ?>

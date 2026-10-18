@@ -38,6 +38,9 @@ local function getSession(src)
     return nil
 end
 
+--- Für die übrigen Server-Dateien (z. B. esx.lua): angemeldete Tablet-Sitzung des Spielers
+SamsSession = getSession
+
 local function clearSession(src)
     sessions[src] = nil
     onDuty[src] = nil

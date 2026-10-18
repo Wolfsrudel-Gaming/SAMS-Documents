@@ -2,9 +2,10 @@
 
 local isOpen = false
 
-local function openTablet()
+--- Tablet öffnen; res (optional) enthält eine bereits geholte Einmal-URL, z. B. direkt auf eine Akte.
+local function openTablet(res)
     if isOpen then return end
-    local res = lib.callback.await('sams:tablet:open', false)
+    res = type(res) == 'table' and res or lib.callback.await('sams:tablet:open', false)
     if not res then return end
     if res.error then
         return Notify(res.error, 'error')
@@ -30,19 +31,18 @@ exports('useTablet', function()
     openTablet()
 end)
 
-if Config.Command then
-    RegisterCommand(Config.Command, function()
-        if Config.CommandRequiresItem and Config.TabletItem then
-            local count = exports.ox_inventory:Search('count', Config.TabletItem)
-            if not count or count < 1 then
-                return Notify(Config.Text.noTablet, 'error')
-            end
+SamsCommand('tablet', Config.Command, function()
+    if Config.CommandRequiresItem and Config.TabletItem then
+        local count = exports.ox_inventory:Search('count', Config.TabletItem)
+        if not count or count < 1 then
+            return Notify(Config.Text.noTablet, 'error')
         end
-        openTablet()
-    end, false)
-end
+    end
+    openTablet()
+end, 'SAMS: Tablet öffnen')
 
-exports('openTablet', openTablet)
+OpenTablet = openTablet
+exports('openTablet', function() openTablet() end)
 exports('closeTablet', closeTablet)
 
 -- ------------------------------------------------------- NUI-Rückmeldungen --

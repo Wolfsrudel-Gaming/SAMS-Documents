@@ -1,0 +1,264 @@
+<?php
+/**
+ * Anbindung an den Spielserver (ESX): Einstellungen für die Resource, Rechnungen ins Spiel, Aktenabruf am Spieler.
+ * Alles Serverabhängige (Society-Konten, Jobs, Befehle, Funktionsschalter) wird im Websystem unter
+ * „Einstellungen → Spielserver“ gepflegt; die Resource holt es über api.php?action=game_config.
+ */
+
+/** Vorgaben je Fraktionsart: ESX-Jobnamen (erster = Society-Konto). */
+const GAME_DEFAULT_JOBS = [
+    'medical' => ['ambulance'], 'police' => ['police', 'sheriff'], 'justice' => ['doj'], 'fire' => ['fire'], 'government' => ['gov'],
+];
+
+const GAME_BILL_STATUS = [
+    'pending' => ['grey', 'wird gesendet'], 'sent' => ['blue', 'im Spiel offen'], 'paid' => ['green', 'im Spiel bezahlt'],
+    'cancel' => ['grey', 'wird zurückgezogen'], 'cancelled' => ['grey', 'zurückgezogen'], 'failed' => ['red', 'fehlgeschlagen'],
+];
+
+/** Systemweite Einstellungen der Resource (gelten für alle Fraktionen). */
+function game_global(): array
+{
+    $cmd = fn(string $k, string $d) => preg_replace('/[^a-z0-9_]/i', '', (string) setting($k, $d));
+    return [
+        'framework' => setting('ingame_framework', 'esx') === 'none' ? 'none' : 'esx',
+        'commands' => [
+            'tablet' => $cmd('ingame_cmd_tablet', 'tablet'), 'duty' => $cmd('duty_command', 'dienst'),
+            'akte' => $cmd('ingame_cmd_akte', 'akte'), 'plate' => $cmd('ingame_cmd_plate', 'kennzeichen'),
+        ],
+        'billing_table' => preg_replace('/[^a-z0-9_]/i', '', (string) setting('ingame_billing_table', 'billing')) ?: 'billing',
+        'akte_distance' => max(1.0, min(10.0, (float) setting('ingame_akte_distance', '3'))),
+        'bill_interval' => max(15, min(600, (int) setting('ingame_bill_interval', '30'))),
+    ];
+}
+
+/** Einstellungen einer Fraktion für den Spielserver. */
+function game_faction(?int $factionId = null): array
+{
+    $factionId ??= fid();
+    $prev = fid();
+    set_faction_context($factionId);
+    $jobs = array_values(array_filter(array_map(fn($j) => preg_replace('/[^a-z0-9_]/i', '', trim($j)), explode(',', (string) setting('game_jobs', '')))));
+    $jobs = $jobs ?: (GAME_DEFAULT_JOBS[faction_kind($factionId)] ?? []);
+    $out = [
+        'jobs' => $jobs,
+        'society' => preg_replace('/[^a-z0-9_]/i', '', (string) setting('game_society', '')) ?: ($jobs ? 'society_' . $jobs[0] : ''),
+        'billing' => setting('game_billing', '1') === '1' && module_enabled('billing', $factionId),
+        'akte' => setting('game_akte', '1') === '1' && module_enabled('records', $factionId),
+        'akte_duty' => setting('game_akte_duty', '1') === '1',
+        'akte_job' => setting('game_akte_job', '0') === '1',
+    ];
+    set_faction_context($prev);
+    return $out;
+}
+
+/** Konfiguration für die Resource (keine Geheimnisse – wird an die Spieler weitergegeben). */
+function game_config(): array
+{
+    $factions = [];
+    foreach (factions() as $f) {
+        $factions[] = ['id' => (int) $f['id'], 'short' => (string) $f['short'], 'name' => (string) $f['name'], 'kind' => faction_kind((int) $f['id'])] + game_faction((int) $f['id']);
+    }
+    return ['ok' => true] + game_global() + ['factions' => $factions];
+}
+
+// ------------------------------------------------------------ Rechnungen
+
+/** Bürger-ID (ESX identifier) des Rechnungsempfängers. */
+function game_bill_citizen(array $doc): string
+{
+    $p = !empty($doc['patient_id']) ? one('SELECT citizen_id FROM patients WHERE id = ?', [$doc['patient_id']]) : null;
+    $snap = is_array($doc['patient_snapshot']) ? $doc['patient_snapshot'] : (json_decode((string) $doc['patient_snapshot'], true) ?: []);
+    return trim((string) (($p['citizen_id'] ?? '') ?: ($snap['citizen_id'] ?? '')));
+}
+
+/** Aktueller Spiel-Eintrag zu einer Rechnung (oder null). */
+function game_bill_for(int $documentId): ?array
+{
+    return one('SELECT * FROM game_bills WHERE document_id = ? ORDER BY id DESC LIMIT 1', [$documentId]);
+}
+
+/** Warum die Rechnung (noch) nicht ins Spiel gesendet werden kann – oder '' wenn es geht. */
+function game_bill_problem(array $doc): string
+{
+    $g = game_faction((int) $doc['faction_id']);
+    $last = game_bill_for((int) $doc['id']);
+    return match (true) {
+        $doc['type'] !== 'rechnung' || $doc['status'] === 'revoked' => 'Nur für gültige Rechnungen.',
+        game_global()['framework'] !== 'esx' => 'Die Spielserver-Anbindung ist ausgeschaltet.',
+        !$g['billing'] => 'Rechnungen ins Spiel sind für diese Fraktion ausgeschaltet.',
+        $g['society'] === '' => 'Kein Society-Konto eingetragen (Einstellungen → Spielserver).',
+        $doc['pay_status'] === 'paid' => 'Die Rechnung ist bereits bezahlt.',
+        (int) $doc['amount_cents'] <= 0 => 'Die Rechnung hat keinen Betrag.',
+        game_bill_citizen($doc) === '' => 'Für die Person ist keine Bürger-ID hinterlegt (in der Akte eintragen oder Akte im Spiel mit /akte anlegen).',
+        $last && in_array($last['status'], ['pending', 'sent', 'cancel'], true) => 'Die Rechnung liegt bereits im Spiel.',
+        default => '',
+    };
+}
+
+function game_bill_send(array $doc, int $userId): int
+{
+    $g = game_faction((int) $doc['faction_id']);
+    $f = faction_by_id((int) $doc['faction_id']);
+    $id = insert('game_bills', [
+        'faction_id' => (int) $doc['faction_id'], 'document_id' => (int) $doc['id'], 'citizen_id' => mb_substr(game_bill_citizen($doc), 0, 64),
+        'amount' => (int) ceil((int) $doc['amount_cents'] / 100), 'society' => $g['society'],
+        'label' => mb_substr(trim(($f['short'] ?? '') . ' ' . billing_labels((int) $doc['faction_id'])['title'] . ' ' . $doc['number']), 0, 190),
+        'status' => 'pending', 'created_by' => $userId, 'created_at' => now(),
+    ]);
+    audit('invoice.game_send', 'document', (int) $doc['id'], $doc['number'] . ' ins Spiel gesendet (' . $g['society'] . ')');
+    return $id;
+}
+
+/** Spiel-Rechnung zurückziehen (Storno oder Zahlung außerhalb des Spiels). */
+function game_bill_cancel_for(int $documentId): void
+{
+    q("UPDATE game_bills SET status = 'cancelled', updated_at = ? WHERE document_id = ? AND status = 'pending'", [now(), $documentId]);
+    q("UPDATE game_bills SET status = 'cancel', updated_at = ? WHERE document_id = ? AND status = 'sent'", [now(), $documentId]);
+}
+
+function game_bill_badge(array $b): string
+{
+    [$c, $l] = GAME_BILL_STATUS[$b['status']] ?? ['grey', $b['status']];
+    return '<span class="badge ' . $c . '">' . e($l) . '</span>';
+}
+
+/** Abgleich für die Resource: neue, zurückzuziehende und offene Spiel-Rechnungen. */
+function game_bills_sync(): array
+{
+    $pending = all("SELECT id, citizen_id, amount, society, label FROM game_bills WHERE status = 'pending' ORDER BY id LIMIT 50");
+    $cancel = all("SELECT id, esx_id FROM game_bills WHERE status = 'cancel' ORDER BY id LIMIT 50");
+    $open = all("SELECT id, esx_id FROM game_bills WHERE status = 'sent' ORDER BY id LIMIT 500");
+    $int = fn(array $rows, array $keys) => array_map(function ($r) use ($keys) {
+        foreach ($keys as $k) {
+            $r[$k] = (int) $r[$k];
+        }
+        return $r;
+    }, $rows);
+    return ['ok' => true, 'table' => game_global()['billing_table'],
+        'pending' => $int($pending, ['id', 'amount']), 'cancel' => $int($cancel, ['id', 'esx_id']), 'open' => $int($open, ['id', 'esx_id'])];
+}
+
+/** Ergebnis der Resource verarbeiten: sent, failed, paid, cancelled. */
+function game_bill_result(int $id, string $result, int $esxId = 0, string $error = ''): array
+{
+    $b = one('SELECT * FROM game_bills WHERE id = ?', [$id]);
+    if (!$b) {
+        return ['ok' => false, 'error' => 'Spiel-Rechnung nicht gefunden.'];
+    }
+    $doc = one('SELECT * FROM documents WHERE id = ?', [$b['document_id']]);
+    set_faction_context((int) $b['faction_id']);
+    $allowed = ['sent' => ['pending'], 'failed' => ['pending'], 'paid' => ['sent', 'cancel'], 'cancelled' => ['cancel']];
+    if (!isset($allowed[$result]) || !in_array($b['status'], $allowed[$result], true)) {
+        return ['ok' => false, 'error' => 'Status passt nicht (' . $b['status'] . ' → ' . $result . ').'];
+    }
+    $row = ['status' => $result, 'updated_at' => now()];
+    if ($result === 'sent') {
+        $row += ['esx_id' => $esxId, 'sent_at' => now()];
+    } elseif ($result === 'failed') {
+        $row['error'] = mb_substr($error ?: 'unbekannter Fehler', 0, 190);
+    } elseif ($result === 'paid') {
+        $row['paid_at'] = now();
+    }
+    update('game_bills', $id, $row);
+    if ($result === 'paid' && $doc && $doc['pay_status'] !== 'paid' && $doc['status'] !== 'revoked') {
+        update('documents', (int) $doc['id'], ['pay_status' => 'paid', 'paid_at' => now(), 'pay_note' => 'im Spiel bezahlt']);
+        audit_as(null, 'invoice.status', 'document', (int) $doc['id'], $doc['number'] . ' → im Spiel bezahlt');
+        notify_users_with('invoices.manage', 'billing', billing_labels()['title'] . ' ' . $doc['number'] . ' im Spiel bezahlt', url('document', ['id' => $doc['id']]));
+    } elseif ($result === 'failed' && $doc) {
+        audit_as(null, 'invoice.game_failed', 'document', (int) $doc['id'], $doc['number'] . ': ' . $row['error']);
+    }
+    return ['ok' => true];
+}
+
+// --------------------------------------------------------- Akte am Spieler
+
+/** Spielerdaten aus ESX in Aktenfelder umwandeln. */
+function game_player_fields(array $in): array
+{
+    $dob = trim((string) ($in['dob'] ?? ''));
+    $date = '';
+    if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})/', $dob, $m)) {
+        $date = sprintf('%04d-%02d-%02d', $m[1], $m[2], $m[3]);
+    } elseif (preg_match('#^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$#', $dob, $m)) {
+        // esx_identity speichert standardmäßig TT/MM/JJJJ
+        $date = sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
+    }
+    if ($date !== '' && !checkdate((int) substr($date, 5, 2), (int) substr($date, 8, 2), (int) substr($date, 0, 4))) {
+        $date = '';
+    }
+    $sex = strtolower(trim((string) ($in['sex'] ?? '')));
+    return [
+        'citizen_id' => mb_substr(trim((string) ($in['citizen_id'] ?? '')), 0, 64),
+        'first_name' => mb_substr(trim((string) ($in['first_name'] ?? '')), 0, 100),
+        'last_name' => mb_substr(trim((string) ($in['last_name'] ?? '')), 0, 100),
+        'dob' => $date,
+        'gender' => in_array($sex, ['m', 'male', 'mann', 'männlich'], true) ? 'm' : (in_array($sex, ['f', 'w', 'female', 'frau', 'weiblich'], true) ? 'w' : ''),
+    ];
+}
+
+/** Prüft, ob der Benutzer im Spiel Akten abrufen darf. Gibt eine Fehlermeldung oder '' zurück. */
+function game_record_problem(array $u): string
+{
+    $g = game_faction((int) $u['faction_id']);
+    $perms = user_permissions($u);
+    return match (true) {
+        !$g['akte'] => 'Der Aktenabruf im Spiel ist für deine Fraktion ausgeschaltet.',
+        !in_array('patients.view', $perms, true) => 'Dein Rang darf keine Akten ansehen.',
+        $g['akte_duty'] && !duty_open_session((int) $u['id']) => 'Aktenabruf nur im Dienst.',
+        default => '',
+    };
+}
+
+function game_record_find(string $citizenId): ?array
+{
+    return $citizenId === '' ? null : one('SELECT * FROM patients WHERE citizen_id = ? AND merged_into IS NULL AND ' . fw() . ' ORDER BY archived_at IS NOT NULL, id LIMIT 1', [$citizenId]);
+}
+
+/** Kurzfassung der Akte für das Kontextmenü im Spiel. */
+function game_record_summary(array $p): array
+{
+    $lines = [];
+    $add = function (string $label, $value) use (&$lines) {
+        $value = trim((string) $value);
+        if ($value !== '') {
+            $lines[] = ['label' => $label, 'value' => mb_strimwidth($value, 0, 160, '…')];
+        }
+    };
+    $add('Geburtsdatum', $p['dob'] ? fmt_date($p['dob']) : '');
+    if (faction_kind() === 'medical') {
+        $add('Blutgruppe', $p['blood_type']);
+        $add('Allergien', $p['allergies']);
+        $add('Vorerkrankungen', $p['conditions']);
+        $add('Medikation', $p['medication']);
+        $add('Patientenverfügung', $p['living_will'] ? 'liegt vor' : '');
+        $add('Organspende', $p['organ_donor']);
+        $add('Notfallkontakt', $p['emergency_contact']);
+    }
+    $add('Hinweise', $p['flags']);
+    if ($p['deceased_at']) {
+        $add('Verstorben', fmt_date($p['deceased_at']));
+    }
+    if ($p['archived_at']) {
+        $add('Status', 'archiviert');
+    }
+    $open = (int) scalar("SELECT COUNT(*) FROM cases WHERE patient_id = ? AND status = 'open'", [$p['id']]);
+    $add(term('cases'), $open ? $open . ' offen' : '');
+    if (module_enabled('wanted') && $p['citizen_id'] !== '' && ($hits = wanted_lookup((string) $p['citizen_id']))) {
+        $add('Fahndung', count($hits) . ' offen' . (array_filter($hits, fn($w) => $w['source'] === 'warrant') ? ' (Haftbefehl)' : ''));
+    }
+    return $lines;
+}
+
+/** Leere Stammdaten der Akte mit den Spielerdaten ergänzen (nichts überschreiben). */
+function game_record_fill(array $p, array $fields): void
+{
+    $row = [];
+    foreach (['first_name', 'last_name', 'dob', 'gender'] as $k) {
+        if (trim((string) $p[$k]) === '' && $fields[$k] !== '') {
+            $row[$k] = $fields[$k];
+        }
+    }
+    if ($row) {
+        update('patients', (int) $p['id'], $row + ['updated_at' => now()]);
+    }
+}

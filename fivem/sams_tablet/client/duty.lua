@@ -18,10 +18,7 @@ local function toggleDuty()
     end
 end
 
-if Config.DutyCommand then
-    RegisterCommand(Config.DutyCommand, toggleDuty, false)
-    TriggerEvent('chat:addSuggestion', '/' .. Config.DutyCommand, 'SAMS: Dienst beginnen oder beenden')
-end
+SamsCommand('duty', Config.DutyCommand, toggleDuty, 'SAMS: Dienst beginnen oder beenden')
 
 exports('toggleDuty', toggleDuty)
 

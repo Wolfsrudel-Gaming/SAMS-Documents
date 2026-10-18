@@ -29,19 +29,16 @@ local function showResult(label, res)
     PlaySoundFrontend(-1, 'TIMER_STOP', 'HUD_MINI_GAME_SOUNDSET', true)
 end
 
-if Config.WantedCommand then
-    RegisterCommand(Config.WantedCommand, function(_, args)
-        local plate = args[1]
-        if not plate or plate == '' then
-            local veh = vehicleInFront()
-            if not veh then return Notify(Config.Text.wantedNoVehicle, 'inform') end
-            plate = GetVehicleNumberPlateText(veh)
-        end
-        plate = plate:gsub('%s+', ''):upper()
-        showResult(plate, lib.callback.await('sams:wanted:check', false, { plate = plate }))
-    end, false)
-    TriggerEvent('chat:addSuggestion', '/' .. Config.WantedCommand, 'SAMS: Kennzeichen abfragen (ohne Angabe: Fahrzeug vor dir)', { { name = 'kennzeichen', help = 'optional' } })
-end
+SamsCommand('plate', Config.WantedCommand, function(_, args)
+    local plate = args[1]
+    if not plate or plate == '' then
+        local veh = vehicleInFront()
+        if not veh then return Notify(Config.Text.wantedNoVehicle, 'inform') end
+        plate = GetVehicleNumberPlateText(veh)
+    end
+    plate = plate:gsub('%s+', ''):upper()
+    showResult(plate, lib.callback.await('sams:wanted:check', false, { plate = plate }))
+end, 'SAMS: Kennzeichen abfragen (ohne Angabe: Fahrzeug vor dir)', { { name = 'kennzeichen', help = 'optional' } })
 
 exports('checkPlate', function(plate)
     return lib.callback.await('sams:wanted:check', false, { plate = plate })

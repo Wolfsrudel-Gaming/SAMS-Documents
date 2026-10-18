@@ -58,3 +58,20 @@ CreateThread(function()
         TriggerEvent('sams:sessionChanged')
     end
 end)
+
+--- Befehl registrieren, dessen Name im Websystem eingestellt wird (Einstellungen → Spielserver).
+--- Steht in der config.lua nil/false, bleibt der Befehl aus; sonst gilt der Name aus dem Websystem bzw. die config.lua.
+function SamsCommand(key, fallback, handler, help, params)
+    if not fallback then return end
+    CreateThread(function()
+        local started = GetGameTimer()
+        while not GlobalState.samsConfig and GetGameTimer() - started < 15000 do Wait(250) end
+        local cfg = GlobalState.samsConfig
+        local name = cfg and cfg.commands and cfg.commands[key]
+        if type(name) ~= 'string' or name == '' then name = fallback end
+        RegisterCommand(name, handler, false)
+        if help then
+            TriggerEvent('chat:addSuggestion', '/' .. name, help, params)
+        end
+    end)
+end

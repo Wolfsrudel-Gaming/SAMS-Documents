@@ -279,7 +279,7 @@ function faction_setting_scoped(string $key): bool
 {
     static $keys = ['city', 'phone', 'fax', 'email', 'web', 'ik_number', 'bsnr', 'director', 'admin_head', 'bank', 'iban', 'bic', 'register',
         'tax_id', 'seal_text', 'currency', 'doc_prefix', 'logo', 'discord_role_map', 'discord_duty_log', 'language', 'doc_type_config', 'roster_lock_hours'];
-    return in_array($key, $keys, true) || (bool) preg_match('/^(org_|theme_|webhook_|report_)/', $key);
+    return in_array($key, $keys, true) || (bool) preg_match('/^(org_|theme_|webhook_|report_|game_)/', $key);
 }
 
 /** Schlüssel in der Tabelle settings für die aktuelle Fraktion. */

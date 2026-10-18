@@ -61,7 +61,7 @@ function scalar(string $sql, array $params = [])
 /** Tabellen, deren Datensätze einer Fraktion gehören (faction_id wird beim Anlegen automatisch gesetzt). */
 const FACTION_TABLES = ['users', 'patients', 'entries', 'documents', 'cases', 'document_drafts', 'ranks', 'departments', 'qualifications',
     'printers', 'price_list', 'custom_doc_types', 'duty_sessions', 'training_courses', 'wiki_pages', 'announcements', 'message_threads',
-    'roster_shifts', 'medications', 'locations', 'appointments', 'portal_requests', 'applications', 'audit_log', 'wanted', 'agency_requests'];
+    'roster_shifts', 'medications', 'locations', 'appointments', 'portal_requests', 'applications', 'audit_log', 'wanted', 'agency_requests', 'game_bills'];
 
 function insert(string $table, array $data): int
 {

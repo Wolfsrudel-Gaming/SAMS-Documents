@@ -90,6 +90,7 @@ Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt au
 - **Einstellungen**: Name, Adresse, Logo, IK-Nummer, BSNR, Bankverbindung, Siegel-Umschrift, Währung, Nummernpräfix
 - Vorschlagslisten für ICD-10-Diagnosen, Medikamente, Fachrichtungen und Leistungen
 - **Im Spiel**: eigenes Tablet, Drucker in der Spielwelt, gedruckte Dokumente als Item (ansehen, zeigen, weitergeben) – siehe unten
+- **ESX-Anbindung** (*Einstellungen → Spielserver*): Rechnungen und Bußgelder per Knopf „Ins Spiel senden“ an esx_billing (Zahlung geht auf das Society-Konto der Fraktion und wird im System automatisch verbucht), `/akte` am nächsten Spieler mit Kurzfassung (Allergien, Blutgruppe, Hinweise, offene Fälle) und Akte direkt im Tablet – neue Akten übernehmen Bürger-ID, Name, Geburtsdatum und Geschlecht aus ESX. Society-Konten, Jobs, Befehlsnamen, Schalter und der Umfang (Module) jeder Fraktion werden im Websystem eingestellt
 - **JSON-API** für FiveM-Resourcen
 
 ## Installation
@@ -238,6 +239,7 @@ GET  api.php?action=printers                      → Drucker in der Spielwelt
 POST api.php?action=tablet_login | tablet_session | tablet_launch | tablet_logout
 POST api.php?action=printer_jobs | job_pickup | jobs_since | document_item
 POST api.php?action=duty_set | duty_status | rx_check | rx_redeem | wanted_check | person_check
+POST api.php?action=game_config | bills_sync | bill_result | record_lookup | record_open
 Header: X-API-Key: <api_key>
 ```
 

@@ -23,7 +23,7 @@ Ein Akten-, Dokumenten- und Verwaltungssystem für den SAMS auf einem FiveM-Role
 |---|---|
 | Hosting | Eigener Linux-vServer, Betreuung durch den Admin selbst |
 | Datenbank | Eigene MySQL/MariaDB (getrennt von der FiveM-Datenbank) |
-| Framework | Standalone – keine Anbindung an QBCore/ESX nötig |
+| Framework | Standalone lauffähig; optional ESX (Rechnungen über esx_billing, Spielerdaten, `/akte`), einstellbar unter *Einstellungen → Spielserver* |
 | Login V1 | **Konten mit Benutzername/Passwort**, angelegt durch Admin bzw. Chiefs. Jeder ändert sein Passwort selbst. Dieselben Zugangsdaten gelten im Tablet. |
 | Login später | Discord-Login und automatische Anmeldung im Spiel als Zusatz |
 | Charaktere | Keine automatische Übernahme aus dem Spiel. Patientenakten werden manuell angelegt. |

@@ -31,6 +31,13 @@
  *   rx_redeem      {token, license, player}                        → Rezept einlösen, Items für ox_inventory
  *   wanted_check   {plate? | citizen_id?}                          → offene Fahndungen/Haftbefehle (Kennzeichen-/Personenabfrage)
  *   person_check   {citizen_id}                                    → Fahndung, Führerschein-/Waffenschein-Status, gültige Erlaubnisse
+ *
+ * Spielserver (ESX):
+ *   game_config    {}                                              → Befehle, Schalter, Society-Konten und Jobs je Fraktion
+ *   bills_sync     {}                                              → neue, zurückzuziehende und offene Rechnungen (esx_billing)
+ *   bill_result    {id, result: sent|failed|paid|cancelled, esx_id?, error?}
+ *   record_lookup  {token, citizen_id, first_name, last_name, dob, sex}  → Kurzfassung der Akte des Spielers vor dir
+ *   record_open    {token, citizen_id, …, create?}                 → Akte (ggf. anlegen) und Tablet-URL direkt auf die Akte
  */
 declare(strict_types=1);
 define('SAMS_IGNORE_MAINTENANCE', true);
@@ -292,6 +299,58 @@ switch ($action) {
             'danger' => $hits ? max(array_map(fn($w) => (int) $w['danger'], $hits)) : 0,
             'license_driver' => LICENSE_STATES[$licenses['driver']] ?? 'unbekannt', 'license_weapon' => LICENSE_STATES[$licenses['weapon']] ?? 'unbekannt',
             'permits' => array_map(fn($d) => ['title' => doc_type($d['type'])['title'] ?? $d['type'], 'number' => $d['number'], 'valid_until' => fmt_date($d['valid_until'])], $permits)]);
+        // no break
+
+    // --------------------------------------------------- Spielserver (ESX)
+    case 'game_config':
+        respond(game_config());
+        // no break
+    case 'bills_sync':
+        respond(game_bills_sync());
+        // no break
+    case 'bill_result':
+        respond(game_bill_result((int) $in('id'), $in('result'), (int) $in('esx_id'), $in('error')));
+        // no break
+    case 'record_lookup':
+    case 'record_open':
+        $tu = $tokenUser();
+        if (!$tu) {
+            respond(['ok' => false, 'error' => 'Anmeldung abgelaufen'], 401);
+        }
+        $u = $tu[1];
+        if ($problem = game_record_problem($u)) {
+            respond(['ok' => false, 'error' => $problem]);
+        }
+        $fields = game_player_fields(['citizen_id' => $in('citizen_id'), 'first_name' => $in('first_name'), 'last_name' => $in('last_name'), 'dob' => $in('dob'), 'sex' => $in('sex')]);
+        if ($fields['citizen_id'] === '') {
+            respond(['ok' => false, 'error' => 'Keine Bürger-ID übermittelt.']);
+        }
+        $p = game_record_find($fields['citizen_id']);
+        $canEdit = in_array('patients.edit', user_permissions($u), true);
+        $name = trim($fields['first_name'] . ' ' . $fields['last_name']);
+        if ($action === 'record_lookup') {
+            audit_as((int) $u['id'], 'patient.game_lookup', 'patient', $p ? (int) $p['id'] : null, ($p ? patient_name($p) : $name . ' (keine Akte)') . ' im Spiel abgerufen');
+            respond(['ok' => true, 'found' => (bool) $p, 'id' => $p ? (int) $p['id'] : null, 'name' => $p ? patient_name($p) : $name,
+                'record' => term('record'), 'can_create' => !$p && $canEdit && $fields['first_name'] !== '' && $fields['last_name'] !== '',
+                'summary' => $p ? game_record_summary($p) : []]);
+        }
+        $created = false;
+        if (!$p) {
+            if (!$canEdit || !in_array(strtolower($in('create')), ['1', 'true'], true)) {
+                respond(['ok' => false, 'error' => 'Keine ' . term('record') . ' vorhanden.']);
+            }
+            if ($fields['first_name'] === '' || $fields['last_name'] === '') {
+                respond(['ok' => false, 'error' => 'Vor- und Nachname fehlen in den Spielerdaten.']);
+            }
+            $pid = insert('patients', $fields + ['created_by' => (int) $u['id'], 'created_at' => now(), 'updated_at' => now()]);
+            audit_as((int) $u['id'], 'patient.create', 'patient', $pid, $name . ' (im Spiel aus den Spielerdaten angelegt)');
+            $p = fone('patients', $pid);
+            $created = true;
+        } elseif ($canEdit) {
+            game_record_fill($p, $fields);
+        }
+        respond(['ok' => true, 'id' => (int) $p['id'], 'created' => $created, 'name' => patient_name($p),
+            'url' => tablet_launch_url($tu[0], 'index.php?p=patient&id=' . (int) $p['id']), 'origin' => preg_replace('#^(https?://[^/]+).*$#', '$1', base_url())]);
         // no break
 
     default:

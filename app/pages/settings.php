@@ -1,5 +1,6 @@
 <?php
 defined('SAMS_ROOT') || exit;
+$yn = ['1' => 'ja', '0' => 'nein'];
 $keys = [
     'Einrichtung' => [
         'org_name'   => ['Name der Einrichtung', 'San Andreas Medical Services'],
@@ -52,13 +53,30 @@ $keys = [
     ],
     'Dienstzeiten' => [
         'duty_max_hours' => ['Vergessene Schichten automatisch beenden nach (Stunden)', '12'],
-        'duty_command'   => ['Befehl im Spiel (Hinweistext, ohne /)', 'dienst'],
         'roster_lock_hours' => ['Dienstplan: Austragen bis … Stunden vor Schichtbeginn (danach nur Tausch)', '12'],
+    ],
+    'Spielserver' => [
+        'game_jobs'      => ['ESX-Jobs dieser Fraktion (Komma)', implode(',', GAME_DEFAULT_JOBS[faction_kind()] ?? [])],
+        'game_society'   => ['Society-Konto für Zahlungen', 'society_' . (GAME_DEFAULT_JOBS[faction_kind()][0] ?? 'job')],
+        'game_billing'   => ['Rechnungen ins Spiel senden (esx_billing)', '1', 'select', $yn],
+        'game_akte'      => ['Akte am Spieler abrufen (Befehl /akte)', '1', 'select', $yn],
+        'game_akte_duty' => ['Aktenabruf nur im Dienst', '1', 'select', $yn],
+        'game_akte_job'  => ['Aktenabruf nur mit passendem ESX-Job', '0', 'select', $yn],
+    ],
+    'Spielserver – alle Fraktionen' => [
+        'ingame_framework'     => ['Framework', 'esx', 'select', ['esx' => 'ESX (Spielerdaten, Rechnungen)', 'none' => 'ohne Framework']],
+        'ingame_cmd_tablet'    => ['Befehl Tablet (ohne /, leer = Vorgabe)', 'tablet'],
+        'duty_command'         => ['Befehl Dienst', 'dienst'],
+        'ingame_cmd_akte'      => ['Befehl Akte am nächsten Spieler', 'akte'],
+        'ingame_cmd_plate'     => ['Befehl Kennzeichenabfrage', 'kennzeichen'],
+        'ingame_akte_distance' => ['Reichweite Aktenabruf (Meter)', '3'],
+        'ingame_billing_table' => ['Tabelle von esx_billing in der Spiel-Datenbank', 'billing'],
+        'ingame_bill_interval' => ['Rechnungen abgleichen alle … Sekunden', '30'],
     ],
 ];
 // Weitere Fraktionen pflegen nur ihre eigenen Angaben; systemweite Einstellungen bleiben der Hauptfraktion vorbehalten
 if (fid() !== 1) {
-    unset($keys['Sicherheit'], $keys['Bürgerportal'], $keys['Apotheke'], $keys['Dienstzeiten']['duty_max_hours'], $keys['Dienstzeiten']['duty_command']);
+    unset($keys['Sicherheit'], $keys['Bürgerportal'], $keys['Apotheke'], $keys['Dienstzeiten']['duty_max_hours'], $keys['Spielserver – alle Fraktionen']);
 }
 if (is_post()) {
     csrf_check();
@@ -85,10 +103,27 @@ if (is_post()) {
                 $v = (string) max(1, min(365, (int) $v ?: 28));
             } elseif ($k === 'roster_lock_hours') {
                 $v = (string) max(0, min(168, (int) $v));
-            } elseif ($k === 'duty_command') {
-                $v = preg_replace('/[^a-z0-9_]/i', '', $v) ?: 'dienst';
+            } elseif ($k === 'duty_command' || $k === 'game_society' || str_starts_with($k, 'ingame_cmd_') || $k === 'ingame_billing_table') {
+                $v = preg_replace('/[^a-z0-9_]/i', '', $v);
+            } elseif ($k === 'game_jobs') {
+                $v = implode(',', array_filter(array_map(fn($j) => preg_replace('/[^a-z0-9_]/i', '', trim($j)), explode(',', $v))));
+            } elseif ($k === 'ingame_akte_distance') {
+                $v = $v === '' ? '' : (string) max(1, min(10, (float) str_replace(',', '.', $v)));
+            } elseif ($k === 'ingame_bill_interval') {
+                $v = $v === '' ? '' : (string) max(15, min(600, (int) $v));
+            }
+            if (($items = $group[$k]) && ($items[2] ?? '') === 'select' && !isset($items[3][$v])) {
+                $v = $items[1];
             }
             save_setting($k, $v);
+        }
+    }
+    if (post('modules_form')) {
+        $mods = array_values(array_intersect((array) ($_POST['modules'] ?? []), array_keys(FACTION_MODULES)));
+        if ($mods !== faction_modules()) {
+            update('factions', fid(), ['modules' => json_encode($mods)]);
+            factions(true, true);
+            audit('faction.modules', 'faction', fid(), implode(', ', $mods) ?: 'keine');
         }
     }
     if (post('remove_logo')) {
@@ -124,6 +159,12 @@ ob_start(); ?>
             <?php endif; ?>
         <?php endforeach; ?>
     <?php endforeach; ?>
+    <h3 class="form-heading">Umfang (Module dieser Fraktion)</h3>
+    <input type="hidden" name="modules_form" value="1">
+    <div class="field w-full"><div class="choices">
+        <?php foreach (FACTION_MODULES as $mk => $ml): ?><label class="choice"><input type="checkbox" name="modules[]" value="<?= e($mk) ?>"<?= module_enabled($mk) ? ' checked' : '' ?>> <?= e($ml) ?></label><?php endforeach; ?>
+    </div><p class="hint">Ausgeschaltete Module verschwinden aus Menü und Rechten aller Ränge dieser Fraktion; Daten bleiben erhalten.</p></div>
+    <p class="hint w-full">Spielserver: Befehle werden beim Start der Resource übernommen (danach <code>restart sams_tablet</code>), alles andere innerhalb weniger Minuten.</p>
     <h3 class="form-heading">Logo</h3>
     <div class="field w-half"><label>Eigenes Logo (PNG/JPG/WEBP, quadratisch empfohlen)</label><input type="file" name="logo" accept="image/png,image/jpeg,image/webp"></div>
     <div class="field w-half"><span class="label">Aktuell</span><img src="<?= e(faction_logo()) ?>" alt="" style="height:64px">

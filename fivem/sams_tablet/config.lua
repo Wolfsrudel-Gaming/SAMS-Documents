@@ -10,6 +10,9 @@
 
 Config = {}
 
+-- Befehlsnamen: Die Namen werden im Websystem eingestellt (Einstellungen → Spielserver) und beim Start der Resource
+-- übernommen. Die Werte hier gelten nur, solange das Websystem nicht erreichbar ist; nil schaltet einen Befehl ganz ab.
+
 -- Tablet öffnen: Befehl (nil = kein Befehl) und/oder Item
 Config.Command = 'tablet'
 Config.TabletItem = 'sams_tablet'
@@ -43,6 +46,14 @@ Config.PharmacyDuration = 3000         -- ms Fortschrittsbalken beim Einlösen
 -- Fahndung: Kennzeichenabfrage per Befehl (nil = aus); nur für Konten mit dem Recht „Fahndungen einsehen“
 Config.WantedCommand = 'kennzeichen'
 Config.WantedRequiresDuty = true       -- nur im Dienst
+
+-- Akte am nächsten Spieler (/akte). Name des Befehls, Reichweite und Schalter (nur im Dienst, nur mit Job)
+-- werden im Websystem unter Einstellungen → Spielserver gepflegt; nil = Befehl aus.
+Config.AkteCommand = 'akte'
+
+-- Rechnungen ins Spiel (esx_billing): Society-Konto und Abgleich stellt das Websystem ein (Einstellungen → Spielserver).
+-- Absender-Kennung in der Tabelle billing (esx_billing braucht keinen angemeldeten Absender für Society-Rechnungen).
+Config.BillSender = 'sams'
 
 -- Dokument zeigen: maximale Entfernung zum anderen Spieler
 Config.ShowDistance = 3.0
@@ -83,6 +94,13 @@ Config.Text = {
     redeeming = 'Rezept wird eingelöst …',
     redeemed = 'Erhalten: %s',
     wantedNone = '%s: keine Fahndung.',
-    wantedNoVehicle = 'Kein Fahrzeug vor dir. Kennzeichen angeben: /kennzeichen ABC123',
+    wantedNoVehicle = 'Kein Fahrzeug vor dir. Kennzeichen mit angeben, z. B. ABC123.',
+    akteNoPlayerData = 'Spielerdaten nicht verfügbar (ESX nicht gestartet?).',
+    akteOpen = 'Akte im Tablet öffnen',
+    akteCreate = 'Akte anlegen und öffnen',
+    akteNone = 'Keine Akte vorhanden',
+    akteNoRight = 'Du darfst keine Akten anlegen.',
+    akteJob = 'Aktenabruf nur im passenden Job.',
+    billReceived = 'Neue Rechnung: %s über $%s. Bezahlen im Rechnungsmenü.',
     wantedDuty = 'Fahndungsabfragen nur im Dienst.',
 }

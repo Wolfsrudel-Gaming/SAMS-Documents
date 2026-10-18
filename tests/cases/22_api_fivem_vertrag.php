@@ -16,18 +16,19 @@ $cases = [
     'rx_redeem' => ['token' => $bad, 'license' => 'license:vertrag', 'player' => 'Test'],
     'wanted_check' => ['token' => $bad, 'plate' => 'XX'],
     'person_check' => ['citizen_id' => ''],
+    'bill_result' => ['id' => 999999, 'result' => 'paid'],
 ];
 foreach ($cases as $action => $body) {
     [$st, $r] = api($action, $body);
     check($st === 200 && ($r['ok'] ?? null) === false, "$action: fachlicher Fehler → HTTP 200 mit ok:false (war HTTP $st)");
 }
-foreach (['job_pickup', 'rx_redeem', 'wanted_check', 'person_check'] as $action) {
+foreach (['job_pickup', 'rx_redeem', 'wanted_check', 'person_check', 'bill_result'] as $action) {
     [, $r] = api($action, $cases[$action]);
     check(is_string($r['error'] ?? null) && $r['error'] !== '', "$action: Fehlertext im JSON vorhanden");
 }
 
 // 3. Ungültige Anmeldung (Token) liefert bei jeder Aktion nur 200 oder 401 – niemals 403/404/409
-foreach (['tablet_session', 'tablet_launch', 'tablet_logout', 'printer_jobs', 'duty_set', 'duty_status', 'rx_check', 'wanted_check', 'person_check', 'jobs_since'] as $action) {
+foreach (['tablet_session', 'tablet_launch', 'tablet_logout', 'printer_jobs', 'duty_set', 'duty_status', 'rx_check', 'wanted_check', 'person_check', 'jobs_since', 'record_lookup', 'record_open', 'bills_sync', 'game_config'] as $action) {
     [$st] = api($action, ['token' => $bad, 'tokens' => [$bad], 'citizen_id' => 'GIBTSNICHT', 'since_id' => 0, 'printer_id' => 0]);
     check(in_array($st, [200, 401], true), "$action: nur HTTP 200 oder 401 erlaubt (war HTTP $st)");
 }

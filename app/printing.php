@@ -98,17 +98,18 @@ function tablet_user_info(array $u): array
         'can_duty' => in_array('duty.clock', $perms, true),
         'on_duty' => in_array('duty.clock', $perms, true) && duty_open_session((int) $u['id']) !== null,
         'faction' => (string) (faction_by_id((int) ($u['faction_id'] ?? 1))['short'] ?? ''),
+        'faction_id' => (int) ($u['faction_id'] ?? 1),
         'faction_kind' => faction_kind((int) ($u['faction_id'] ?? 1)),
         'can_wanted' => in_array('wanted.view', $perms, true),
     ];
 }
 
-/** Einmal-Link, mit dem das Tablet eine Browsersitzung im Websystem öffnet (60 Sekunden gültig). */
-function tablet_launch_url(array $tokenRow): string
+/** Einmal-Link, mit dem das Tablet eine Browsersitzung im Websystem öffnet (60 Sekunden gültig), optional direkt auf einer Seite. */
+function tablet_launch_url(array $tokenRow, string $next = ''): string
 {
     $code = bin2hex(random_bytes(24));
     update('tablet_tokens', (int) $tokenRow['id'], ['launch_hash' => hash('sha256', $code), 'launch_expires' => date('Y-m-d H:i:s', time() + 60)]);
-    return base_url() . '/tablet.php?c=' . $code;
+    return base_url() . '/tablet.php?c=' . $code . ($next !== '' ? '&next=' . rawurlencode($next) : '');
 }
 
 // ---------------------------------------------------------------- Drucker

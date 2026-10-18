@@ -20,6 +20,7 @@ if (is_post() && post('action') === 'revoke') {
         q('UPDATE documents SET status = ?, revoked_reason = ?, revoked_by = ?, revoked_at = ? WHERE id = ?', ['revoked', $reason, $me['id'], now(), $id]);
         audit('document.revoke', 'document', $id, $reason);
         wanted_close_for_document($id, 'Dokument storniert: ' . $reason);
+        game_bill_cancel_for($id);
         notify_webhook('documents', log_embed('🚫 ' . ($type['title'] ?? 'Dokument') . ' storniert', '', 0xb3261e, [
             ['name' => 'Nummer', 'value' => $doc['number'], 'inline' => true], ['name' => 'Storniert von', 'value' => user_display($me), 'inline' => true]]));
         flash('success', 'Dokument wurde storniert. Die Echtheitsprüfung zeigt es ab sofort als ungültig an.');
@@ -43,9 +44,24 @@ if (is_post() && post('action') === 'pay_status') {
     };
     if ($row) {
         update('documents', $id, $row + ['pay_note' => $note]);
+        if ($to === 'paid') {
+            game_bill_cancel_for($id); // außerhalb des Spiels bezahlt: offene Rechnung im Spiel zurückziehen
+        }
         $label = $to === 'dunned' ? $row['dunning_level'] . '. Mahnung' : PAY_STATUS[$to][1];
         audit('invoice.status', 'document', $id, $doc['number'] . ' → ' . $label . ($note !== '' ? ' (' . $note . ')' : ''));
         flash('success', 'Rechnung: ' . $label . '.' . ($to === 'dunned' ? ' Die Mahnung kann jetzt gedruckt oder im Spiel übergeben werden.' : ''));
+    }
+    redirect(url('document', ['id' => $id]));
+}
+
+if (is_post() && post('action') === 'game_bill') {
+    csrf_check();
+    require_perm('invoices.manage');
+    if ($problem = game_bill_problem($doc)) {
+        flash('error', $problem);
+    } else {
+        game_bill_send($doc, (int) $me['id']);
+        flash('success', 'Die Rechnung wird ins Spiel gesendet. Die Person kann sie dort bezahlen; die Zahlung wird hier automatisch verbucht.');
     }
     redirect(url('document', ['id' => $id]));
 }
@@ -234,6 +250,14 @@ ob_start(); ?>
             <button class="btn small" name="to" value="open">Zahlung zurücknehmen</button>
         <?php endif; ?>
     </form>
+    <?php $gameBill = game_bill_for($id); $gameProblem = game_bill_problem($doc); if ($gameBill || game_faction()['billing']): ?>
+    <form method="post" class="inline-form">
+        <?= csrf_field() ?><input type="hidden" name="action" value="game_bill">
+        <span><strong>Im Spiel:</strong> <?= $gameBill ? game_bill_badge($gameBill) . ' <small class="muted">' . e(fmt_datetime($gameBill['paid_at'] ?: ($gameBill['sent_at'] ?: $gameBill['created_at']))) . ($gameBill['status'] === 'failed' ? ' · ' . e($gameBill['error']) : '') . '</small>' : '<span class="muted">noch nicht gesendet</span>' ?></span>
+        <?php if (!$gameProblem): ?><button class="btn small"><?= icon('external') ?>Ins Spiel senden</button>
+        <?php elseif (!$gameBill || !in_array($gameBill['status'], ['pending', 'sent', 'cancel', 'paid'], true)): ?><small class="muted"><?= e($gameProblem) ?></small><?php endif; ?>
+    </form>
+    <?php endif; ?>
 </section>
 <?php endif; ?>
 
