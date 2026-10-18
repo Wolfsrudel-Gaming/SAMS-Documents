@@ -15,9 +15,9 @@ $keys = [
         'web'        => ['Website', 'www.sams.ls'],
     ],
     'Kennungen & Fußzeile' => [
-        'ik_number'  => ['Institutionskennzeichen (IK)', '260 911 234'],
-        'bsnr'       => ['Betriebsstätten-Nr.', '72 911 3400'],
-        'director'   => ['Ärztliche Direktion', 'Dr. med. Ärztliche Direktion'],
+        'ik_number'  => ['Institutionskennzeichen (IK, nur Rettungsdienst)', '260 911 234'],
+        'bsnr'       => ['Betriebsstätten-Nr. (nur Rettungsdienst)', '72 911 3400'],
+        'director'   => [STAMP_PROFILES[faction_kind()]['head'] ?? 'Leitung', faction_kind() === 'medical' ? 'Dr. med. Ärztliche Direktion' : 'Name der Leitung'],
         'register'   => ['Rechtsform / Register', 'Körperschaft des öffentlichen Rechts · State of San Andreas'],
         'tax_id'     => ['Steuernummer', 'St.-Nr. 31/911/04711'],
         'bank'       => ['Bank', 'Maze Bank of Los Santos'],
@@ -31,10 +31,11 @@ $keys = [
         'theme_primary' => ['Primärfarbe (Schaltflächen, Markierungen)', '#0b4f9c', 'color'],
         'theme_accent'  => ['Akzentfarbe (Warnhinweise)', '#c8102e', 'color'],
         'theme_nav'     => ['Farbe Kopfleiste', '#1c2b3b', 'color'],
+        'stamp_color'   => ['Stempel- und Siegelfarbe (leer = passend zur Fraktionsart)', STAMP_PROFILES[faction_kind()]['color'] ?? '#22409a', 'color'],
     ],
     'Dokumente' => [
         'doc_prefix' => ['Präfix Dokumentnummern', 'SAMS'],
-        'seal_text'  => ['Umschrift Dienstsiegel', 'SAN ANDREAS MEDICAL SERVICES'],
+        'seal_text'  => ['Umschrift Dienstsiegel', mb_strtoupper((string) (current_faction()['name'] ?? 'SAN ANDREAS MEDICAL SERVICES'))],
         'currency'   => ['Währungssymbol', '$'],
     ],
     'Bürgerportal' => [
@@ -103,7 +104,7 @@ if (is_post()) {
     foreach ($keys as $group) {
         foreach ($group as $k => $_) {
             $v = mb_substr((string) post($k), 0, 300);
-            if (str_starts_with($k, 'theme_') && $v !== '' && !preg_match('/^#[0-9a-f]{6}$/i', $v)) {
+            if ((str_starts_with($k, 'theme_') || $k === 'stamp_color') && $v !== '' && !preg_match('/^#[0-9a-f]{6}$/i', $v)) {
                 $v = '';
             }
             if (in_array($k, ['portal_appointment_kinds', 'license_types', 'evidence_storage', 'custody_cells', 'court_rooms'], true)) {

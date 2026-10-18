@@ -70,7 +70,7 @@ function addendum_sheet(array $doc, array $addendum, int $n): string
         <div class="pgrid">
             <div class="pc w4"><span class="fl">Dokument</span><span class="fv"><?= e($type['title'] ?? $doc['type']) ?></span></div>
             <div class="pc w4"><span class="fl">Dokument-Nr. / Prüfcode</span><span class="fv mono"><?= e($doc['number'] ?? '') ?> · <?= e($doc['verify_code'] ?? '') ?></span></div>
-            <div class="pc w4"><span class="fl">Patient/in</span><span class="fv"><?= e($p ? patient_name($p, true) : '–') ?></span></div>
+            <div class="pc w4"><span class="fl"><?= e(term('person')) ?></span><span class="fv"><?= e($p ? patient_name($p, true) : '–') ?></span></div>
         </div>
         <h3 class="psec">Nachtrag vom <?= e(fmt_datetime($addendum['created_at'])) ?></h3>
         <div class="addendum-text printed"><?= nl($addendum['text']) ?></div>
@@ -223,11 +223,35 @@ function doc_patient_box(array $doc, bool $full = true): string
     return ob_get_clean();
 }
 
+/**
+ * Stempel- und Siegel-Gestaltung je Fraktionsart (Farbe, Wappen im Dienstsiegel, Beschriftungen).
+ * Die Farbe lässt sich je Fraktion unter Einstellungen → Design ändern (stamp_color).
+ */
+const STAMP_PROFILES = [
+    'medical'    => ['color' => '#22409a', 'emblem' => 'star_of_life', 'seal_label' => 'DIENSTSIEGEL', 'caption' => 'Unterschrift und Stempel', 'head' => 'Ärztliche Direktion'],
+    'police'     => ['color' => '#1d2f5e', 'emblem' => 'badge', 'seal_label' => 'DIENSTSIEGEL', 'caption' => 'Unterschrift und Dienststempel', 'head' => 'Behördenleitung'],
+    'justice'    => ['color' => '#6b1e1e', 'emblem' => 'scales', 'seal_label' => 'GERICHTSSIEGEL', 'caption' => 'Unterschrift und Siegel', 'head' => 'Präsidium'],
+    'fire'       => ['color' => '#a3161a', 'emblem' => 'maltese', 'seal_label' => 'DIENSTSIEGEL', 'caption' => 'Unterschrift und Dienststempel', 'head' => 'Leitung der Feuerwehr'],
+    'government' => ['color' => '#2f5d50', 'emblem' => 'columns', 'seal_label' => 'AMTSSIEGEL', 'caption' => 'Unterschrift und Amtsstempel', 'head' => 'Verwaltungsleitung'],
+];
+
+/** Stempelprofil der aktuellen Fraktion (beim Rendern: Fraktion des Dokuments). */
+function stamp_profile(): array
+{
+    $p = STAMP_PROFILES[faction_kind()] ?? STAMP_PROFILES['medical'];
+    $c = (string) setting('stamp_color', '');
+    if (preg_match('/^#[0-9a-f]{6}$/i', $c)) {
+        $p['color'] = $c;
+    }
+    return $p;
+}
+
 /** Unterschriftsblock mit optionalem Stempel. $stamp: 'rect' | 'round' | '' */
 function doc_signature(array $doc, string $stamp = 'rect', string $caption = '', bool $withPlace = true): string
 {
     $u = $doc['issuer_snapshot'] ?? [];
-    $caption = $caption ?: ((($u['doctor_number'] ?? '') !== '' || in_array($u['role'] ?? '', ['doctor', 'admin'], true)) ? 'Unterschrift und Stempel des Arztes / der Ärztin' : 'Unterschrift');
+    $medicalDoctor = faction_kind() === 'medical' && (($u['doctor_number'] ?? '') !== '' || in_array($u['role'] ?? '', ['doctor', 'admin'], true));
+    $caption = $caption ?: ($medicalDoctor ? 'Unterschrift und Stempel des Arztes / der Ärztin' : ($stamp !== '' ? stamp_profile()['caption'] : 'Unterschrift'));
     $rot = doc_rand($doc, 'sig', -4, 3);
     ob_start(); ?>
     <div class="sigblock">
@@ -275,38 +299,97 @@ function ink_filter(string $id, int $seed): string
         . '</filter>';
 }
 
-/** Rechteckiger Arztstempel (blau). */
+/** Rechteckiger Stempel: beim Rettungsdienst Arztstempel, sonst Dienst-/Amtsstempel mit Rang, Dienstnummer und Abteilung. */
 function doctor_stamp_svg(array $doc): string
 {
     $u = $doc['issuer_snapshot'] ?? [];
     $id = 'ink' . substr(md5(($doc['verify_code'] ?? '') . 'rect' . mt_rand()), 0, 8);
     $seed = (int) (doc_rand($doc, 'seed', 1, 900));
     $rot = doc_rand($doc, 'stamprot', -5, 4);
-    $lines = array_values(array_filter([
-        ['t' => user_display($u), 'c' => 'big'],
-        ['t' => $u['department'] ?? '', 'c' => ''],
-        ['t' => org('org_name'), 'c' => ''],
-        ['t' => org('org_street') . ' · ' . org('city'), 'c' => ''],
-        ['t' => 'Tel. ' . org('phone') . (!empty($u['doctor_number']) ? ' · Arzt-Nr. ' . $u['doctor_number'] : ''), 'c' => 'small'],
-        ['t' => 'BSNR ' . org('bsnr'), 'c' => 'small'],
-    ], fn($l) => trim($l['t']) !== ''));
+    $profile = stamp_profile();
+    $color = $profile['color'];
+    $place = trim(org('org_street') . ' · ' . org('city'), ' ·');
+    if (faction_kind() === 'medical') {
+        $lines = [
+            ['t' => user_display($u), 'c' => 'big'],
+            ['t' => $u['department'] ?? '', 'c' => ''],
+            ['t' => org('org_name'), 'c' => ''],
+            ['t' => $place, 'c' => ''],
+            ['t' => trim((org('phone') !== '' ? 'Tel. ' . org('phone') : '') . (!empty($u['doctor_number']) ? ' · Arzt-Nr. ' . $u['doctor_number'] : ''), ' ·'), 'c' => 'small'],
+            ['t' => org('bsnr') !== '' ? 'BSNR ' . org('bsnr') : '', 'c' => 'small'],
+        ];
+    } else {
+        $rankLine = trim(($u['rank_name'] ?? '') . (!empty($u['badge_number']) ? ' · Dienst-Nr. ' . $u['badge_number'] : ''), ' ·');
+        $lines = [
+            ['t' => mb_strtoupper(org('org_name')), 'c' => 'head'],
+            ['t' => $u['department'] ?? '', 'c' => ''],
+            ['t' => user_display($u), 'c' => 'big'],
+            ['t' => $rankLine, 'c' => ''],
+            ['t' => $place, 'c' => 'small'],
+            ['t' => org('phone') !== '' ? 'Tel. ' . org('phone') : '', 'c' => 'small'],
+        ];
+    }
+    $lines = array_values(array_filter($lines, fn($l) => trim($l['t']) !== ''));
     $h = 14 + count($lines) * 11;
     $svg = '<svg class="stamp-svg" viewBox="0 0 250 ' . $h . '" style="transform:rotate(' . $rot . 'deg)" xmlns="http://www.w3.org/2000/svg">'
-        . '<defs>' . ink_filter($id, $seed) . '</defs><g filter="url(#' . $id . ')" fill="#22409a" stroke="#22409a">'
-        . '<rect x="2" y="2" width="246" height="' . ($h - 4) . '" rx="3" fill="none" stroke-width="1.6"/>';
+        . '<defs>' . ink_filter($id, $seed) . '</defs><g filter="url(#' . $id . ')" fill="' . e($color) . '" stroke="' . e($color) . '">'
+        . '<rect x="2" y="2" width="246" height="' . ($h - 4) . '" rx="3" fill="none" stroke-width="1.6"/>'
+        . (faction_kind() !== 'medical' ? '<rect x="5" y="5" width="240" height="' . ($h - 10) . '" rx="2" fill="none" stroke-width="0.6"/>' : '');
     $y = 17;
     foreach ($lines as $l) {
-        $size = $l['c'] === 'big' ? 12.5 : ($l['c'] === 'small' ? 8.8 : 9.8);
-        $weight = $l['c'] === 'big' ? 700 : 400;
+        $size = $l['c'] === 'big' ? 12.5 : ($l['c'] === 'small' ? 8.8 : ($l['c'] === 'head' ? 9.2 : 9.8));
+        $weight = in_array($l['c'], ['big', 'head'], true) ? 700 : 400;
         $svg .= '<text x="125" y="' . $y . '" text-anchor="middle" stroke="none" font-family="Arial, Helvetica, sans-serif" font-size="' . $size . '" font-weight="' . $weight . '">' . e($l['t']) . '</text>';
         $y += 11;
     }
     return $svg . '</g></svg>';
 }
 
-/** Runder Dienstsiegel-Stempel. */
-function seal_svg(array $doc, string $color = '#1c3c8c'): string
+/** Wappen in der Mitte des Dienstsiegels (je Fraktionsart), Mittelpunkt 0/0, Radius ca. 38. */
+function seal_emblem(string $emblem, string $pid): string
 {
+    switch ($emblem) {
+        case 'badge': // Polizeistern mit Mittelschild
+            $pts = [];
+            for ($i = 0; $i < 14; $i++) {
+                $r = $i % 2 ? 17 : 38;
+                $a = deg2rad(-90 + $i * (360 / 14));
+                $pts[] = round(cos($a) * $r, 1) . ',' . round(sin($a) * $r, 1);
+            }
+            $tips = '';
+            for ($i = 0; $i < 7; $i++) {
+                $a = deg2rad(-90 + $i * (360 / 7));
+                $tips .= '<circle cx="' . round(cos($a) * 38, 1) . '" cy="' . round(sin($a) * 38, 1) . '" r="3.4"/>';
+            }
+            return '<polygon points="' . implode(' ', $pts) . '"/>' . $tips
+                . '<circle r="13" fill="#fff"/><path d="M0 -9 L8 -5 L8 2 C8 7 4 10 0 12 C-4 10 -8 7 -8 2 L-8 -5 Z"/>';
+        case 'scales': // Waage der Justiz
+            return '<rect x="-1.8" y="-34" width="3.6" height="62" rx="1"/><circle cy="-36" r="4"/>'
+                . '<rect x="-30" y="-27" width="60" height="3.2" rx="1.5"/>'
+                . '<path d="M-27 -24 L-37 2 M-27 -24 L-17 2 M27 -24 L17 2 M27 -24 L37 2" fill="none" stroke-width="1.4"/>'
+                . '<path d="M-39 2 Q-27 14 -15 2 Z M15 2 Q27 14 39 2 Z"/>'
+                . '<path d="M-16 28 L16 28 L12 34 L-12 34 Z"/>';
+        case 'maltese': // Feuerwehrkreuz (Malteserkreuz) mit Flamme
+            $arm = '<path id="' . $pid . 'mx" d="M0 -6 L-15 -38 Q0 -30 15 -38 Z"/>';
+            return $arm . '<use href="#' . $pid . 'mx" transform="rotate(90)"/><use href="#' . $pid . 'mx" transform="rotate(180)"/><use href="#' . $pid . 'mx" transform="rotate(270)"/>'
+                . '<circle r="11" fill="#fff"/><path d="M0 -8 C5 -3 6 2 3 7 C2 3 0 2 -1 0 C-1 3 -3 5 -4 7 C-7 2 -5 -3 0 -8 Z"/>';
+        case 'columns': // Amtsgebäude mit Säulen
+            return '<path d="M-36 -12 L0 -34 L36 -12 Z"/><rect x="-36" y="-10" width="72" height="4"/>'
+                . '<rect x="-30" y="-4" width="7" height="28"/><rect x="-15" y="-4" width="7" height="28"/><rect x="8" y="-4" width="7" height="28"/><rect x="23" y="-4" width="7" height="28"/>'
+                . '<rect x="-38" y="25" width="76" height="4"/><rect x="-42" y="30" width="84" height="4"/>';
+        default: // Star of Life (Rettungsdienst)
+            return '<g id="' . $pid . 'arm"><rect x="-7" y="-36" width="14" height="72" rx="1"/></g>'
+                . '<use href="#' . $pid . 'arm" transform="rotate(60)"/><use href="#' . $pid . 'arm" transform="rotate(-60)"/>'
+                . '<path d="M-1.6 -27 v50 M1.6 -27 v50" stroke="#fff" stroke-width="1.2"/>'
+                . '<path d="M0 -24 c7 3 7 8 0 11 c-7 3 -7 8 0 11 c7 3 7 8 0 11" fill="none" stroke="#fff" stroke-width="2.2"/>';
+    }
+}
+
+/** Runder Dienstsiegel-Stempel (Wappen und Farbe passend zur Fraktion). $color '' = Farbe der Fraktion. */
+function seal_svg(array $doc, string $color = ''): string
+{
+    $profile = stamp_profile();
+    $color = $color !== '' ? $color : $profile['color'];
     $id = 'ink' . substr(md5(($doc['verify_code'] ?? '') . 'seal' . mt_rand()), 0, 8);
     $pid = 'arc' . substr($id, 3);
     $seed = (int) (doc_rand($doc, 'seed2', 1, 900));
@@ -326,14 +409,9 @@ function seal_svg(array $doc, string $color = '#1c3c8c'): string
         . '<text font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="700" letter-spacing="2" stroke="none">'
         . '<textPath href="#' . $pid . 'b" startOffset="50%" text-anchor="middle">' . e($bottom) . '</textPath></text>'
         . '<text x="29" y="105" font-size="12" stroke="none" text-anchor="middle">★</text><text x="171" y="105" font-size="12" stroke="none" text-anchor="middle">★</text>'
-        // Star of Life
-        . '<g transform="translate(100 96)" stroke="none">'
-        . '<g id="' . $pid . 'arm"><rect x="-7" y="-36" width="14" height="72" rx="1"/></g>'
-        . '<use href="#' . $pid . 'arm" transform="rotate(60)"/><use href="#' . $pid . 'arm" transform="rotate(-60)"/>'
-        . '<path d="M-1.6 -27 v50 M1.6 -27 v50" stroke="#fff" stroke-width="1.2"/>'
-        . '<path d="M0 -24 c7 3 7 8 0 11 c-7 3 -7 8 0 11 c7 3 7 8 0 11" fill="none" stroke="#fff" stroke-width="2.2"/>'
-        . '</g>'
-        . '<text x="100" y="146" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="8" stroke="none" letter-spacing="1">DIENSTSIEGEL</text>'
+        // Wappen der Fraktion
+        . '<g transform="translate(100 96)" stroke="none">' . seal_emblem($profile['emblem'], $pid) . '</g>'
+        . '<text x="100" y="146" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="8" stroke="none" letter-spacing="1">' . e($profile['seal_label']) . '</text>'
         . '</g></svg>';
 }
 
@@ -406,8 +484,8 @@ function doc_footer(array $doc, string $extra = ''): string
         <div class="df-cols">
             <div><strong><?= e(org('org_name')) ?></strong><br><?= e(org('org_sub')) ?><br><?= e(org('org_street')) ?><br><?= e(org('org_city')) ?></div>
             <div>Tel. <?= e(org('phone')) ?><br>Fax <?= e(org('fax')) ?><br><?= e(org('email')) ?><br><?= e(org('web')) ?></div>
-            <div><?= e(org('bank')) ?><br>IBAN <?= e(org('iban')) ?><br>BIC <?= e(org('bic')) ?><br>IK <?= e(org('ik_number')) ?></div>
-            <div>Ärztliche Direktion:<br><?= e(org('director')) ?><br><?= e(org('register')) ?><br><?= e(org('tax_id')) ?></div>
+            <div><?= e(org('bank')) ?><?= org('iban') !== '' ? '<br>IBAN ' . e(org('iban')) : '' ?><?= org('bic') !== '' ? '<br>BIC ' . e(org('bic')) : '' ?><?= faction_kind() === 'medical' && org('ik_number') !== '' ? '<br>IK ' . e(org('ik_number')) : '' ?></div>
+            <div><?= org('director') !== '' ? e(stamp_profile()['head']) . ':<br>' . e(org('director')) . '<br>' : '' ?><?= e(org('register')) ?><br><?= e(org('tax_id')) ?></div>
         </div>
         <?php if ($extra !== ''): ?><div class="df-extra"><?= $extra ?></div><?php endif; ?>
     </footer>

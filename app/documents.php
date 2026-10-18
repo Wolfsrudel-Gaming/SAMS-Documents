@@ -858,7 +858,8 @@ function issuer_snapshot(array $u): array
         'title'         => $u['title'],
         'role'          => $u['role'] ?? '',
         'rank_name'     => user_rank_name($u),
-        'department'    => $u['department'],
+        // Stempel: eigene Angabe, sonst die erste zugeordnete Abteilung
+        'department'    => trim((string) $u['department']) !== '' ? $u['department'] : (string) scalar('SELECT d.name FROM departments d JOIN user_departments ud ON ud.department_id = d.id WHERE ud.user_id = ? ORDER BY d.sort, d.name LIMIT 1', [(int) ($u['id'] ?? 0)]),
         'badge_number'  => $u['badge_number'],
         'doctor_number' => $u['doctor_number'],
         'signature'     => $u['signature'],

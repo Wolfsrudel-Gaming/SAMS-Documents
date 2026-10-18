@@ -44,7 +44,7 @@ $access = opt_label($type, 'access', $d['access'] ?? []);
         <div class="id-back-foot">
             <?= qr_html($doc, 'qr id-qr') ?>
             <div class="id-issuer"><?= signature_html($u, doc_rand($doc, 'idsig', -4, 3)) ?><span><?= e(user_display($u)) ?> · ausgestellt <?= e(fmt_date($doc['issued_at'] ?? now())) ?></span></div>
-            <div class="id-seal"><?= seal_svg($doc, '#1c3c8c') ?></div>
+            <div class="id-seal"><?= seal_svg($doc) ?></div>
         </div>
         <div class="id-code mono"><?= e($doc['number'] ?? '') ?> · <?= e(chunk_split($doc['verify_code'] ?? '', 4, ' ')) ?></div>
     </div>
