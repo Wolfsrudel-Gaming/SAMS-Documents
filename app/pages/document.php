@@ -56,7 +56,9 @@ if (is_post() && post('action') === 'pay_status') {
 
 if (is_post() && post('action') === 'game_bill') {
     csrf_check();
-    require_perm('invoices.manage');
+    if (!game_bill_allowed($doc)) {
+        forbidden();
+    }
     if ($problem = game_bill_problem($doc)) {
         flash('error', $problem);
     } else {
@@ -258,6 +260,18 @@ ob_start(); ?>
         <?php elseif (!$gameBill || !in_array($gameBill['status'], ['pending', 'sent', 'cancel', 'paid'], true)): ?><small class="muted"><?= e($gameProblem) ?></small><?php endif; ?>
     </form>
     <?php endif; ?>
+</section>
+<?php endif; ?>
+
+<?php if ($doc['type'] !== 'rechnung' && array_key_exists($doc['type'], GAME_BILL_TYPES) && $doc['status'] !== 'revoked' && game_bill_allowed($doc) && (game_faction()['billing'] || game_bill_for($id))):
+    $gameBill = game_bill_for($id); $gameProblem = game_bill_problem($doc); ?>
+<section class="card no-print pay-card">
+    <form method="post" class="inline-form">
+        <?= csrf_field() ?><input type="hidden" name="action" value="game_bill">
+        <span><strong>Geldstrafe im Spiel:</strong> <?= e(money(game_bill_amount($doc))) ?> · <?= $gameBill ? game_bill_badge($gameBill) : '<span class="muted">noch nicht gesendet</span>' ?><?= $doc['pay_status'] === 'paid' ? ' · bezahlt am ' . e(fmt_date($doc['paid_at'])) : '' ?></span>
+        <?php if (!$gameProblem): ?><button class="btn small"><?= icon('external') ?>Ins Spiel senden</button>
+        <?php elseif (!$gameBill || !in_array($gameBill['status'], ['pending', 'sent', 'cancel', 'paid'], true)): ?><small class="muted"><?= e($gameProblem) ?></small><?php endif; ?>
+    </form>
 </section>
 <?php endif; ?>
 

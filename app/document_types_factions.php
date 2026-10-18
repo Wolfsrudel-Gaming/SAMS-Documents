@@ -102,6 +102,7 @@ function document_types_factions(): array
         ], "Gegen **{{patient.name}}** wird wegen folgender Tat\n\n{{tat}}\n\nauf Antrag der Staatsanwaltschaft ein Strafbefehl erlassen: **{{strafe}}** – {{betrag}} {{haft}} Haft-Einheiten.\n\nGegen diesen Strafbefehl kann innerhalb von zwei Wochen nach Zustellung Einspruch eingelegt werden. Andernfalls wird er rechtskräftig."),
         'doj_urteil' => $def('Urteil', 'Urteil', 'UR', 'justice', 'judge', 'Strafverfahren', 'letter', [
             $az, $date('verhandlung', 'Verhandlungstag', ['required' => true]), $area('tenor', 'Urteilstenor', ['required' => true]),
+            $t('geldstrafe', 'Geldstrafe (Betrag, falls verhängt – kann ins Spiel gesendet werden)', ['width' => 'half']),
             $area('gruende', 'Gründe', ['rows' => 8]), $area('rechtsmittel', 'Rechtsmittelbelehrung', ['rows' => 2, 'default' => 'Gegen dieses Urteil ist binnen einer Woche die Berufung zulässig.']),
         ], "**Im Namen des Volkes**\n\nIn der Strafsache gegen **{{patient.name}}**, geboren am {{patient.dob}}, hat das Gericht aufgrund der Hauptverhandlung vom {{verhandlung}} für Recht erkannt:\n\n{{tenor}}"),
         'doj_haftbefehl' => $def('Haftbefehl', 'Haftbefehl', 'HB', 'justice', 'judge', 'Beschlüsse', 'letter', [

@@ -77,18 +77,52 @@ function game_bill_for(int $documentId): ?array
     return one('SELECT * FROM game_bills WHERE document_id = ? ORDER BY id DESC LIMIT 1', [$documentId]);
 }
 
+/** Dokumentarten, die als Forderung ins Spiel gehen: Art => Feld mit dem Betrag (null = Rechnungsbetrag). */
+const GAME_BILL_TYPES = ['rechnung' => null, 'doj_strafbefehl' => 'betrag', 'doj_urteil' => 'geldstrafe'];
+
+/** Betrag aus einem Freitextfeld („$ 5.000“, „2500,50“, „1,500.00“). */
+function parse_money(string $v): float
+{
+    $v = preg_replace('/[^0-9.,]/', '', $v);
+    if (preg_match('/^\d{1,3}(\.\d{3})+(,\d+)?$/', $v)) {
+        $v = str_replace(['.', ','], ['', '.'], $v);
+    } elseif (preg_match('/^\d{1,3}(,\d{3})+(\.\d+)?$/', $v)) {
+        $v = str_replace(',', '', $v);
+    } else {
+        $v = str_replace(',', '.', $v);
+    }
+    return (float) $v;
+}
+
+/** Forderung in ganzen Dollar (aufgerundet). */
+function game_bill_amount(array $doc): int
+{
+    $field = GAME_BILL_TYPES[$doc['type']] ?? null;
+    if ($field === null) {
+        return (int) ceil((int) $doc['amount_cents'] / 100);
+    }
+    $data = is_array($doc['data']) ? $doc['data'] : (json_decode((string) $doc['data'], true) ?: []);
+    return (int) ceil(parse_money((string) ($data[$field] ?? '')));
+}
+
+/** Darf der Benutzer diese Forderung ins Spiel senden? Rechnungen: Rechnungsverwaltung; Geldstrafen: auch wer sie ausstellen darf. */
+function game_bill_allowed(array $doc): bool
+{
+    return can('invoices.manage') || ($doc['type'] !== 'rechnung' && can('documents.issue.' . $doc['type']));
+}
+
 /** Warum die Rechnung (noch) nicht ins Spiel gesendet werden kann – oder '' wenn es geht. */
 function game_bill_problem(array $doc): string
 {
     $g = game_faction((int) $doc['faction_id']);
     $last = game_bill_for((int) $doc['id']);
     return match (true) {
-        $doc['type'] !== 'rechnung' || $doc['status'] === 'revoked' => 'Nur für gültige Rechnungen.',
+        !array_key_exists($doc['type'], GAME_BILL_TYPES) || $doc['status'] === 'revoked' => 'Nur für gültige Rechnungen und Geldstrafen.',
         game_global()['framework'] !== 'esx' => 'Die Spielserver-Anbindung ist ausgeschaltet.',
         !$g['billing'] => 'Rechnungen ins Spiel sind für diese Fraktion ausgeschaltet.',
         $g['society'] === '' => 'Kein Society-Konto eingetragen (Einstellungen → Spielserver).',
         $doc['pay_status'] === 'paid' => 'Die Rechnung ist bereits bezahlt.',
-        (int) $doc['amount_cents'] <= 0 => 'Die Rechnung hat keinen Betrag.',
+        game_bill_amount($doc) <= 0 => $doc['type'] === 'rechnung' ? 'Die Rechnung hat keinen Betrag.' : 'Im Dokument ist keine Geldstrafe eingetragen.',
         game_bill_citizen($doc) === '' => 'Für die Person ist keine Bürger-ID hinterlegt (in der Akte eintragen oder Akte im Spiel mit /akte anlegen).',
         $last && in_array($last['status'], ['pending', 'sent', 'cancel'], true) => 'Die Rechnung liegt bereits im Spiel.',
         default => '',
@@ -101,8 +135,8 @@ function game_bill_send(array $doc, int $userId): int
     $f = faction_by_id((int) $doc['faction_id']);
     $id = insert('game_bills', [
         'faction_id' => (int) $doc['faction_id'], 'document_id' => (int) $doc['id'], 'citizen_id' => mb_substr(game_bill_citizen($doc), 0, 64),
-        'amount' => (int) ceil((int) $doc['amount_cents'] / 100), 'society' => $g['society'],
-        'label' => mb_substr(trim(($f['short'] ?? '') . ' ' . billing_labels((int) $doc['faction_id'])['title'] . ' ' . $doc['number']), 0, 190),
+        'amount' => game_bill_amount($doc), 'society' => $g['society'],
+        'label' => mb_substr(trim(($f['short'] ?? '') . ' ' . ($doc['type'] === 'rechnung' ? billing_labels((int) $doc['faction_id'])['title'] : 'Geldstrafe ' . (doc_type($doc['type'])['title'] ?? '')) . ' ' . $doc['number']), 0, 190),
         'status' => 'pending', 'created_by' => $userId, 'created_at' => now(),
     ]);
     audit('invoice.game_send', 'document', (int) $doc['id'], $doc['number'] . ' ins Spiel gesendet (' . $g['society'] . ')');
