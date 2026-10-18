@@ -112,6 +112,9 @@ function permission_catalog(): array
             'wiki.edit'    => 'Wiki-Seiten anlegen und bearbeiten',
             'lists.manage' => 'Vorschlagslisten der Formulare pflegen (ICD, Medikamente …)',
         ],
+        'Gesetze' => [
+            'laws.manage' => 'Gesetzbücher importieren und bearbeiten (gelten für alle Fraktionen)',
+        ],
         'Kommunikation' => [
             'board.view'   => 'Schwarzes Brett lesen',
             'board.manage' => 'Aushänge veröffentlichen und Lesebestätigungen einsehen',

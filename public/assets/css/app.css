@@ -674,3 +674,19 @@ details.card:not([open]) > summary { margin-bottom: 0; }
 .code-block { background: #f5f6f8; border: 1px solid var(--border, #dde1e6); border-radius: 6px; padding: .6rem .8rem; font-size: .85rem; white-space: pre-wrap; word-break: break-all; margin: .4rem 0; }
 .inline-reveal { display: inline-block; } .inline-reveal > summary { list-style: none; display: inline-block; } .inline-reveal > summary::-webkit-details-marker { display: none; }
 .inline-reveal[open] > summary { display: none; } .inline-reveal code { word-break: break-all; }
+
+/* Gesetze */
+.flash.info { border-color: #c6d6ea; border-left-color: var(--primary); background: #f2f6fb; color: var(--primary-dark); }
+.law-layout { grid-template-columns: 300px 1fr; }
+.law-nav { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; font-size: .9rem; }
+.law-nav ul { list-style: none; margin: .3rem 0 .6rem; padding: 0 0 0 .4rem; }
+.law-nav li a { display: block; padding: .15rem 0; color: inherit; text-decoration: none; } .law-nav li a:hover { color: var(--primary); }
+.law-search input { width: 100%; margin-bottom: .5rem; }
+.law-section { padding: .7rem 0; border-top: 1px solid var(--border, #e3e6ea); scroll-margin-top: 12px; }
+.law-section:first-of-type { border-top: 0; }
+.law-section h3 { margin: 0 0 .35rem; font-size: 1.02rem; }
+.law-section p { margin: .2rem 0; } .law-section ul { margin: .2rem 0 .3rem 1.2rem; }
+.law-penalty { margin-top: .4rem !important; font-weight: 600; }
+.law-section:target { background: var(--primary-soft); border-radius: 6px; padding-left: .5rem; }
+.law-snippet { max-width: 60ch; }
+@media (max-width: 1150px) { .law-nav { position: static; max-height: none; } }

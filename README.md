@@ -242,6 +242,17 @@ Voraussetzung ist HTTPS für das Websystem (das Einrichtungsskript richtet es ei
 
 In der `.env` steht `API_KEY` (leer = API deaktiviert). Den Schlüssel nur serverseitig verwenden (server.lua bzw. `set sams_api_key` in der server.cfg), nie im Client.
 
+### Gesetzbücher
+
+Unter *Gesetze* lesen und durchsuchen alle Fraktionen die Gesetzbücher (Bücher, Paragraphen, Strafmaße; Treffer werden markiert). Importieren und bearbeiten dürfen der Hauptadministrator und die Leitung von Justiz und Verwaltung (Recht `laws.manage`).
+
+- **Import** (*Gesetze → Gesetzbuch importieren*): PDF hochladen – der Text wird direkt im Browser gelesen (pdf.js, liegt im Projekt), es sind keine Programme auf dem Webspace nötig. Alternativ Text- oder Markdown-Datei oder Text einfügen.
+- Erkannt werden Buchüberschriften (z. B. „Strafgesetzbuch (StGB)“, Kürzel aus der Klammer), Paragraphen („§1 Titel“, „§ 1“, „Art. 1“), Absätze, Aufzählungen und Strafmaße („Strafmaß: bis 20 HE und 10.000 $“, auch „oder“). Seitenzahlen und wiederkehrende Kopfzeilen fallen weg.
+- **Vorschau** vor dem Speichern: Bücher an- und abwählen, Titel und Kürzel ändern, Hinweise auf doppelte Paragraphen oder nicht lesbare Strafmaße.
+- Ein Gesetzbuch gilt für einen **Staat** (Spielserver) oder für alle. Erneuter Import mit gleichem Namen im selben Staat ersetzt die alte Fassung.
+- **Strafmaße in den Katalog übernehmen**: Polizei und Justiz übernehmen alle Paragraphen mit Strafmaß als Positionen (z. B. „§2 StGB – Raub“, Geldstrafe und Hafteinheiten) in ihren Bußgeld- und Strafkatalog – damit stehen sie in Strafanzeige, Strafbefehl und Bußgeldbescheid zur Auswahl. Erneute Übernahme aktualisiert statt zu verdoppeln.
+- Einzelne Paragraphen lassen sich nachträglich bearbeiten; das Strafmaß wird dabei neu ausgewertet.
+
 ### Mehrere FiveM-Server (Staaten) an einem Portal
 
 Unter *Administration → Spielserver* (nur Hauptadministrator) verbindest du beliebig viele FiveM-Server, z. B. je Staat. Jeder Server bekommt einen **eigenen API-Schlüssel**; Portal-Adresse (`sams_url`) und Schlüssel (`sams_api_key`) lassen sich dort anzeigen und kopieren. Der erste Server (Hauptserver) nutzt `API_KEY` aus der `.env`, bis im Portal ein eigener Schlüssel erzeugt wird.

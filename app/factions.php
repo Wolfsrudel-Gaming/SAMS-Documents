@@ -347,6 +347,9 @@ function create_faction(string $name, string $short, string $kind, string $color
         foreach (FACTION_RANK_TEMPLATES[$kind] as [$rname, $rshort, $level, $rcolor, $tier, $roles]) {
             $rankId = insert('ranks', ['faction_id' => $id, 'name' => $rname, 'short' => $rshort, 'level' => $level, 'color' => $rcolor, 'description' => '', 'created_at' => $now, 'updated_at' => $now]);
             $perms = faction_tier_permissions($tier);
+            if ($tier === 'chief' && in_array($kind, ['justice', 'government'], true)) {
+                $perms[] = 'laws.manage'; // Gesetzbücher pflegt die Leitung von Justiz und Verwaltung
+            }
             if (in_array('lawyer', $roles, true)) {
                 // Anwaltszugang: im Gerichtskalender nur eigene Termine und Fristen
                 $perms = array_merge(array_diff($perms, ['court.manage']), ['court.own']);

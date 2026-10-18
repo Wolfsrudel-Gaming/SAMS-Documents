@@ -33,6 +33,7 @@ $navGroups = [
         'stock'        => ['Medikamente & BtM', 'stock.view|stock.manage', 'shield'],
         'training'     => ['Ausbildung', 'training.view|training.manage', 'shield'],
         'wiki'         => ['Wiki', 'wiki.view|wiki.edit', 'folder'],
+        'laws'         => ['Gesetze', law_codes() ? '' : 'laws.manage', 'docs'],
         'shared'       => ['Freigegebene Dokumente', 'documents.shared_view|documents.view|requests.view', 'external'],
         'portal_admin' => ['Bürgerportal', 'portal.manage|portal.applications', 'users'],
     ],
@@ -56,7 +57,7 @@ $navGroups = [
 ];
 // Unterseiten der passenden Navigation zuordnen
 $activeMap = ['patient' => 'patients', 'patient_edit' => 'patients', 'patient_print' => 'patients', 'entry_edit' => 'patients', 'case' => 'patients', 'case_edit' => 'patients', 'patient_merge' => 'patients', 'btm' => 'stock',
-    'document' => 'documents', 'draft' => 'drafts', 'user_edit' => 'users', 'personnel' => 'users', 'course' => 'training', 'exam' => 'training', 'course_edit' => 'training', 'wiki_page' => 'wiki', 'wiki_edit' => 'wiki', 'wiki_lists' => 'wiki', 'rank_edit' => 'ranks', 'evidence_item' => 'evidence', 'object' => 'objects', 'joint_report' => 'joint', 'password_change' => 'profile', 'twofa' => 'profile'];
+    'document' => 'documents', 'draft' => 'drafts', 'user_edit' => 'users', 'personnel' => 'users', 'course' => 'training', 'exam' => 'training', 'course_edit' => 'training', 'wiki_page' => 'wiki', 'wiki_edit' => 'wiki', 'wiki_lists' => 'wiki', 'rank_edit' => 'ranks', 'evidence_item' => 'evidence', 'object' => 'objects', 'joint_report' => 'joint', 'law_import' => 'laws', 'password_change' => 'profile', 'twofa' => 'profile'];
 $active = $activeMap[$current] ?? $current;
 ?><!doctype html>
 <html lang="<?= e(ui_lang()) ?>">
