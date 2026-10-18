@@ -104,28 +104,40 @@ function grade_attempt(array $attempt, array $course, array $answers): array
     return ['score' => $score, 'passed' => !$overtime && $score >= (int) $course['pass_percent'], 'answers' => $clean, 'overtime' => $overtime];
 }
 
-/** Nach bestandener Prüfung: Qualifikation, Laufbahn, Zertifikat. Gibt die Dokument-ID zurück. */
+/**
+ * Nach bestandener Online-Prüfung (Theorie): nur Eintrag in der Laufbahn und Hinweis an die Ausbildung.
+ * Qualifikation und Zertifikat gibt es erst nach der praktischen Prüfung (complete_practical).
+ */
 function complete_course(array $course, array $user, int $score): ?int
+{
+    personnel_event((int) $user['id'], 'training', 'Theorieprüfung bestanden: ' . $course['title'] . ' (' . $score . ' %) – praktische Prüfung ausstehend');
+    notify_users_with('training.manage', 'personnel', 'Theorie bestanden: ' . user_display($user) . ' – ' . $course['title'] . ' (Praxis ausstehend)', url('course_edit', ['id' => $course['id']]) . '#results');
+    return null;
+}
+
+/** Praktische Prüfung bestanden: Qualifikation, Laufbahn und Zertifikat (unterschrieben von der Prüferin / dem Prüfer). */
+function complete_practical(array $course, array $user, array $examiner, int $score, string $note): ?int
 {
     $uid = (int) $user['id'];
     if ($course['qualification_id'] && !scalar('SELECT COUNT(*) FROM user_qualifications WHERE user_id = ? AND qualification_id = ?', [$uid, $course['qualification_id']])) {
         insert('user_qualifications', ['user_id' => $uid, 'qualification_id' => $course['qualification_id']]);
+        $qname = (string) scalar('SELECT name FROM qualifications WHERE id = ?', [$course['qualification_id']]);
+        personnel_event($uid, 'qualification', 'Qualifikation erworben: ' . $qname . ' (praktische Prüfung bei ' . user_display($examiner) . ')');
     }
     $docId = null;
     $type = doc_type('ausbildungsnachweis');
-    $signer = $course['signer_id'] ? one('SELECT * FROM users WHERE id = ? AND active = 1', [$course['signer_id']]) : null;
-    $signer = $signer ?: ($course['created_by'] ? one('SELECT * FROM users WHERE id = ? AND active = 1', [$course['created_by']]) : null);
-    if ((int) $course['certificate'] && $type && $signer) {
+    if ((int) $course['certificate'] && $type) {
         $data = [
             'course' => $course['title'], 'date_from' => '', 'date_to' => date('Y-m-d'), 'hours' => (int) $course['hours'] ?: '',
             'valid_until' => (int) $course['valid_months'] > 0 ? date('Y-m-d', strtotime('+' . (int) $course['valid_months'] . ' months')) : '',
             'contents' => implode("\n", array_column(course_modules((int) $course['id']), 'title')),
-            'result' => $score >= 95 ? 'mit_auszeichnung' : 'bestanden', 'grade' => $score . ' %', 'instructor' => 'Online-Prüfung',
+            'result' => $score >= 95 ? 'mit_auszeichnung' : 'bestanden', 'grade' => 'Theorie ' . $score . ' %, Praxis bestanden', 'instructor' => user_display($examiner),
             '_employee' => employee_snapshot($user),
         ];
-        $docId = issue_document($type, null, null, $data, $signer);
+        $docId = issue_document($type, null, null, $data, $examiner);
     } else {
-        personnel_event($uid, 'training', 'Lehrgang bestanden: ' . $course['title'] . ' (' . $score . ' %)');
+        personnel_event($uid, 'training', 'Lehrgang abgeschlossen: ' . $course['title'] . ' (Praxis bestanden)');
     }
+    notify_user($uid, 'personnel', 'Praktische Prüfung bestanden: ' . $course['title'], url('personnel'), $note);
     return $docId;
 }

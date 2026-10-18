@@ -24,4 +24,16 @@ $qid = (int) tval('SELECT id FROM training_questions WHERE course_id = ?', [$cid
 check(!$nfs->has('answer correct'), 'Lösung vor Abgabe nicht im HTML');
 $nfs->post("/index.php?p=exam&id=$aid", ["a[$qid][]" => '1']);
 check($nfs->has('Bestanden'), 'Prüfung bestanden');
-check((int) tval("SELECT COUNT(*) FROM documents WHERE type = 'ausbildungsnachweis' AND employee_id = ?", [$nfsId]) === 1, 'Zertifikat automatisch ausgestellt');
+check(!tval("SELECT COUNT(*) FROM documents WHERE type = 'ausbildungsnachweis' AND employee_id = ?", [$nfsId]), 'Theorie allein ergibt kein Zertifikat');
+$chiefId = (int) tval("SELECT id FROM users WHERE username = 'chief'");
+check((bool) tval("SELECT id FROM notifications WHERE user_id = ? AND title LIKE 'Theorie bestanden%'", [$chiefId]), 'Ausbildung wird über die ausstehende Praxis informiert');
+$chief->get("/index.php?p=course_edit&id=$cid");
+check($chief->has('ausstehend') && $chief->has('Praxis bestanden'), 'Praxis in den Ergebnissen bestätigbar');
+$chief->post("/index.php?p=course_edit&id=$cid", ['action' => 'practical_fail', 'attempt_id' => (string) $aid, 'note' => 'Reanimation zu langsam']);
+check(tval('SELECT practical FROM training_attempts WHERE id = ?', [$aid]) === 'failed' && !tval("SELECT COUNT(*) FROM documents WHERE type = 'ausbildungsnachweis' AND employee_id = ?", [$nfsId]), 'Praxis nicht bestanden vermerkt');
+$qual = (int) tval("SELECT id FROM qualifications WHERE faction_id = 1 AND id NOT IN (SELECT qualification_id FROM user_qualifications WHERE user_id = ?) ORDER BY id LIMIT 1", [$nfsId]);
+texec('UPDATE training_courses SET qualification_id = ? WHERE id = ?', [$qual, $cid]);
+check(!tval('SELECT COUNT(*) FROM user_qualifications WHERE user_id = ? AND qualification_id = ?', [$nfsId, $qual]), 'Keine Qualifikation allein durch die Theorie');
+$chief->post("/index.php?p=course_edit&id=$cid", ['action' => 'practical_pass', 'attempt_id' => (string) $aid, 'note' => 'Fallbeispiel Polytrauma']);
+check((int) tval("SELECT COUNT(*) FROM documents WHERE type = 'ausbildungsnachweis' AND employee_id = ?", [$nfsId]) === 1, 'Zertifikat erst nach bestandener Praxis');
+check((bool) tval('SELECT COUNT(*) FROM user_qualifications WHERE user_id = ? AND qualification_id = ?', [$nfsId, $qual]), 'Qualifikation nach bestätigter Praxis');

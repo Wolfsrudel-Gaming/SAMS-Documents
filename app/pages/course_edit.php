@@ -32,6 +32,31 @@ $parseOptions = function (string $raw): array {
 if (is_post()) {
     csrf_check();
     $action = post('action');
+    if (in_array($action, ['practical_pass', 'practical_fail'], true) && $course) {
+        $att = one('SELECT * FROM training_attempts WHERE id = ? AND course_id = ? AND passed = 1', [(int) post('attempt_id'), $id]);
+        $trainee = $att ? fone('users', (int) $att['user_id']) : null;
+        $note = mb_substr(trim((string) post('note')), 0, 190);
+        if (!$att || !$trainee || $att['practical'] === 'passed') {
+            flash('error', 'Dieser Versuch kann nicht (mehr) bewertet werden.');
+        } elseif ((int) $trainee['id'] === (int) $me['id']) {
+            flash('error', 'Die eigene praktische Prüfung kann man nicht selbst abnehmen.');
+        } elseif ($action === 'practical_fail') {
+            update('training_attempts', (int) $att['id'], ['practical' => 'failed', 'practical_at' => now(), 'practical_by' => $me['id'], 'practical_note' => $note]);
+            personnel_event((int) $trainee['id'], 'training', 'Praktische Prüfung nicht bestanden: ' . $course['title'] . ($note !== '' ? ' – ' . $note : ''));
+            notify_user((int) $trainee['id'], 'personnel', 'Praktische Prüfung nicht bestanden: ' . $course['title'], url('course', ['id' => $id]), $note);
+            audit('training.practical', 'course', $id, user_display($trainee) . ': nicht bestanden');
+            flash('success', 'Als nicht bestanden vermerkt. Die Theorie bleibt gültig, die Praxis kann wiederholt werden.');
+        } else {
+            update('training_attempts', (int) $att['id'], ['practical' => 'passed', 'practical_at' => now(), 'practical_by' => $me['id'], 'practical_note' => $note]);
+            $docId = complete_practical($course, $trainee, $me, (int) $att['score'], $note);
+            if ($docId) {
+                update('training_attempts', (int) $att['id'], ['document_id' => $docId]);
+            }
+            audit('training.practical', 'course', $id, user_display($trainee) . ': bestanden');
+            flash('success', 'Praktische Prüfung bestätigt' . ($course['qualification_id'] ? ', Qualifikation vergeben' : '') . ($docId ? ', Zertifikat ausgestellt.' : '.'));
+        }
+        redirect(url('course_edit', ['id' => $id]) . '#results');
+    }
     if ($action === 'course') {
         $row = [
             'title' => mb_substr(trim((string) post('title')), 0, 190),
@@ -104,7 +129,7 @@ if ($errors) {
 }
 $modules = $course ? course_modules($id) : [];
 $questions = $course ? course_questions($id) : [];
-$results = $course ? all('SELECT a.*, u.name FROM training_attempts a JOIN users u ON u.id = a.user_id WHERE a.course_id = ? AND a.finished_at IS NOT NULL ORDER BY a.finished_at DESC LIMIT 50', [$id]) : [];
+$results = $course ? all('SELECT a.*, u.name, x.name AS examiner FROM training_attempts a JOIN users u ON u.id = a.user_id LEFT JOIN users x ON x.id = a.practical_by WHERE a.course_id = ? AND a.finished_at IS NOT NULL ORDER BY a.finished_at DESC LIMIT 50', [$id]) : [];
 $optText = fn(array $q) => implode("\n", array_map(fn($o, $i) => (in_array($i, $q['correct'], true) ? '* ' : '') . $o, $q['options'], array_keys($q['options'])));
 
 ob_start(); ?>
@@ -118,7 +143,7 @@ ob_start(); ?>
     <?= csrf_field() ?><input type="hidden" name="action" value="course">
     <div class="field w-full"><label>Titel <span class="req">*</span></label><input name="title" value="<?= e($form['title']) ?>" required placeholder="z. B. Advanced Cardiac Life Support (ACLS)"></div>
     <div class="field w-full"><label>Beschreibung</label><textarea name="description" rows="3"><?= e($form['description']) ?></textarea></div>
-    <div class="field w-third"><label>Qualifikation bei Bestehen</label><select name="qualification_id"><option value="">– keine –</option><?php foreach ($quals as $q): ?><option value="<?= (int) $q['id'] ?>"<?= selected($q['id'], $form['qualification_id']) ?>><?= e($q['name']) ?></option><?php endforeach; ?></select></div>
+    <div class="field w-third"><label>Qualifikation nach praktischer Prüfung</label><select name="qualification_id"><option value="">– keine –</option><?php foreach ($quals as $q): ?><option value="<?= (int) $q['id'] ?>"<?= selected($q['id'], $form['qualification_id']) ?>><?= e($q['name']) ?></option><?php endforeach; ?></select></div>
     <div class="field w-third"><label>Bestanden ab (%)</label><input type="number" name="pass_percent" value="<?= (int) $form['pass_percent'] ?>" min="1" max="100"></div>
     <div class="field w-third"><label>Fragen pro Prüfung (0 = alle)</label><input type="number" name="question_count" value="<?= (int) $form['question_count'] ?>" min="0"></div>
     <div class="field w-third"><label>Zeitlimit (Minuten, 0 = keins)</label><input type="number" name="time_limit" value="<?= (int) $form['time_limit'] ?>" min="0"></div>
@@ -186,16 +211,26 @@ ob_start(); ?>
     </details>
 </section>
 
-<section class="card">
+<section class="card" id="results">
     <h2>Ergebnisse</h2>
+    <p class="hint">Die Online-Prüfung ist der Theorieteil. Qualifikation<?= $course['qualification_id'] ? '' : ' (falls eingestellt)' ?> und Zertifikat gibt es erst, wenn eine Ausbilderin / ein Ausbilder die praktische Prüfung hier bestätigt.</p>
     <table class="list compact">
-        <thead><tr><th>Mitarbeiter/in</th><th>Abgegeben</th><th class="right">Ergebnis</th></tr></thead>
+        <thead><tr><th>Mitarbeiter/in</th><th>Abgegeben</th><th class="right">Theorie</th><th>Praxis</th></tr></thead>
         <tbody>
         <?php foreach ($results as $r): ?>
-            <tr onclick="location.href='<?= e(url('exam', ['id' => $r['id']])) ?>'"><td><?= e($r['name']) ?></td><td class="small"><?= e(fmt_datetime($r['finished_at'])) ?></td>
-                <td class="right"><?= (int) $r['score'] ?> % <?= $r['passed'] ? '<span class="badge green">bestanden</span>' : '<span class="badge red">nicht bestanden</span>' ?></td></tr>
+            <tr><td><a href="<?= e(url('exam', ['id' => $r['id']])) ?>"><?= e($r['name']) ?></a></td><td class="small"><?= e(fmt_datetime($r['finished_at'])) ?></td>
+                <td class="right"><?= (int) $r['score'] ?> % <?= $r['passed'] ? '<span class="badge green">bestanden</span>' : '<span class="badge red">nicht bestanden</span>' ?></td>
+                <td><?php if (!$r['passed']): ?><span class="muted">–</span>
+                    <?php elseif ($r['practical'] === 'passed'): ?><span class="badge green">bestanden</span> <small class="muted"><?= e(fmt_date($r['practical_at'])) ?> · <?= e((string) $r['examiner']) ?><?= $r['practical_note'] ? ' · ' . e($r['practical_note']) : '' ?></small>
+                    <?php else: ?>
+                        <?= $r['practical'] === 'failed' ? '<span class="badge red">nicht bestanden</span> <small class="muted">' . e(fmt_date($r['practical_at'])) . ($r['practical_note'] ? ' · ' . e($r['practical_note']) : '') . '</small><br>' : '<span class="badge orange">ausstehend</span>' ?>
+                        <form method="post" class="inline-form"><?= csrf_field() ?><input type="hidden" name="attempt_id" value="<?= (int) $r['id'] ?>">
+                            <input name="note" placeholder="Bemerkung (z. B. Fallbeispiel, Prüfer/in)" maxlength="190">
+                            <button class="btn small primary" name="action" value="practical_pass" onclick="return confirm('Praktische Prüfung als bestanden bestätigen?')">Praxis bestanden</button>
+                            <button class="btn small" name="action" value="practical_fail">nicht bestanden</button></form>
+                    <?php endif; ?></td></tr>
         <?php endforeach; ?>
-        <?php if (!$results): ?><tr><td colspan="3" class="muted">Noch keine Prüfungen abgelegt.</td></tr><?php endif; ?>
+        <?php if (!$results): ?><tr><td colspan="4" class="muted">Noch keine Prüfungen abgelegt.</td></tr><?php endif; ?>
         </tbody>
     </table>
 </section>

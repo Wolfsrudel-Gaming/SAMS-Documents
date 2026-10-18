@@ -58,7 +58,7 @@ Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt au
 - **Bürgerportal** (`/portal.php`): Discord-Login, eigene Dokumente, Terminanfragen, Anträge und Bewerbungen – bearbeitet im Websystem
 - **Schwarzes Brett & Nachrichten**: Aushänge mit Zielgruppe und Lesebestätigung, interne Nachrichten an Personen oder Abteilungen
 - **Wiki**: SOPs und Wissen mit Versionsgeschichte und Wiki-Links; pflegt auch die Vorschlagslisten der Formulare
-- **Ausbildung**: Lehrgänge mit Lernmodulen und Online-Prüfung, bei Bestehen automatisch Qualifikation und Zertifikat
+- **Ausbildung**: Lehrgänge mit Lernmodulen und Online-Prüfung (Theorie); Qualifikation und Zertifikat erst nach der praktischen Prüfung, die eine Ausbilderin / ein Ausbilder im System bestätigt
 - **Personalakte**: Laufbahn mit automatischen Einträgen (Rang, Qualifikationen, Beförderung, Abmahnung …), Notizen, Personaldokumente, Dienstzeiten; eigene Akte für alle einsehbar
 - **Dienstzeiten**: Ein-/Ausstempeln im Spiel (`/dienst`) oder im Browser, „Jetzt im Dienst“, Wochenstunden, Korrekturen durch die Leitung
 - **Dienstplan**: Schichten mit Mindest-/Höchstbesetzung, selbst eintragen oder einteilen lassen, Tausch („zur Übernahme anbieten“), Erinnerung 1 Stunde vorher, Warnung bei Unterbesetzung, Abgleich mit der gestempelten Dienstzeit, Vorwoche übernehmen

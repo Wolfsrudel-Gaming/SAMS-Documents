@@ -28,7 +28,7 @@ if (is_post() && $own && !$attempt['finished_at']) {
         }
     }
     audit('training.finish', 'course', (int) $course['id'], $course['title'] . ': ' . $result['score'] . ' % ' . ($result['passed'] ? 'bestanden' : 'nicht bestanden'));
-    flash($result['passed'] ? 'success' : 'error', $result['passed'] ? 'Bestanden mit ' . $result['score'] . ' %! ' . ($docId ? 'Dein Zertifikat wurde ausgestellt.' : '')
+    flash($result['passed'] ? 'success' : 'error', $result['passed'] ? 'Theorie bestanden mit ' . $result['score'] . ' %! Die Ausbildung meldet sich zur praktischen Prüfung – erst danach gibt es Qualifikation und Zertifikat.'
         : ($result['overtime'] ? 'Die Zeit war abgelaufen – ' : 'Leider nicht bestanden – ') . $result['score'] . ' % (nötig: ' . (int) $course['pass_percent'] . ' %).');
     redirect(url('exam', ['id' => $id]));
 }
@@ -47,7 +47,7 @@ ob_start(); ?>
 <?php if ($finished): ?>
     <div class="result-banner <?= $attempt['passed'] ? 'ok' : 'bad' ?>">
         <strong><?= (int) $attempt['score'] ?> %</strong>
-        <span><?= $attempt['passed'] ? 'Bestanden' : 'Nicht bestanden' ?><?= $attempt['overtime'] ? ' (Zeit überschritten)' : '' ?></span>
+        <span><?= $attempt['passed'] ? 'Bestanden' . ($attempt['practical'] === 'passed' ? ' · Praxis bestanden' : ($attempt['practical'] === 'failed' ? ' · Praxis nicht bestanden' : ' · Praxis ausstehend')) : 'Nicht bestanden' ?><?= $attempt['overtime'] ? ' (Zeit überschritten)' : '' ?></span>
         <?php if ($attempt['document_id'] && ($own || can('documents.view'))): ?><a class="btn" href="<?= e(can('documents.view') ? url('document', ['id' => $attempt['document_id']]) : url('personnel')) ?>">Zertifikat ansehen</a><?php endif; ?>
         <a class="btn" href="<?= e(url('course', ['id' => $course['id']])) ?>">Zum Lehrgang</a>
     </div>

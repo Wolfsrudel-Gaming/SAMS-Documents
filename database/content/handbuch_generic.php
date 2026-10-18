@@ -37,7 +37,7 @@ MD,
     'Handbuch: Dienst und Organisation' => <<<'MD'
 - **Dienstzeiten**: stempeln im Browser, im Tablet oder mit `/dienst`; Korrekturen durch die Leitung.
 - **Dienstplan**: in Schichten eintragen, zum Tausch anbieten, übernehmen. Erinnerung eine Stunde vorher.
-- **Ausbildung**: Lehrgänge mit Prüfung; bestanden = Qualifikation und Zertifikat.
+- **Ausbildung**: Lehrgänge mit Online-Prüfung (Theorie). Qualifikation und Zertifikat gibt es erst nach der praktischen Prüfung bei der Ausbildung.
 - **Schwarzes Brett** und **Nachrichten** für interne Kommunikation.
 - **Personalakte**: Laufbahn, Beförderungen, Abmahnungen – die eigene Akte siehst du selbst.
 MD,

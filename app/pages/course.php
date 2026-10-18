@@ -38,7 +38,7 @@ $open = one('SELECT * FROM training_attempts WHERE user_id = ? AND course_id = ?
 ob_start(); ?>
 <div class="page-head">
     <div><h1><?= e($course['title']) ?> <?= $passed ? '<span class="badge green">bestanden</span>' : '' ?></h1>
-        <p class="muted"><?= count($modules) ?> Module · Prüfung: <?= (int) $course['question_count'] ?: $qCount ?> Fragen<?= (int) $course['time_limit'] ? ', ' . (int) $course['time_limit'] . ' Minuten' : '' ?>, bestanden ab <?= (int) $course['pass_percent'] ?> %<?= $course['qualification'] ? ' · Qualifikation: ' . e($course['qualification']) : '' ?></p></div>
+        <p class="muted"><?= count($modules) ?> Module · Prüfung: <?= (int) $course['question_count'] ?: $qCount ?> Fragen<?= (int) $course['time_limit'] ? ', ' . (int) $course['time_limit'] . ' Minuten' : '' ?>, bestanden ab <?= (int) $course['pass_percent'] ?> %<?= $course['qualification'] ? ' · Qualifikation: ' . e($course['qualification']) . ' (nach praktischer Prüfung)' : '' ?></p></div>
     <div class="btn-row">
         <?php if (can('training.manage')): ?><a class="btn" href="<?= e(url('course_edit', ['id' => $id])) ?>"><?= icon('edit') ?>Bearbeiten</a><?php endif; ?>
         <a class="btn" href="<?= e(url('training')) ?>">Alle Lehrgänge</a>
