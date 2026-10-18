@@ -119,6 +119,14 @@ Einschalten im Websystem unter *Einstellungen → Spielserver → „Sky Ambulan
 
 Hinweis: Die Vitalwerte stammen aus dem Spiel des Patienten und dienen nur der Dokumentation.
 
+## Leitstelle tetrascript (tetra-core)
+
+Optional und ohne Änderungen an tetra-core. Einschalten unter *Einstellungen → Spielserver → „Leitstelle tetrascript anbinden“*; je Fraktion wird die Organisation der Leitstelle eingetragen (Vorgabe: Feuerwehr `fire`, Rettungsdienst `ems`, Polizei `police`).
+
+- **FMS-Status**: Die Brücke hängt sich an den Hook `statusChanged` von tetra-core. Ist der Träger des Funkgeräts im Tablet angemeldet, erscheint sein Status (mit Rufname) im Websystem. Mit „Dienst automatisch mit Funkstatus“ beginnt Status 1–4 den Dienst, Status 6 beendet ihn.
+- **Einsätze**: Die Brücke liest den Einsatzstand der Leitstelle aus der gemeinsamen Datenbank (Tabelle `tetra_dispatch_cad`, nur lesend) und überträgt neue bzw. geänderte Einsätze alle 20 Sekunden (einstellbar). Im Tablet unter *Leitstelle*: laufende und abgeschlossene Einsätze, Einheiten, Verlauf, Gefahren, passender Objektplan; „Einsatzbericht erstellen“ übernimmt Ort, Zeiten, Kräfte und Verlauf.
+- Läuft tetra-core nicht (oder die Anbindung ist aus), passiert nichts. Umgekehrt merkt tetra-core von SAMS nichts.
+
 ## Dienstausweis als Karte
 
 Dienstausweise erscheinen nicht auf dem Klemmbrett, sondern als Karte in der Hand (Animation `Config.Anim.card`). Klicken dreht die Karte um (Vorder-/Rückseite), Ziehen mit der Maus neigt und dreht sie frei, Leertaste/Pfeiltasten drehen ebenfalls. Beim „Zeigen“ sieht die andere Person die Karte genauso. Welche Dokumentarten als Karte gelten, steht in der Dokumentart (`'card' => true`).

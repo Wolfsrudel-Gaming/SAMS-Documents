@@ -221,6 +221,9 @@ switch ($cmd) {
             if ($r = roster_cron()) {
                 $out($tag . "Dienstplan: $r Erinnerung(en)/Warnung(en).");
             }
+            if ($r = fire_cron()) {
+                $out($tag . "Geräte/Atemschutz: $r Hinweis(e) auf fällige Prüfungen.");
+            }
             if ($r = license_cron()) {
                 $out($tag . "Lizenzen: $r laufen bald ab.");
             }

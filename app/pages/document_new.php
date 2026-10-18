@@ -99,6 +99,30 @@ foreach ($type['fields'] as $f) {
 if ($case && !$fromId && !$draft) {
     $data = prefill_from_case($type, $case, $data);
 }
+// Vorbelegung über die Adresse (?prefill[feld]=…, z. B. „Brandschau dokumentieren“) oder aus einem Leitstellen-Einsatz (?dispatch=ID)
+$prefill = is_array($_GET['prefill'] ?? null) ? $_GET['prefill'] : [];
+if (!$draft && !$fromId && (int) ($_GET['dispatch'] ?? 0) && ($dispatchInc = fone('dispatch_incidents', (int) $_GET['dispatch']))) {
+    $prefill = dispatch_prefill($dispatchInc, $type['key']) + $prefill;
+    $data['_dispatch'] = (int) $dispatchInc['id'];
+}
+if (!$draft && !$fromId && $prefill) {
+    foreach ($type['fields'] as $f) {
+        $n = $f['name'] ?? '';
+        $v = is_string($prefill[$n] ?? null) ? trim($prefill[$n]) : '';
+        $ft = $f['type'] ?? 'text';
+        $okType = match ($ft) {
+            'text', 'textarea' => true,
+            'date' => (bool) preg_match('/^\d{4}-\d{2}-\d{2}$/', $v),
+            'time' => (bool) preg_match('/^\d{2}:\d{2}$/', $v),
+            'select' => isset($f['options'][$v]),
+            default => false,
+        };
+        // Textfelder nur, wenn leer; Datum/Uhrzeit/Auswahl ersetzen die Vorgabe (z. B. „heute“)
+        if ($n !== '' && $v !== '' && $okType && (!in_array($ft, ['text', 'textarea'], true) || (string) ($data[$n] ?? '') === '')) {
+            $data[$n] = mb_substr($v, 0, $ft === 'textarea' ? 5000 : 500);
+        }
+    }
+}
 // Frische Vitalwerte aus dem Spiel (Sky Ambulance) übernehmen
 if ($patient && !$fromId && !$draft) {
     $data = prefill_vitals($type, $data, $patient);
@@ -143,6 +167,9 @@ if (is_post()) {
     }
     if (locations()) {
         $data['_location'] = location_snapshot((int) post('_location')) ? (int) post('_location') : user_location_id($me);
+    }
+    if ((int) post('_dispatch') && fone('dispatch_incidents', (int) post('_dispatch'))) {
+        $data['_dispatch'] = (int) post('_dispatch'); // Bericht zu einem Leitstellen-Einsatz
     }
     $sigMode = post('sig_mode') === 'live' ? 'live' : 'stored';
     $liveSignature = $sigMode === 'live' ? clean_signature(post('live_signature')) : '';
@@ -253,6 +280,7 @@ ob_start(); ?>
 <?php elseif ($draft && $draft['note']): ?><div class="flash warn"><strong>Hinweis zur Übergabe:</strong> <?= e($draft['note']) ?></div><?php endif; ?>
 
 <form method="post" class="card form-grid docform<?= $cfg['mode'] === 'quick' ? ' quick' : '' ?>" id="docform" action="<?= e(url('document_new', ['type' => $type['key']])) ?>">
+    <?php if (!empty($data['_dispatch'])): ?><input type="hidden" name="_dispatch" value="<?= (int) $data['_dispatch'] ?>"><?php endif; ?>
     <?= csrf_field() ?>
     <input type="hidden" name="type" value="<?= e($type['key']) ?>">
     <?php if ($draft): ?><input type="hidden" name="draft_id" value="<?= (int) $draft['id'] ?>"><?php endif; ?>

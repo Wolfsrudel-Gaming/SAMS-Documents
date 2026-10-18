@@ -70,6 +70,8 @@ $keys = [
         'game_akte'      => ['Akte am Spieler abrufen (Befehl /akte)', '1', 'select', $yn],
         'game_akte_duty' => ['Aktenabruf nur im Dienst', '1', 'select', $yn],
         'game_akte_job'  => ['Aktenabruf nur mit passendem ESX-Job', '0', 'select', $yn],
+        'game_tetra_org' => ['Organisation in der Leitstelle (tetrascript: fire, ems, police)', DISPATCH_DEFAULT_ORG[faction_kind()] ?? ''],
+        'game_tetra_duty' => ['Dienst automatisch mit Funkstatus (1–4 beginnt, 6 beendet)', '0', 'select', $yn],
     ],
     'Spielserver – alle Fraktionen' => [
         'ingame_framework'     => ['Framework', 'esx', 'select', ['esx' => 'ESX (Spielerdaten, Rechnungen)', 'none' => 'ohne Framework']],
@@ -84,6 +86,8 @@ $keys = [
         'ingame_sky'           => ['Sky Ambulance (sky_ambulancejob) anbinden', '0', 'select', $yn],
         'ingame_sky_death'     => ['Sky: Tod/Wiederbelebung in die Akte', '1', 'select', $yn],
         'ingame_sky_meds'      => ['Sky: Medikamentengabe im Bestand/BtM-Buch buchen', '1', 'select', $yn],
+        'ingame_tetra'         => ['Leitstelle tetrascript (tetra-core) anbinden', '0', 'select', $yn],
+        'ingame_tetra_poll'    => ['Leitstelle: Einsätze abgleichen alle … Sekunden', '20'],
     ],
 ];
 // Weitere Fraktionen pflegen nur ihre eigenen Angaben; systemweite Einstellungen bleiben der Hauptfraktion vorbehalten
@@ -139,6 +143,10 @@ if (is_post()) {
                 $v = (string) max(0, min(168, (int) $v));
             } elseif ($k === 'duty_command' || $k === 'game_society' || str_starts_with($k, 'ingame_cmd_') || $k === 'ingame_billing_table') {
                 $v = preg_replace('/[^a-z0-9_]/i', '', $v);
+            } elseif ($k === 'game_tetra_org') {
+                $v = preg_replace('/[^a-z0-9_]/', '', strtolower($v));
+            } elseif ($k === 'ingame_tetra_poll') {
+                $v = $v === '' ? '' : (string) max(10, min(300, (int) $v));
             } elseif ($k === 'game_jobs') {
                 $v = implode(',', array_filter(array_map(fn($j) => preg_replace('/[^a-z0-9_]/i', '', trim($j)), explode(',', $v))));
             } elseif ($k === 'ingame_akte_distance') {

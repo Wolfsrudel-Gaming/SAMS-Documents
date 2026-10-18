@@ -67,6 +67,14 @@ ob_start(); ?>
             <input name="title" placeholder="z. B. Grundriss EG, Feuerwehrplan" maxlength="190"><input type="file" name="file" accept="image/*,application/pdf" required><button class="btn small">Hochladen</button></form>
         <?php endif; ?>
     </div>
+    <div class="card">
+        <div class="card-head"><h2>Brandschau & Dokumente</h2>
+            <?php if (can('documents.issue.fd_brandschau')): ?><a class="btn small" href="<?= e(url('document_new', ['type' => 'fd_brandschau', 'prefill' => ['objekt' => $o['name']]])) ?>">Brandschau dokumentieren</a><?php endif; ?></div>
+        <p class="small muted">Letzte Brandschau: <?= e(fmt_date($o['last_inspection']) ?: '–') ?> · nächste: <?= e(fmt_date($o['next_inspection']) ?: '–') ?>. Brandschau- und Nachschauberichte mit diesem Objektnamen übernehmen die Termine automatisch.</p>
+        <table class="list compact"><tbody>
+        <?php foreach (object_documents($o) as $d): ?><tr onclick="location.href='<?= e(url('document', ['id' => $d['id']])) ?>'"><td class="small"><?= e(fmt_date($d['issued_at'])) ?></td><td><?= e(doc_type($d['type'])['title'] ?? $d['type']) ?></td><td class="mono small"><?= e($d['number']) ?></td><td><?= $d['status'] === 'revoked' ? '<span class="badge grey">storniert</span>' : '' ?></td></tr><?php endforeach; ?>
+        </tbody></table>
+    </div>
     <?php if (!$manage): ?>
     <div class="card"><dl class="kv"><?php foreach ($labels as $k => $l): ?><dt><?= e($l) ?></dt><dd><?= nl($o[$k] ?: '–') ?></dd><?php endforeach; ?>
         <dt>Letzte Brandschau</dt><dd><?= e(fmt_date($o['last_inspection']) ?: '–') ?></dd><dt>Nächste Brandschau</dt><dd><?= e(fmt_date($o['next_inspection']) ?: '–') ?></dd></dl></div>

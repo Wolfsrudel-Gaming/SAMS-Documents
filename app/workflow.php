@@ -192,6 +192,10 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
     if ($type['key'] === 'doj_haftbefehl') {
         wanted_from_warrant($id); // Fahndung bei allen Polizeibehörden
     }
+    fire_document_issued($id, $type['key'], $data); // Brandschau → Prüftermine im Objektplan
+    if (!empty($data['_dispatch'])) {
+        q('UPDATE dispatch_incidents SET document_id = ? WHERE id = ? AND faction_id = ?', [$id, (int) $data['_dispatch'], fid()]);
+    }
     notify_patient_dm($patient['id'] ?? null, 'Der ' . org('org_short') . ' hat für dich ein neues Dokument ausgestellt: ' . $type['title'] . ' (' . $number . '). Du findest es im Bürgerportal: ' . base_url() . '/portal.php?page=documents');
     return $id;
 }

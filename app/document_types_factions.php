@@ -145,6 +145,63 @@ function document_types_factions(): array
             $area('auflagen', 'Auflagen', ['rows' => 2]),
         ], "Für das Objekt **{{objekt}}** (Betreiber/in: {{betreiber}}) wird bescheinigt, dass bei der Brandschau keine Mängel festgestellt wurden, die einer Nutzung entgegenstehen.\n\nGültig bis: **{{gueltig_bis}}**\n\nAuflagen: {{auflagen}}", 'none', 'round', 'gueltig_bis'),
 
+        'fd_brandursache' => $def('Brandursachenermittlung', 'Brandursache', 'BU', 'fire', 'lead', 'Einsatz', 'protocol', [
+            $head('Brandobjekt'), $t('objekt', 'Objekt / Anschrift', ['width' => 'half', 'required' => true]), $date('datum', 'Brandtag', ['required' => true, 'default' => 'today']), $time('entdeckt', 'Entdeckt um'),
+            $t('einsatz', 'Bezug Einsatzbericht (Nr.)', ['width' => 'third']), $t('eigentuemer', 'Eigentümer/in / Nutzer/in', ['width' => 'third']), $t('schaden', 'Schaden (geschätzt)', ['width' => 'third']),
+            $head('Feststellungen'), $area('ausbruch', 'Brandausbruchsbereich', ['required' => true, 'rows' => 3]), $area('spuren', 'Spuren und Brandbild', ['rows' => 4]),
+            $sel('ursache', 'Vermutete Ursache', ['Elektrischer Defekt', 'Technischer Defekt', 'Fahrlässigkeit (Rauchen, Kerze, Kochen)', 'Brandstiftung (Verdacht)', 'Selbstentzündung', 'Blitzschlag', 'Explosion', 'Ungeklärt'], ['required' => true, 'width' => 'half']),
+            $radio('sicherheit', 'Sicherheit der Einschätzung', ['gesichert', 'wahrscheinlich', 'möglich']),
+            $check('polizei', 'Polizei informiert (Verdacht Straftat)'), $check('asservate', 'Spuren/Beweismittel gesichert'), $check('fotos', 'Fotodokumentation erstellt'),
+            $area('bemerkung', 'Bemerkungen', ['rows' => 2]),
+        ], '', 'none'),
+        'fd_atemschutz' => $def('Atemschutzüberwachung', 'Atemschutzüberwachung', 'AS', 'fire', 'fire', 'Einsatz', 'protocol', [
+            $t('einsatzort', 'Einsatzort', ['width' => 'half', 'required' => true]), $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $t('ueberwacher', 'Atemschutzüberwachung durch', ['width' => 'quarter']),
+            $head('1. Trupp'), $t('t1_namen', 'Truppführer / Truppmann', ['width' => 'half', 'required' => true]), $t('t1_auftrag', 'Auftrag', ['width' => 'half']),
+            $t('t1_druck', 'Anfangsdruck (bar)', ['width' => 'quarter']), $time('t1_beginn', 'Einsatzbeginn'), $time('t1_rueckzug', 'Rückzug'), $time('t1_ende', 'Einsatzende'),
+            $head('2. Trupp'), $t('t2_namen', 'Truppführer / Truppmann', ['width' => 'half']), $t('t2_auftrag', 'Auftrag', ['width' => 'half']),
+            $t('t2_druck', 'Anfangsdruck (bar)', ['width' => 'quarter']), $time('t2_beginn', 'Einsatzbeginn'), $time('t2_rueckzug', 'Rückzug'), $time('t2_ende', 'Einsatzende'),
+            $head('Sicherheitstrupp'), $t('st_namen', 'Sicherheitstrupp', ['width' => 'half']), $check('st_einsatz', 'Sicherheitstrupp eingesetzt'),
+            $check('mayday', 'Atemschutznotfall (Mayday)'), $area('besonderheiten', 'Besonderheiten / Druckkontrollen', ['rows' => 3]),
+        ], '', 'none', 'none'),
+        'fd_bsw' => $def('Bericht Brandsicherheitswache', 'Brandsicherheitswache', 'BW', 'fire', 'fire', 'Vorbeugender Brandschutz', 'protocol', [
+            $t('veranstaltung', 'Veranstaltung / Objekt', ['width' => 'half', 'required' => true]), $t('veranstalter', 'Veranstalter/in', ['width' => 'half']),
+            $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $time('beginn', 'Beginn'), $time('ende', 'Ende'), $t('kraefte', 'Eingesetzte Kräfte', ['width' => 'quarter']),
+            $area('kontrolle', 'Kontrollgänge (Rettungswege, Feuerlöscher, Notausgänge)', ['rows' => 3]), $area('maengel', 'Festgestellte Mängel und Maßnahmen', ['rows' => 3]),
+            $radio('vorkommnisse', 'Vorkommnisse', ['keine', 'Einsatz der Brandsicherheitswache', 'Räumung', 'Übergabe an Rettungsdienst']), $area('bericht', 'Bericht', ['rows' => 3]),
+            $sign('sig_veranstalter', 'Unterschrift Veranstalter/in'),
+        ], '', 'none'),
+        'fd_uebung' => $def('Übungsbericht', 'Übungsbericht', 'UB', 'fire', 'fire', 'Ausbildung', 'protocol', [
+            $t('thema', 'Übungsthema', ['width' => 'half', 'required' => true]), $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $t('dauer', 'Dauer', ['width' => 'quarter', 'placeholder' => 'z. B. 2 Std.']),
+            $t('ort', 'Übungsort', ['width' => 'half']), $sel('art', 'Art', ['Einsatzübung', 'Atemschutz (Belastungsübung)', 'Technische Hilfe', 'Gefahrgut', 'Maschinist', 'Gemeinsame Übung mit SAMS/Polizei', 'Theorie / Unterricht']),
+            $area('teilnehmer', 'Teilnehmer/innen', ['rows' => 3, 'required' => true]), $area('ablauf', 'Ablauf und Lagebeschreibung', ['rows' => 5]),
+            $area('erkenntnisse', 'Erkenntnisse / Verbesserungen', ['rows' => 3]),
+        ], '', 'none', 'none'),
+        'fd_gefahrgut' => $def('Gefahrgutmeldung', 'Gefahrgutmeldung', 'GG', 'fire', 'fire', 'Einsatz', 'protocol', [
+            $t('einsatzort', 'Einsatzort', ['width' => 'half', 'required' => true]), $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Uhrzeit'),
+            $head('Stoff'), $t('un', 'UN-Nummer', ['width' => 'quarter']), $t('gefahrnummer', 'Gefahrnummer (Kemler)', ['width' => 'quarter']), $t('stoff', 'Stoffbezeichnung', ['width' => 'half']),
+            $t('menge', 'Menge / Behälter', ['width' => 'half']), $sel('zustand', 'Austritt', ['kein Austritt', 'geringer Austritt', 'erheblicher Austritt', 'Brand / Reaktion']),
+            $head('Maßnahmen'), $t('absperrung', 'Absperrbereich (Radius)', ['width' => 'third', 'placeholder' => 'z. B. 50 m']), $check('messung', 'Messungen durchgeführt'), $check('dekon', 'Dekontamination eingerichtet'),
+            $area('messwerte', 'Messwerte', ['rows' => 2]), $area('massnahmen', 'Getroffene Maßnahmen', ['rows' => 4, 'required' => true]),
+            $area('betroffene', 'Betroffene / an SAMS übergeben', ['rows' => 2]), $check('polizei', 'Polizei informiert'), $check('umwelt', 'Umweltbehörde informiert'),
+        ], '', 'none'),
+        'fd_nachschau' => $def('Nachschau Brandschau', 'Nachschau', 'NS', 'fire', 'fire', 'Vorbeugender Brandschutz', 'protocol', [
+            $t('objekt', 'Objekt / Anschrift', ['required' => true, 'width' => 'half']), $t('bezug', 'Bezug Brandschaubericht (Nr.)', ['width' => 'quarter']), $date('datum', 'Datum', ['required' => true, 'default' => 'today']),
+            $radio('ergebnis', 'Ergebnis', ['Alle Mängel beseitigt', 'Mängel teilweise beseitigt – neue Frist', 'Mängel nicht beseitigt – Nutzungsuntersagung empfohlen'], ['required' => true]),
+            $area('verbleibend', 'Verbleibende Mängel', ['rows' => 3]), $date('frist', 'Neue Frist'),
+        ], '', 'none'),
+        'fd_tueroeffnung' => $def('Protokoll Türöffnung', 'Türöffnung', 'TO', 'fire', 'fire', 'Einsatz', 'protocol', [
+            $t('anschrift', 'Anschrift / Wohnung', ['width' => 'half', 'required' => true]), $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Uhrzeit'),
+            $sel('auftraggeber', 'Angefordert durch', ['Rettungsdienst (SAMS)', 'Polizei', 'Eigentümer/in / Mieter/in', 'Hausverwaltung', 'Leitstelle'], ['required' => true]),
+            $sel('grund', 'Grund', ['Person in Notlage vermutet', 'Kind / Person eingeschlossen', 'Wasserschaden', 'Brandgeruch / Rauchmelder', 'Amtshilfe Polizei']),
+            $sel('methode', 'Öffnungsmethode', ['zerstörungsfrei (Werkzeug)', 'Zylinder gezogen', 'Fenster', 'gewaltsam']), $area('schaden', 'Entstandener Schaden', ['rows' => 2]),
+            $sel('verschluss', 'Verschluss danach', ['an Polizei übergeben', 'an Eigentümer/in übergeben', 'provisorisch verschlossen', 'Schließdienst bestellt']),
+            $area('vorgefunden', 'Vorgefunden / Maßnahmen', ['rows' => 3]), $sign('sig_berechtigt', 'Unterschrift Berechtigte/r bzw. Polizei'),
+        ], '', 'optional'),
+        'fd_schaden' => $def('Schadensmeldung Fahrzeug / Gerät', 'Schadensmeldung', 'SM', 'fire', 'fire', 'Fahrzeuge & Geräte', 'protocol', [
+            $t('geraet', 'Fahrzeug / Gerät (Funkrufname, Inventar-Nr.)', ['width' => 'half', 'required' => true]), $date('datum', 'Datum', ['required' => true, 'default' => 'today']),
+            $sel('anlass', 'Anlass', ['Einsatz', 'Übung', 'Fahrt', 'Wartung / Prüfung', 'Unbekannt']), $area('schaden', 'Schadensbeschreibung', ['required' => true, 'rows' => 3]),
+            $radio('einsatzbereit', 'Einsatzbereitschaft', ['weiterhin einsatzbereit', 'eingeschränkt einsatzbereit', 'außer Dienst']), $area('massnahme', 'Veranlasste Maßnahmen', ['rows' => 2]),
+        ], '', 'none', 'none'),
         // ============================================================ Verwaltung
         'gov_bescheid' => $def('Bescheid', 'Bescheid', 'BS', 'government', 'gov', 'Bescheide', 'letter', [
             $az, $t('betreff', 'Betreff', ['required' => true]), $area('tenor', 'Entscheidung', ['required' => true]), $area('gruende', 'Begründung', ['rows' => 5]),

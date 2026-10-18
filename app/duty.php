@@ -95,7 +95,7 @@ function duty_totals(string $from, string $to, ?int $userId = null): array
 function duty_on_now(): array
 {
     duty_autoclose();
-    return all('SELECT s.*, u.name, u.title, u.badge_number, u.rank_id FROM duty_sessions s JOIN users u ON u.id = s.user_id
+    return all('SELECT s.*, u.name, u.title, u.badge_number, u.rank_id, u.fms_status, u.fms_at, u.fms_opta FROM duty_sessions s JOIN users u ON u.id = s.user_id
         WHERE s.ended_at IS NULL AND ' . fw('s') . ' ORDER BY s.started_at');
 }
 

@@ -5,7 +5,7 @@ lua54 'yes'
 name 'sams_tablet'
 description 'SAMS Tablet – Dokumentensystem im Spiel, Drucker und Dokument-Items'
 author 'SAMS'
-version '1.6.1'
+version '1.7.0'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -30,6 +30,7 @@ server_scripts {
     'server/pharmacy.lua',
     'server/esx.lua',   -- optional: es_extended + oxmysql (Rechnungen, Spielerdaten, /akte)
     'server/sky.lua',   -- optional: sky_ambulancejob (Vitalwerte, Tod/Wiederbelebung, Medikamente, Sky Billing)
+    'server/tetra.lua', -- optional: Leitstelle tetrascript (tetra-core): FMS-Status, Einsätze
 }
 
 ui_page 'web/index.html'

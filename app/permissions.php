@@ -83,6 +83,10 @@ function permission_catalog(): array
             'objects.manage'  => 'Objektpläne anlegen und pflegen',
             'joint.view'      => 'Gemeinsame Einsatzberichte ansehen',
             'joint.write'     => 'Gemeinsame Einsatzberichte anlegen und eigenen Teil schreiben',
+            'equipment.view'   => 'Geräte und Prüffristen ansehen',
+            'equipment.manage' => 'Geräte anlegen und Prüfungen eintragen',
+            'breathing.view'   => 'Atemschutz-Nachweise ansehen',
+            'breathing.manage' => 'Atemschutz-Nachweise pflegen (Eignung, Übungen, Einsätze)',
         ],
         'Gericht' => [
             'court.view'   => 'Gerichtskalender und Fristen ansehen',

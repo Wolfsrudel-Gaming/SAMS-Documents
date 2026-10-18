@@ -18,7 +18,10 @@ $navGroups = [
         'licenses'     => ['Lizenzen', 'licenses.view|licenses.manage', 'docs'],
         'court'        => ['Gerichtskalender', 'court.view|court.manage', 'clock'],
         'objects'      => ['Objektpläne', 'objects.view|objects.manage', 'folder'],
+        'dispatch'     => ['Leitstelle', game_global()['tetra'] ? 'documents.view' : 'dispatch.none', 'external'],
         'joint'        => ['Einsatzberichte', 'joint.view|joint.write', 'docs'],
+        'equipment'    => ['Geräte & Prüfungen', 'equipment.view|equipment.manage', 'settings'],
+        'breathing'    => ['Atemschutz', 'breathing.view|breathing.manage', 'shield'],
         'documents'    => ['Dokumente', 'documents.view', 'docs'],
         'document_new' => ['Neues Dokument', 'documents.issue.*', 'doc-plus'],
         'drafts'       => ['Entwürfe & Freigaben', 'documents.issue.*|documents.approve|documents.drafts_all', 'edit'],
@@ -117,7 +120,7 @@ $active = $activeMap[$current] ?? $current;
         if (!$visible) continue; ?>
         <div class="nav-group"><?= e(t($group)) ?></div>
         <?php foreach ($visible as $p => [$label, $role, $ic]): ?>
-            <a href="<?= e(url($p)) ?>" title="<?= e(t($label)) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e(t($label)) ?></span><?php $cnt = match ($p) { 'drafts' => draft_inbox_count(), 'board' => board_unread_count(), 'messages' => messages_unread_count(), 'portal_admin' => portal_open_count(), 'wanted' => wanted_open_count(), 'requests' => request_open_count(), 'custody' => custody_open_count(), 'court' => court_open_count(), 'joint' => joint_open_count(), default => 0 }; if ($cnt): ?><b class="nav-count"><?= $cnt ?></b><?php endif; ?></a>
+            <a href="<?= e(url($p)) ?>" title="<?= e(t($label)) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e(t($label)) ?></span><?php $cnt = match ($p) { 'drafts' => draft_inbox_count(), 'board' => board_unread_count(), 'messages' => messages_unread_count(), 'portal_admin' => portal_open_count(), 'wanted' => wanted_open_count(), 'requests' => request_open_count(), 'custody' => custody_open_count(), 'court' => court_open_count(), 'joint' => joint_open_count(), 'equipment' => equipment_due_count(), 'dispatch' => dispatch_open_count(), default => 0 }; if ($cnt): ?><b class="nav-count"><?= $cnt ?></b><?php endif; ?></a>
         <?php endforeach; ?>
     <?php endforeach; ?>
     <div class="nav-group"><?= e(t('Extern')) ?></div>

@@ -91,7 +91,7 @@ ob_start(); ?>
             <div class="duty-now">
                 <?php foreach ($onNow as $n): ?>
                     <div class="person"><span class="avatar"><?= e(mb_strtoupper(mb_substr($n['name'], 0, 1))) ?></span>
-                        <div><strong><?= e(trim($n['title'] . ' ' . $n['name'])) ?></strong><small><?= e(user_rank_name($n)) ?> · seit <?= e(fmt_date($n['started_at'], 'H:i')) ?> (<?= e(duty_format(duty_seconds($n))) ?>)</small></div></div>
+                        <div><strong><?= e(trim($n['title'] . ' ' . $n['name'])) ?></strong> <?= isset($n['fms_status']) && $n['fms_status'] !== null && ($n['fms_at'] ?? '') >= date('Y-m-d H:i:s', time() - 12 * 3600) ? fms_badge((int) $n['fms_status']) . (($n['fms_opta'] ?? '') !== '' ? ' <small class="mono">' . e($n['fms_opta']) . '</small>' : '') : '' ?><small><?= e(user_rank_name($n)) ?> · seit <?= e(fmt_date($n['started_at'], 'H:i')) ?> (<?= e(duty_format(duty_seconds($n))) ?>)</small></div></div>
                 <?php endforeach; ?>
             </div>
         </div>

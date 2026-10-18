@@ -33,6 +33,9 @@ function game_global(): array
         'sky' => setting('ingame_sky', '0') === '1',
         'sky_death' => setting('ingame_sky', '0') === '1' && setting('ingame_sky_death', '1') === '1',
         'sky_meds' => setting('ingame_sky', '0') === '1' && setting('ingame_sky_meds', '1') === '1',
+        // Leitstelle tetrascript (tetra-core): FMS-Status und Einsätze über die Brücke in sams_tablet
+        'tetra' => setting('ingame_tetra', '0') === '1',
+        'tetra_poll' => max(10, min(300, (int) setting('ingame_tetra_poll', '20'))),
     ];
 }
 
@@ -51,6 +54,7 @@ function game_faction(?int $factionId = null): array
         'akte' => setting('game_akte', '1') === '1' && module_enabled('records', $factionId),
         'akte_duty' => setting('game_akte_duty', '1') === '1',
         'akte_job' => setting('game_akte_job', '0') === '1',
+        'tetra_org' => function_exists('dispatch_org') ? dispatch_org($factionId) : '',
     ];
     set_faction_context($prev);
     return $out;

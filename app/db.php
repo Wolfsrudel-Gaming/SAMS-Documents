@@ -62,7 +62,7 @@ function scalar(string $sql, array $params = [])
 const FACTION_TABLES = ['users', 'patients', 'entries', 'documents', 'cases', 'document_drafts', 'ranks', 'departments', 'qualifications',
     'printers', 'price_list', 'custom_doc_types', 'duty_sessions', 'training_courses', 'wiki_pages', 'announcements', 'message_threads',
     'roster_shifts', 'medications', 'locations', 'appointments', 'portal_requests', 'applications', 'audit_log', 'wanted', 'agency_requests', 'game_bills',
-    'evidence', 'vehicles', 'custody', 'hearings', 'deadlines', 'licenses', 'objects', 'joint_reports', 'patient_vitals'];
+    'evidence', 'vehicles', 'custody', 'hearings', 'deadlines', 'licenses', 'objects', 'joint_reports', 'patient_vitals', 'equipment', 'breathing_log'];
 
 function insert(string $table, array $data): int
 {

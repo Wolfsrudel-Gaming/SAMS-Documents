@@ -45,6 +45,10 @@
  *   record_vitals  {token, citizen_id, …, vitals:{heart_rate, systolic, diastolic, spo2, blood_sugar, cardiac_arrest, activity}} → Vitalverlauf
  *   sky_death      {citizen_id, …, dead, medic_token?}             → Tod/Wiederbelebung als Akteneintrag
  *   sky_medication {token, item, citizen_id, …}                    → Medikamentengabe: Bestand/BtM-Buch und Akte
+ *
+ * Leitstelle (tetrascript / tetra-core, optional):
+ *   tetra_status       {token, status 0–9, issi, opta}             → FMS-Status des Spielers, optional Dienst automatisch
+ *   dispatch_incidents {incidents: [Incident aus dem CAD …]}       → Einsätze je Organisation (fire/ems/police) speichern
  */
 declare(strict_types=1);
 define('SAMS_IGNORE_MAINTENANCE', true);
@@ -440,6 +444,34 @@ switch ($action) {
         respond(['ok' => $ok, 'text' => $text]);
         // no break
 
-default:
+    // ---------------------------------------------- Leitstelle (tetrascript)
+    case 'tetra_status':
+        // FMS-Status eines angemeldeten Spielers (Brücke in sams_tablet, Hook statusChanged von tetra-core)
+        if (!game_global()['tetra']) {
+            respond(['ok' => false, 'error' => 'Leitstellen-Anbindung ist ausgeschaltet.']);
+        }
+        $tu = $tokenUser();
+        if (!$tu) {
+            respond(['ok' => false, 'error' => 'Anmeldung abgelaufen'], 401);
+        }
+        $status = (int) $in('status', '-1');
+        if ($status < 0 || $status > 9) {
+            respond(['ok' => false, 'error' => 'Ungültiger Status.']);
+        }
+        respond(dispatch_fms($tu[1], $status, $in('issi'), $in('opta')));
+        // no break
+    case 'dispatch_incidents':
+        // Einsätze aus der Leitstelle (geänderte seit dem letzten Abgleich); Zuordnung zur Fraktion über die Organisation
+        if (!game_global()['tetra']) {
+            respond(['ok' => false, 'error' => 'Leitstellen-Anbindung ist ausgeschaltet.']);
+        }
+        $n = 0;
+        foreach (array_slice(is_array($body['incidents'] ?? null) ? $body['incidents'] : [], 0, 100) as $inc) {
+            $n += is_array($inc) ? dispatch_upsert($inc) : 0;
+        }
+        respond(['ok' => true, 'stored' => $n]);
+        // no break
+
+    default:
         respond(['error' => 'Unbekannte Aktion'], 400);
 }

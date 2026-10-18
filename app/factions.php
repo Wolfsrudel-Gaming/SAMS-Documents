@@ -28,12 +28,14 @@ const FACTION_MODULES = [
     'licenses' => 'Führerscheine und Lizenzen mit Ablaufdatum',
     'objects'  => 'Objektpläne (Gebäude, Gefahren, Schlüsseldepots, Pläne)',
     'joint'    => 'Gemeinsame Einsatzberichte mehrerer Behörden',
+    'equipment' => 'Geräte & Prüffristen (Wartung, Prüfprotokolle)',
+    'breathing' => 'Atemschutz-Nachweise (Eignung, Belastungsübung, Einsätze)',
 ];
 
 const FACTION_KINDS = [
     'medical' => [
         'label' => 'Rettungsdienst / Klinik', 'logo' => 'assets/img/logo.svg', 'color' => '#0b4f9c',
-        'modules' => ['records', 'billing', 'stock', 'portal', 'requests', 'joint'],
+        'modules' => ['records', 'billing', 'stock', 'portal', 'requests', 'joint', 'equipment'],
         'terms' => ['record' => 'Patientenakte', 'records' => 'Patientenakten', 'person' => 'Patient/in', 'persons' => 'Patienten',
             'case' => 'Fall', 'cases' => 'Fälle', 'billing' => 'Rechnungen', 'catalog' => 'Gebührenordnung', 'staff' => 'Personal'],
     ],
@@ -51,7 +53,7 @@ const FACTION_KINDS = [
     ],
     'fire' => [
         'label' => 'Feuerwehr', 'logo' => 'assets/img/kinds/fire.svg', 'color' => '#a3161a',
-        'modules' => ['billing', 'requests', 'objects', 'joint'],
+        'modules' => ['billing', 'requests', 'objects', 'joint', 'equipment', 'breathing'],
         'terms' => ['record' => 'Akte', 'records' => 'Akten', 'person' => 'Betroffene/r', 'persons' => 'Betroffene',
             'case' => 'Einsatz', 'cases' => 'Einsätze', 'billing' => 'Gebührenbescheide', 'catalog' => 'Gebührenordnung', 'staff' => 'Personal'],
     ],
@@ -154,10 +156,10 @@ function faction_tier_permissions(string $tier): array
 {
     $trainee = ['patients.view', 'documents.view', 'duty.clock', 'duty.view', 'roster.view', 'roster.signup', 'training.view', 'wiki.view',
         'board.view', 'messages.use', 'stock.view', 'wanted.view', 'requests.view', 'evidence.view', 'vehicles.view', 'custody.view', 'court.view',
-        'licenses.view', 'objects.view', 'joint.view'];
+        'licenses.view', 'objects.view', 'joint.view', 'equipment.view', 'breathing.view'];
     $staff = array_merge($trainee, ['patients.edit', 'entries.create', 'attachments.upload', 'cases.manage', 'documents.revoke.own', 'documents.print',
         'documents.share', 'stock.dispense', 'wanted.manage', 'requests.manage', 'evidence.manage', 'vehicles.manage', 'custody.manage', 'court.manage',
-        'licenses.manage', 'objects.manage', 'joint.write']);
+        'licenses.manage', 'objects.manage', 'joint.write', 'equipment.manage', 'breathing.manage']);
     $senior = array_merge($staff, ['entries.confidential', 'documents.approve', 'documents.addendum', 'users.view', 'personnel.view', 'patients.archive']);
     $lead = array_merge($senior, ['entries.edit_all', 'entries.all_departments', 'documents.revoke.all', 'documents.drafts_all', 'patients.merge',
         'users.create', 'users.edit', 'users.password_reset', 'users.deactivate', 'users.sessions', 'personnel.edit', 'duty.manage', 'roster.manage',
@@ -255,6 +257,7 @@ function permission_module(string $perm): ?string
         'invoices.' => 'billing', 'prices.' => 'billing', 'stock.' => 'stock', 'btm.' => 'stock',
         'wanted.' => 'wanted', 'portal.' => 'portal', 'requests.' => 'requests', 'evidence.' => 'evidence', 'vehicles.' => 'vehicles',
         'custody.' => 'custody', 'court.' => 'court', 'licenses.' => 'licenses', 'objects.' => 'objects', 'joint.' => 'joint',
+        'equipment.' => 'equipment', 'breathing.' => 'breathing',
     ];
     foreach ($map as $prefix => $module) {
         if (str_starts_with($perm, $prefix)) {
@@ -349,9 +352,7 @@ function create_faction(string $name, string $short, string $kind, string $color
                 'sort' => ($i + 1) * 10, 'active' => 1, 'created_at' => $now, 'updated_at' => $now]);
         }
         faction_seed_content($id, $kind);
-        if ($kind === 'medical') {
-            seed_medical_content($id);
-        }
+        seed_kind_content($id, $kind);
         set_faction_context($prev);
         db()->commit();
     } catch (Throwable $e) {
@@ -547,10 +548,21 @@ function case_labels(?string $kind = null): array
  */
 function seed_medical_content(int $factionId): array
 {
+    return seed_kind_content($factionId, 'medical');
+}
+
+/**
+ * Fachinhalte einer Fraktionsart laden: database/content/<art>_wiki*.php und <art>_training.php.
+ * Legt nur Fehlendes an; fehlende Qualifikationen der Lehrgänge werden angelegt (außer beim Rettungsdienst).
+ */
+function seed_kind_content(int $factionId, string $kind): array
+{
     $now = now();
     $dir = SAMS_ROOT . '/database/content/';
     $wiki = 0;
-    foreach (['medical_wiki_a.php', 'medical_wiki_b.php'] as $file) {
+    $files = glob($dir . $kind . '_wiki*.php') ?: [];
+    sort($files);
+    foreach (array_map('basename', $files) as $file) {
         foreach (is_file($dir . $file) ? require $dir . $file : [] as $pg) {
             $slug = wiki_slug($pg['title']);
             if (!scalar('SELECT id FROM wiki_pages WHERE faction_id = ? AND slug = ?', [$factionId, $slug])) {
@@ -562,11 +574,15 @@ function seed_medical_content(int $factionId): array
     }
     $courses = 0;
     $sort = (int) scalar('SELECT COALESCE(MAX(sort), 0) FROM training_courses WHERE faction_id = ?', [$factionId]);
-    foreach (is_file($dir . 'medical_training.php') ? require $dir . 'medical_training.php' : [] as $c) {
+    foreach (is_file($dir . $kind . '_training.php') ? require $dir . $kind . '_training.php' : [] as $c) {
         if (scalar('SELECT id FROM training_courses WHERE faction_id = ? AND title = ?', [$factionId, $c['title']])) {
             continue;
         }
         $qual = $c['qualification'] ? scalar('SELECT id FROM qualifications WHERE faction_id = ? AND name = ?', [$factionId, $c['qualification']]) : null;
+        if ($c['qualification'] && !$qual && $kind !== 'medical') {
+            $qual = insert('qualifications', ['faction_id' => $factionId, 'name' => $c['qualification'], 'short' => mb_strtoupper(mb_substr(preg_replace('/[^\p{L}]/u', '', $c['qualification']), 0, 3)),
+                'color' => '#a3161a', 'description' => 'Erworben mit dem Lehrgang „' . $c['title'] . '“ (Theorie und praktische Prüfung).', 'sort' => 0, 'active' => 1, 'created_at' => $now, 'updated_at' => $now]);
+        }
         $cid = insert('training_courses', ['faction_id' => $factionId, 'title' => $c['title'], 'description' => $c['description'], 'qualification_id' => $qual ?: null,
             'pass_percent' => $c['pass_percent'], 'question_count' => $c['question_count'], 'time_limit' => $c['time_limit'], 'hours' => $c['hours'],
             'active' => 1, 'sort' => $sort += 10, 'created_at' => $now, 'updated_at' => $now]);

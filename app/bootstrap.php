@@ -62,6 +62,8 @@ require __DIR__ . '/game.php';
 require __DIR__ . '/authority.php';
 require __DIR__ . '/signing.php';
 require __DIR__ . '/sky.php';
+require __DIR__ . '/fire.php';
+require __DIR__ . '/dispatch.php';
 
 set_exception_handler('handle_exception');
 set_error_handler(function (int $no, string $msg, string $file, int $line): bool {
