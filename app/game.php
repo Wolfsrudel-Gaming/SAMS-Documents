@@ -28,6 +28,11 @@ function game_global(): array
         'billing_table' => preg_replace('/[^a-z0-9_]/i', '', (string) setting('ingame_billing_table', 'billing')) ?: 'billing',
         'akte_distance' => max(1.0, min(10.0, (float) setting('ingame_akte_distance', '3'))),
         'bill_interval' => max(15, min(600, (int) setting('ingame_bill_interval', '30'))),
+        // Sky Ambulance (sky_ambulancejob) und Rechnungssystem (esx_billing oder Sky Billing aus sky_jobs_base)
+        'billing_provider' => setting('ingame_billing_provider', 'esx_billing') === 'sky' ? 'sky' : 'esx_billing',
+        'sky' => setting('ingame_sky', '0') === '1',
+        'sky_death' => setting('ingame_sky', '0') === '1' && setting('ingame_sky_death', '1') === '1',
+        'sky_meds' => setting('ingame_sky', '0') === '1' && setting('ingame_sky_meds', '1') === '1',
     ];
 }
 
@@ -159,21 +164,30 @@ function game_bill_badge(array $b): string
 /** Abgleich für die Resource: neue, zurückzuziehende und offene Spiel-Rechnungen. */
 function game_bills_sync(): array
 {
-    $pending = all("SELECT id, citizen_id, amount, society, label FROM game_bills WHERE status = 'pending' ORDER BY id LIMIT 50");
-    $cancel = all("SELECT id, esx_id FROM game_bills WHERE status = 'cancel' ORDER BY id LIMIT 50");
-    $open = all("SELECT id, esx_id FROM game_bills WHERE status = 'sent' ORDER BY id LIMIT 500");
+    $pending = all("SELECT g.id, g.citizen_id, g.amount, g.society, g.label, g.faction_id, d.patient_snapshot, d.number FROM game_bills g JOIN documents d ON d.id = g.document_id
+        WHERE g.status = 'pending' ORDER BY g.id LIMIT 50");
+    foreach ($pending as $i => $b) {
+        // Für Sky Billing: Job (Society) der Fraktion und Name des Empfängers
+        $snap = json_decode((string) $b['patient_snapshot'], true) ?: [];
+        $pending[$i]['job'] = game_faction((int) $b['faction_id'])['jobs'][0] ?? '';
+        $pending[$i]['name'] = $snap ? patient_name($snap) : '';
+        $pending[$i]['reference'] = 'SAMS-' . $b['number'] . '-' . $b['id'];
+        unset($pending[$i]['patient_snapshot'], $pending[$i]['faction_id'], $pending[$i]['number']);
+    }
+    $cancel = all("SELECT id, esx_id, ext_ref FROM game_bills WHERE status = 'cancel' ORDER BY id LIMIT 50");
+    $open = all("SELECT id, esx_id, ext_ref FROM game_bills WHERE status = 'sent' ORDER BY id LIMIT 500");
     $int = fn(array $rows, array $keys) => array_map(function ($r) use ($keys) {
         foreach ($keys as $k) {
             $r[$k] = (int) $r[$k];
         }
         return $r;
     }, $rows);
-    return ['ok' => true, 'table' => game_global()['billing_table'],
+    return ['ok' => true, 'table' => game_global()['billing_table'], 'provider' => game_global()['billing_provider'],
         'pending' => $int($pending, ['id', 'amount']), 'cancel' => $int($cancel, ['id', 'esx_id']), 'open' => $int($open, ['id', 'esx_id'])];
 }
 
 /** Ergebnis der Resource verarbeiten: sent, failed, paid, cancelled. */
-function game_bill_result(int $id, string $result, int $esxId = 0, string $error = ''): array
+function game_bill_result(int $id, string $result, int $esxId = 0, string $error = '', string $extRef = ''): array
 {
     $b = one('SELECT * FROM game_bills WHERE id = ?', [$id]);
     if (!$b) {
@@ -181,13 +195,14 @@ function game_bill_result(int $id, string $result, int $esxId = 0, string $error
     }
     $doc = one('SELECT * FROM documents WHERE id = ?', [$b['document_id']]);
     set_faction_context((int) $b['faction_id']);
-    $allowed = ['sent' => ['pending'], 'failed' => ['pending'], 'paid' => ['sent', 'cancel'], 'cancelled' => ['cancel']];
+    // cancelled aus sent: Rechnung wurde im Spiel (z. B. in Sky Billing) storniert
+    $allowed = ['sent' => ['pending'], 'failed' => ['pending'], 'paid' => ['sent', 'cancel'], 'cancelled' => ['cancel', 'sent']];
     if (!isset($allowed[$result]) || !in_array($b['status'], $allowed[$result], true)) {
         return ['ok' => false, 'error' => 'Status passt nicht (' . $b['status'] . ' → ' . $result . ').'];
     }
     $row = ['status' => $result, 'updated_at' => now()];
     if ($result === 'sent') {
-        $row += ['esx_id' => $esxId, 'sent_at' => now()];
+        $row += ['esx_id' => $esxId ?: null, 'ext_ref' => mb_substr($extRef, 0, 64), 'sent_at' => now()];
     } elseif ($result === 'failed') {
         $row['error'] = mb_substr($error ?: 'unbekannter Fehler', 0, 190);
     } elseif ($result === 'paid') {

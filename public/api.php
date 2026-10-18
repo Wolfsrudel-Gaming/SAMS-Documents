@@ -40,6 +40,11 @@
  *   bill_result    {id, result: sent|failed|paid|cancelled, esx_id?, error?}
  *   record_lookup  {token, citizen_id, first_name, last_name, dob, sex}  → Kurzfassung der Akte des Spielers vor dir
  *   record_open    {token, citizen_id, …, create?}                 → Akte (ggf. anlegen) und Tablet-URL direkt auf die Akte
+ *
+ * Sky Ambulance (sky_ambulancejob):
+ *   record_vitals  {token, citizen_id, …, vitals:{heart_rate, systolic, diastolic, spo2, blood_sugar, cardiac_arrest, activity}} → Vitalverlauf
+ *   sky_death      {citizen_id, …, dead, medic_token?}             → Tod/Wiederbelebung als Akteneintrag
+ *   sky_medication {token, item, citizen_id, …}                    → Medikamentengabe: Bestand/BtM-Buch und Akte
  */
 declare(strict_types=1);
 define('SAMS_IGNORE_MAINTENANCE', true);
@@ -340,7 +345,7 @@ switch ($action) {
         respond(game_bills_sync());
         // no break
     case 'bill_result':
-        respond(game_bill_result((int) $in('id'), $in('result'), (int) $in('esx_id'), $in('error')));
+        respond(game_bill_result((int) $in('id'), $in('result'), (int) $in('esx_id'), $in('error'), $in('ext_ref')));
         // no break
     case 'record_lookup':
     case 'record_open':
@@ -384,6 +389,57 @@ switch ($action) {
             'url' => tablet_launch_url($tu[0], 'index.php?p=patient&id=' . (int) $p['id']), 'origin' => preg_replace('#^(https?://[^/]+).*$#', '$1', base_url())]);
         // no break
 
-    default:
+    // ------------------------------------------------------ Sky Ambulance
+    case 'record_vitals':
+        // Vitalwerte des Patienten vor dir (aus GetLocalInjuryProfile des Patienten) in die Akte
+        $tu = $tokenUser();
+        if (!$tu) {
+            respond(['ok' => false, 'error' => 'Anmeldung abgelaufen'], 401);
+        }
+        if ($problem = game_record_problem($tu[1])) {
+            respond(['ok' => false, 'error' => $problem]);
+        }
+        $fields = game_player_fields(['citizen_id' => $in('citizen_id'), 'first_name' => $in('first_name'), 'last_name' => $in('last_name'), 'dob' => $in('dob'), 'sex' => $in('sex')]);
+        $v = sky_clean_vitals(is_array($body['vitals'] ?? null) ? $body['vitals'] : []);
+        if (!$v) {
+            respond(['ok' => false, 'error' => 'Keine gültigen Vitalwerte vom Patienten erhalten.']);
+        }
+        $p = sky_record((int) $tu[1]['faction_id'], $fields, in_array('patients.edit', user_permissions($tu[1]), true), (int) $tu[1]['id']);
+        if (!$p) {
+            respond(['ok' => false, 'error' => 'Keine ' . term('record') . ' vorhanden und keine Berechtigung, sie anzulegen.']);
+        }
+        sky_store_vitals($p, $v, (int) $tu[1]['id']);
+        audit_as((int) $tu[1]['id'], 'patient.vitals', 'patient', (int) $p['id'], patient_name($p) . ': ' . sky_vitals_text($v));
+        respond(['ok' => true, 'id' => (int) $p['id'], 'name' => patient_name($p), 'text' => sky_vitals_text($v), 'cardiac_arrest' => (bool) $v['cardiac_arrest']]);
+        // no break
+    case 'sky_death':
+        // Vom Spielserver (geprüft mit isDead); optional der Medic im Dienst in der Nähe
+        if (!game_global()['sky_death']) {
+            respond(['ok' => false, 'error' => 'Erfassung von Tod/Wiederbelebung ist ausgeschaltet.']);
+        }
+        $fields = game_player_fields(['citizen_id' => $in('citizen_id'), 'first_name' => $in('first_name'), 'last_name' => $in('last_name'), 'dob' => $in('dob'), 'sex' => $in('sex')]);
+        if ($fields['citizen_id'] === '') {
+            respond(['ok' => false, 'error' => 'citizen_id fehlt']);
+        }
+        $medic = null;
+        if ($in('medic_token') !== '' && ($mt = tablet_token_user($in('medic_token'))) && faction_kind((int) $mt[1]['faction_id']) === 'medical') {
+            $medic = $mt[1];
+        }
+        respond(['ok' => true, 'entries' => sky_death_event($fields, in_array(strtolower($in('dead')), ['1', 'true'], true), $medic)]);
+        // no break
+    case 'sky_medication':
+        $tu = $tokenUser();
+        if (!$tu) {
+            respond(['ok' => false, 'error' => 'Anmeldung abgelaufen'], 401);
+        }
+        if (!game_global()['sky_meds']) {
+            respond(['ok' => false, 'error' => 'Buchung der Medikamentengabe ist ausgeschaltet.']);
+        }
+        $fields = game_player_fields(['citizen_id' => $in('citizen_id'), 'first_name' => $in('first_name'), 'last_name' => $in('last_name'), 'dob' => $in('dob'), 'sex' => $in('sex')]);
+        [$ok, $text] = sky_medication($tu[1], mb_substr($in('item'), 0, 64), $fields);
+        respond(['ok' => $ok, 'text' => $text]);
+        // no break
+
+default:
         respond(['error' => 'Unbekannte Aktion'], 400);
 }

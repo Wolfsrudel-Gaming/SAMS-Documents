@@ -42,7 +42,7 @@ check($st === 200 && $p && $p['amount'] === 121 && str_contains($p['label'], 'SA
 [$st, $r] = api('bill_result', ['id' => $bill['id'], 'result' => 'sent', 'esx_id' => 77]);
 check($r['ok'] && tval('SELECT status FROM game_bills WHERE id = ?', [$bill['id']]) === 'sent', 'Versand gemeldet');
 [, $sync] = api('bills_sync', []);
-check(in_array(['id' => (int) $bill['id'], 'esx_id' => 77], $sync['open'], true), 'Offene Rechnung wird auf Zahlung geprüft');
+check((array_column($sync['open'], 'esx_id', 'id')[(int) $bill['id']] ?? null) === 77, 'Offene Rechnung wird auf Zahlung geprüft');
 [, $r] = api('bill_result', ['id' => $bill['id'], 'result' => 'sent', 'esx_id' => 78]);
 check($r['ok'] === false && $r['error'] !== '', 'Falscher Statuswechsel → ok:false mit Text');
 [, $r] = api('bill_result', ['id' => $bill['id'], 'result' => 'paid']);
@@ -57,7 +57,7 @@ $b2 = (int) tval('SELECT id FROM game_bills WHERE document_id = ?', [$id2]);
 api('bill_result', ['id' => $b2, 'result' => 'sent', 'esx_id' => 90]);
 $nfs->post("/index.php?p=document&id=$id2", ['action' => 'pay_status', 'to' => 'paid', 'pay_note' => 'bar']);
 [, $sync] = api('bills_sync', []);
-check(in_array(['id' => $b2, 'esx_id' => 90], $sync['cancel'], true), 'Bar bezahlt → Rechnung im Spiel wird zurückgezogen');
+check((array_column($sync['cancel'], 'esx_id', 'id')[$b2] ?? null) === 90, 'Bar bezahlt → Rechnung im Spiel wird zurückgezogen');
 api('bill_result', ['id' => $b2, 'result' => 'cancelled']);
 check(tval('SELECT status FROM game_bills WHERE id = ?', [$b2]) === 'cancelled', 'Zurückziehen bestätigt');
 $id3 = $issue();

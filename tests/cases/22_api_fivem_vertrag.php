@@ -30,7 +30,7 @@ foreach (['job_pickup', 'rx_redeem', 'wanted_check', 'person_check', 'bill_resul
 }
 
 // 3. Ungültige Anmeldung (Token) liefert bei jeder Aktion nur 200 oder 401 – niemals 403/404/409
-foreach (['tablet_session', 'tablet_launch', 'tablet_logout', 'printer_jobs', 'duty_set', 'duty_status', 'rx_check', 'wanted_check', 'person_check', 'jobs_since', 'record_lookup', 'record_open', 'bills_sync', 'game_config'] as $action) {
+foreach (['tablet_session', 'tablet_launch', 'tablet_logout', 'printer_jobs', 'duty_set', 'duty_status', 'rx_check', 'wanted_check', 'person_check', 'jobs_since', 'record_lookup', 'record_open', 'bills_sync', 'game_config', 'record_vitals', 'sky_death', 'sky_medication'] as $action) {
     [$st] = api($action, ['token' => $bad, 'tokens' => [$bad], 'citizen_id' => 'GIBTSNICHT', 'since_id' => 0, 'printer_id' => 0]);
     check(in_array($st, [200, 401], true), "$action: nur HTTP 200 oder 401 erlaubt (war HTTP $st)");
 }

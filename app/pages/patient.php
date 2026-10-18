@@ -164,6 +164,15 @@ ob_start(); ?>
             <dt>Notfallkontakt</dt><dd><?= nl($p['emergency_contact'] ?: '–') ?></dd>
         </dl>
         <?php endif; ?>
+        <?php $vitals = $medical ? all('SELECT v.*, u.name AS by_name FROM patient_vitals v LEFT JOIN users u ON u.id = v.recorded_by WHERE v.patient_id = ? ORDER BY v.id DESC LIMIT 10', [$id]) : []; if ($vitals): ?>
+        <h2>Vitalverlauf</h2>
+        <table class="list compact"><thead><tr><th>Zeit</th><th>RR</th><th>HF</th><th>SpO₂</th><th>BZ</th></tr></thead><tbody>
+        <?php foreach ($vitals as $v): ?><tr<?= $v['cardiac_arrest'] ? ' class="text-danger"' : '' ?> title="<?= e(($v['by_name'] ?? '') . ' · ' . ($v['source'] === 'sky' ? 'aus dem Spiel (Sky Ambulance)' : $v['source'])) ?>">
+            <td class="small"><?= e(fmt_datetime($v['recorded_at'])) ?><?= $v['cardiac_arrest'] ? '<br><strong>Herzstillstand</strong>' : '' ?></td>
+            <td><?= $v['systolic'] !== null ? (int) $v['systolic'] . '/' . (int) $v['diastolic'] : '–' ?></td><td><?= e((string) ($v['heart_rate'] ?? '–')) ?></td>
+            <td><?= $v['spo2'] !== null ? (int) $v['spo2'] . ' %' : '–' ?></td><td><?= e((string) ($v['blood_sugar'] ?? '–')) ?></td></tr><?php endforeach; ?>
+        </tbody></table>
+        <?php endif; ?>
         <?php if (trim((string) $p['notes']) !== ''): ?>
             <h2>Notizen</h2><p><?= nl($p['notes']) ?></p>
         <?php endif; ?>

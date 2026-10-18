@@ -100,6 +100,25 @@ Einstellen im Websystem unter *Einstellungen → Spielserver*:
 
 Für andere Resourcen: `exports.sams_tablet:GetPlayerData(source)` (serverseitig), `exports.sams_tablet:showRecord()` (clientseitig).
 
+## Sky Ambulance (sky_ambulancejob)
+
+Einschalten im Websystem unter *Einstellungen → Spielserver → „Sky Ambulance anbinden“* (Schalter für Tod/Wiederbelebung und Medikamente einzeln). Genutzt werden nur die dokumentierten Schnittstellen von Sky (ab Version 2.37, Vitalwerte als Zahlen):
+
+- **`/akte` → „Vitalwerte übernehmen“**: liest beim Patienten `GetLocalInjuryProfile()` (RR, HF, SpO₂, Blutzucker, Herzstillstand) und speichert die Werte im Vitalverlauf der Akte. Ein Einsatzprotokoll, das in der nächsten Stunde ausgestellt wird, ist damit vorbelegt.
+- **`/akte` → „Behandeln (Sky Ambulance)“**: öffnet Skys Behandlung (`OpenTreatment`) für diese Person.
+- **Tod und Wiederbelebung**: `deathStateChanged` beim Spieler, serverseitig mit `isDead` geprüft. Ist ein Medic (im Dienst, im Tablet angemeldet) im Umkreis von 30 m, entsteht der Eintrag in dessen Akte (Akte wird bei Bedarf aus ESX angelegt), sonst nur in vorhandenen Akten.
+- **Medikamentengabe → Bestand/BtM-Buch**: In Skys `Config.CustomMedications` beim jeweiligen Medikament ergänzen:
+  ```lua
+  onFinishServer = function(self)
+      exports.sams_tablet:SkyMedication(self.source, self.target, self.itemName)
+  end,
+  ```
+  Im Websystem unter *Medikamente & BtM* beim Artikel dasselbe ox_inventory-Item eintragen. Jede Gabe bucht 1 Einheit mit Patient und Medic und erscheint in der Akte.
+- **Sky Billing**: *Rechnungssystem im Spiel* auf „Sky Billing“ stellen. „Ins Spiel senden“ legt dann über `sky_jobs_base:CreateInvoice` eine Rechnung von der Fraktion (erster ESX-Job) an den Spieler an (zahlbar später, eindeutige Referenz). Bezahlt wird erkannt, wenn `balanceDue` 0 ist; Storno/Barzahlung im Websystem ruft `CancelInvoice`.
+- **`/samsprofil`** (F8): gibt das eigene Verletzungsprofil aus. Bitte einmal mit Verletzungen ausführen und die Ausgabe schicken – Wunden und Körperzonen sind bei Sky nicht dokumentiert und werden erst danach übernommen.
+
+Hinweis: Die Vitalwerte stammen aus dem Spiel des Patienten und dienen nur der Dokumentation.
+
 ## Unterschreiben auf dem Ausdruck
 
 - Dokument-Item benutzen → unten auf dem Klemmbrett erscheinen die offenen Unterschriftsfelder („✍ Unterschrift betroffene Person“). Anklicken, mit der Maus unterschreiben, „Unterschreiben“.

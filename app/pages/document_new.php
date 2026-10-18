@@ -99,6 +99,10 @@ foreach ($type['fields'] as $f) {
 if ($case && !$fromId && !$draft) {
     $data = prefill_from_case($type, $case, $data);
 }
+// Frische Vitalwerte aus dem Spiel (Sky Ambulance) übernehmen
+if ($patient && !$fromId && !$draft) {
+    $data = prefill_vitals($type, $data, $patient);
+}
 if ($patient && $type['key'] === 'au' && empty($data['employer'])) {
     $data['employer'] = $patient['employer'];
 }

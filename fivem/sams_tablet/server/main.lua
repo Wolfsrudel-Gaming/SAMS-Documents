@@ -42,6 +42,18 @@ end
 --- Für die übrigen Server-Dateien (z. B. esx.lua): angemeldete Tablet-Sitzung des Spielers
 SamsSession = getSession
 
+--- Nächste/r angemeldete/r Rettungsdienst-Mitarbeiter/in im Dienst (für Sky Ambulance). Gibt Sitzung oder nil.
+function SamsNearestMedic(coords, maxDist)
+    local best, bestDist = nil, maxDist
+    for src, s in pairs(sessions) do
+        if onDuty[src] and s.user and s.user.faction_kind == 'medical' then
+            local d = #(GetEntityCoords(GetPlayerPed(src)) - coords)
+            if d <= bestDist then best, bestDist = s, d end
+        end
+    end
+    return best
+end
+
 local function clearSession(src)
     sessions[src] = nil
     onDuty[src] = nil

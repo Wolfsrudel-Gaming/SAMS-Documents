@@ -79,6 +79,10 @@ $keys = [
         'ingame_akte_distance' => ['Reichweite Aktenabruf (Meter)', '3'],
         'ingame_billing_table' => ['Tabelle von esx_billing in der Spiel-Datenbank', 'billing'],
         'ingame_bill_interval' => ['Rechnungen abgleichen alle … Sekunden', '30'],
+        'ingame_billing_provider' => ['Rechnungssystem im Spiel', 'esx_billing', 'select', ['esx_billing' => 'esx_billing (Tabelle billing)', 'sky' => 'Sky Billing (sky_jobs_base)']],
+        'ingame_sky'           => ['Sky Ambulance (sky_ambulancejob) anbinden', '0', 'select', $yn],
+        'ingame_sky_death'     => ['Sky: Tod/Wiederbelebung in die Akte', '1', 'select', $yn],
+        'ingame_sky_meds'      => ['Sky: Medikamentengabe im Bestand/BtM-Buch buchen', '1', 'select', $yn],
     ],
 ];
 // Weitere Fraktionen pflegen nur ihre eigenen Angaben; systemweite Einstellungen bleiben der Hauptfraktion vorbehalten

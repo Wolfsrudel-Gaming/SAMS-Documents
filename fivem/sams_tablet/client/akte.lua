@@ -27,6 +27,21 @@ local function showRecord()
     for _, line in ipairs(res.summary or {}) do
         options[#options + 1] = { title = line.label, description = line.value, readOnly = true }
     end
+    -- Sky Ambulance: Behandlung starten und Vitalwerte in die Akte übernehmen
+    local cfg = GlobalState.samsConfig or {}
+    if cfg.sky and GetResourceState('sky_ambulancejob') == 'started' then
+        table.insert(options, 1, { title = Config.Text.skyVitals, icon = 'heart-pulse', onSelect = function()
+            local r = lib.callback.await('sams:sky:vitals', false, target)
+            if not r or r.error then return Notify(r and r.error or Config.Text.offline, 'error') end
+            Notify(('%s: %s'):format(r.name, r.text), r.cardiac_arrest and 'error' or 'success')
+        end })
+        table.insert(options, 1, { title = Config.Text.skyTreat, icon = 'kit-medical', onSelect = function()
+            CreateThread(function()
+                local started, reason = exports.sky_ambulancejob:OpenTreatment(target)
+                if not started then Notify(Config.Text.skyTreatFail:format(type(reason) == 'table' and (reason.reason or '?') or tostring(reason)), 'error') end
+            end)
+        end })
+    end
     if res.found then
         table.insert(options, 1, { title = Config.Text.akteOpen, icon = 'folder-open', onSelect = function() openRecord(target, false) end })
     elseif res.can_create then

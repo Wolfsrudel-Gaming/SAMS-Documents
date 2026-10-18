@@ -16,7 +16,8 @@ local function loadConfig()
     if data and data.ok then
         GameConfig = data
         -- an alle Spieler (keine Geheimnisse): Befehlsnamen und Reichweite
-        GlobalState.samsConfig = { commands = data.commands, framework = data.framework, akte_distance = data.akte_distance }
+        GlobalState.samsConfig = { commands = data.commands, framework = data.framework, akte_distance = data.akte_distance,
+            sky = data.sky == true and GetResourceState('sky_ambulancejob') == 'started', sky_death = data.sky_death == true }
     end
 end
 
@@ -98,9 +99,60 @@ local function notifyCitizen(identifier, text)
     end
 end
 
+--- Sky Billing (sky_jobs_base): Rechnung von der Fraktion (Society/Job) an den Spieler. Gibt die Rechnungs-ID oder nil, Fehler.
+local function skyCreate(b)
+    local ok, res = pcall(function()
+        return exports.sky_jobs_base:CreateInvoice({
+            from = { type = 'society', job = b.job },
+            to = { type = 'player', identifier = b.citizen_id, name = b.name },
+            createdBy = { type = 'society', job = b.job },
+            amount = b.amount, reason = b.label, reference = b.reference,
+            depositToSociety = true, paymentMode = 'later', sourceType = 'sams',
+        })
+    end)
+    if not ok or type(res) ~= 'table' then return nil, 'sky_jobs_base nicht erreichbar' end
+    if not res.success then return nil, tostring(res.error or 'abgelehnt') end
+    local inv = res.data or {}
+    return tostring(inv.id or inv.number or ''), nil
+end
+
+local function skySync(sync)
+    if GetResourceState('sky_jobs_base') ~= 'started' then return end
+    for _, b in ipairs(sync.pending or {}) do
+        local ref, err = skyCreate(b)
+        if ref and ref ~= '' then
+            Api.post('bill_result', { id = b.id, result = 'sent', ext_ref = ref })
+            notifyCitizen(b.citizen_id, Config.Text.billReceived:format(b.label, b.amount))
+        else
+            Api.post('bill_result', { id = b.id, result = 'failed', error = 'Sky Billing: ' .. tostring(err) })
+        end
+    end
+    for _, b in ipairs(sync.cancel or {}) do
+        local ok, res = pcall(function() return exports.sky_jobs_base:CancelInvoice(b.ext_ref) end)
+        if ok then
+            local inv = select(2, pcall(function() return exports.sky_jobs_base:GetInvoice(b.ext_ref) end))
+            local paid = type(inv) == 'table' and inv.data and tonumber(inv.data.balanceDue) == 0
+            Api.post('bill_result', { id = b.id, result = paid and 'paid' or 'cancelled' })
+        end
+    end
+    -- bezahlt, wenn nichts mehr offen ist (balanceDue = 0); storniert in Sky → zurückgezogen
+    for _, b in ipairs(sync.open or {}) do
+        local ok, res = pcall(function() return exports.sky_jobs_base:GetInvoice(b.ext_ref) end)
+        if ok and type(res) == 'table' and res.success and res.data then
+            local inv = res.data
+            if tonumber(inv.balanceDue) == 0 and (tonumber(inv.amountPaid) or 0) > 0 then
+                Api.post('bill_result', { id = b.id, result = 'paid' })
+            elseif inv.status == 'cancelled' or inv.status == 'canceled' then
+                Api.post('bill_result', { id = b.id, result = 'cancelled' })
+            end
+        end
+    end
+end
+
 local function syncBills()
     local sync = Api.post('bills_sync', {})
     if not sync or not sync.ok then return end
+    if sync.provider == 'sky' then return skySync(sync) end
     local tbl = tostring(sync.table or 'billing'):gsub('[^%w_]', '')
 
     for _, b in ipairs(sync.pending or {}) do
@@ -146,7 +198,7 @@ end
 CreateThread(function()
     Wait(5000)
     while true do
-        if esxReady() and GetResourceState('oxmysql') == 'started' then
+        if esxReady() and (GetResourceState('oxmysql') == 'started' or (GameConfig and GameConfig.billing_provider == 'sky')) then
             syncBills()
         end
         Wait(((GameConfig and GameConfig.bill_interval) or 30) * 1000)
@@ -181,6 +233,8 @@ local function akteTarget(src, target)
     if not pd or pd.citizen_id == '' then return nil, Config.Text.akteNoPlayerData end
     return { session = s, player = pd }
 end
+
+SamsAkteTarget = function(src, target) return akteTarget(src, target) end -- für sky.lua
 
 lib.callback.register('sams:akte:lookup', function(src, target)
     local t, err = akteTarget(src, target)
