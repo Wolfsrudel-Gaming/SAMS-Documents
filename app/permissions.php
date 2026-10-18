@@ -70,6 +70,25 @@ function permission_catalog(): array
             'roster.signup' => 'Sich in Schichten eintragen, austragen und tauschen',
             'roster.manage' => 'Dienstplan erstellen, Personal einteilen',
         ],
+        'Polizei & Behörden' => [
+            'evidence.view'   => 'Asservaten ansehen',
+            'evidence.manage' => 'Asservaten erfassen, ein-/auslagern, übergeben, vernichten',
+            'vehicles.view'   => 'Fahrzeugregister ansehen',
+            'vehicles.manage' => 'Fahrzeuge registrieren und ändern',
+            'custody.view'    => 'Haftbuch ansehen',
+            'custody.manage'  => 'Personen in Gewahrsam nehmen und entlassen',
+            'licenses.view'   => 'Lizenzen und Führerscheine ansehen',
+            'licenses.manage' => 'Lizenzen ausstellen, verlängern, sperren und entziehen',
+            'objects.view'    => 'Objektpläne ansehen',
+            'objects.manage'  => 'Objektpläne anlegen und pflegen',
+            'joint.view'      => 'Gemeinsame Einsatzberichte ansehen',
+            'joint.write'     => 'Gemeinsame Einsatzberichte anlegen und eigenen Teil schreiben',
+        ],
+        'Gericht' => [
+            'court.view'   => 'Gerichtskalender und Fristen ansehen',
+            'court.manage' => 'Termine und Fristen anlegen und bearbeiten',
+            'court.own'    => 'Einschränkung: nur Termine und Fristen, an denen man selbst beteiligt ist (Anwaltszugang)',
+        ],
         'Medikamente' => [
             'stock.view'     => 'Medikamentenbestand ansehen',
             'stock.dispense' => 'Medikamente ausgeben und Rezepte einlösen',
@@ -167,7 +186,7 @@ function user_permissions_uncached(array $u): array
 {
     if (!empty($u['is_superadmin'])) {
         // Hauptadministrator: alle Fähigkeiten, aber keine Einschränkungen. Die 2FA-Pflicht richtet sich nach seinem Rang.
-        $perms = array_diff(all_permissions(), ['users.scope_department', 'security.2fa_required']);
+        $perms = array_diff(all_permissions(), ['users.scope_department', 'security.2fa_required', 'court.own']);
         if (in_array('security.2fa_required', rank_permissions(isset($u['rank_id']) ? (int) $u['rank_id'] : null), true)) {
             $perms[] = 'security.2fa_required';
         }

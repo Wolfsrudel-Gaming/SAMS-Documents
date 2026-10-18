@@ -221,6 +221,9 @@ switch ($cmd) {
             if ($r = roster_cron()) {
                 $out($tag . "Dienstplan: $r Erinnerung(en)/Warnung(en).");
             }
+            if ($r = court_cron()) {
+                $out($tag . "Gericht: $r Erinnerung(en) zu Terminen und Fristen.");
+            }
         });
         $n = discord_flush(100);
         if ($n) {

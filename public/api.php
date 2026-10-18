@@ -29,8 +29,8 @@
  *   duty_status    {token}                                         → im Dienst? seit wann?
  *   rx_check       {tokens: [sams_token, …]}                       → Rezepte mit Positionen und Einlösbarkeit
  *   rx_redeem      {token, license, player}                        → Rezept einlösen, Items für ox_inventory
- *   wanted_check   {plate? | citizen_id?}                          → offene Fahndungen/Haftbefehle (Kennzeichen-/Personenabfrage)
- *   person_check   {citizen_id}                                    → Fahndung, Führerschein-/Waffenschein-Status, gültige Erlaubnisse
+ *   wanted_check   {plate? | citizen_id?}                          → offene Fahndungen/Haftbefehle, Fahrzeugregister (Halter, gestohlen/beschlagnahmt)
+ *   person_check   {citizen_id}                                    → Fahndung, Führerschein-/Waffenschein-Status, Erlaubnisse, Lizenzregister
  *
  * Spielserver (ESX):
  *   game_config    {}                                              → Befehle, Schalter, Society-Konten und Jobs je Fraktion
@@ -275,7 +275,12 @@ switch ($action) {
             }
         }
         $hits = wanted_lookup($in('citizen_id'), $in('plate'));
-        respond(['ok' => true, 'wanted' => $hits !== [], 'entries' => array_map(fn($w) => [
+        $registry = $in('plate') !== '' ? array_map(fn($v) => ['plate' => $v['plate'], 'model' => $v['model'], 'color' => $v['color'], 'owner' => $v['owner_name'],
+            'owner_citizen_id' => $v['owner_citizen_id'], 'status' => $v['status'], 'status_label' => VEHICLE_STATUS[$v['status']][1] ?? $v['status'],
+            'valid_until' => fmt_date($v['valid_until']), 'expired' => $v['valid_until'] !== '' && $v['valid_until'] < date('Y-m-d'),
+            'agency' => faction_by_id((int) $v['faction_id'])['short'] ?? ''], vehicle_lookup($in('plate'))) : [];
+        $flagged = array_values(array_filter($registry, fn($v) => in_array($v['status'], ['stolen', 'seized'], true)));
+        respond(['ok' => true, 'wanted' => $hits !== [] || $flagged !== [], 'registry' => $registry, 'flagged' => $flagged, 'entries' => array_map(fn($w) => [
             'kind' => $w['kind'], 'name' => $w['name'], 'citizen_id' => $w['citizen_id'], 'plate' => $w['plate'], 'vehicle' => $w['vehicle'],
             'reason' => mb_strimwidth((string) $w['reason'], 0, 240, '…'), 'danger' => (int) $w['danger'], 'danger_label' => WANTED_DANGER[(int) $w['danger']],
             'warrant' => $w['source'] === 'warrant', 'agency' => faction_by_id((int) $w['faction_id'])['short'] ?? '', 'since' => fmt_date($w['created_at']),
@@ -298,7 +303,10 @@ switch ($action) {
         respond(['ok' => true, 'wanted' => $hits !== [], 'warrant' => (bool) array_filter($hits, fn($w) => $w['source'] === 'warrant'),
             'danger' => $hits ? max(array_map(fn($w) => (int) $w['danger'], $hits)) : 0,
             'license_driver' => LICENSE_STATES[$licenses['driver']] ?? 'unbekannt', 'license_weapon' => LICENSE_STATES[$licenses['weapon']] ?? 'unbekannt',
-            'permits' => array_map(fn($d) => ['title' => doc_type($d['type'])['title'] ?? $d['type'], 'number' => $d['number'], 'valid_until' => fmt_date($d['valid_until'])], $permits)]);
+            'permits' => array_map(fn($d) => ['title' => doc_type($d['type'])['title'] ?? $d['type'], 'number' => $d['number'], 'valid_until' => fmt_date($d['valid_until'])], $permits),
+            'licenses' => array_map(fn($l) => ['type' => $l['type'], 'classes' => $l['classes'], 'number' => $l['number'], 'state' => $l['state'],
+                'label' => LICENSE_STATUS[$l['state']][1] ?? $l['state'], 'expires' => fmt_date($l['expires_on']), 'agency' => faction_by_id((int) $l['faction_id'])['short'] ?? ''],
+                licenses_for_citizen($cid))]);
         // no break
 
     // --------------------------------------------------- Spielserver (ESX)

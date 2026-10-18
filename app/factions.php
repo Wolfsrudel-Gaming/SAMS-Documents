@@ -21,36 +21,43 @@ const FACTION_MODULES = [
     'wanted'   => 'Fahndung und Haftbefehle',
     'portal'   => 'Bürgerportal (Termine, Anträge, Bewerbungen)',
     'requests' => 'Behördenanfragen zwischen Fraktionen',
+    'evidence' => 'Asservatenverwaltung mit lückenloser Beweismittelkette',
+    'vehicles' => 'Fahrzeugregister (Halter, Zulassung, gestohlen/beschlagnahmt)',
+    'custody'  => 'Haftbuch / Gewahrsam',
+    'court'    => 'Gerichtskalender, Fristen und Anwaltszugänge',
+    'licenses' => 'Führerscheine und Lizenzen mit Ablaufdatum',
+    'objects'  => 'Objektpläne (Gebäude, Gefahren, Schlüsseldepots, Pläne)',
+    'joint'    => 'Gemeinsame Einsatzberichte mehrerer Behörden',
 ];
 
 const FACTION_KINDS = [
     'medical' => [
         'label' => 'Rettungsdienst / Klinik', 'logo' => 'assets/img/logo.svg', 'color' => '#0b4f9c',
-        'modules' => ['records', 'billing', 'stock', 'portal', 'requests'],
+        'modules' => ['records', 'billing', 'stock', 'portal', 'requests', 'joint'],
         'terms' => ['record' => 'Patientenakte', 'records' => 'Patientenakten', 'person' => 'Patient/in', 'persons' => 'Patienten',
             'case' => 'Fall', 'cases' => 'Fälle', 'billing' => 'Rechnungen', 'catalog' => 'Gebührenordnung', 'staff' => 'Personal'],
     ],
     'police' => [
         'label' => 'Polizei', 'logo' => 'assets/img/kinds/police.svg', 'color' => '#1d3a6e',
-        'modules' => ['records', 'billing', 'wanted', 'requests'],
+        'modules' => ['records', 'billing', 'wanted', 'requests', 'evidence', 'vehicles', 'custody', 'licenses', 'joint'],
         'terms' => ['record' => 'Personenakte', 'records' => 'Personenakten', 'person' => 'Person', 'persons' => 'Personen',
             'case' => 'Vorgang', 'cases' => 'Vorgänge', 'billing' => 'Bußgelder', 'catalog' => 'Bußgeld- und Strafkatalog', 'staff' => 'Personal'],
     ],
     'justice' => [
         'label' => 'Justiz', 'logo' => 'assets/img/kinds/justice.svg', 'color' => '#5b3a1e',
-        'modules' => ['records', 'billing', 'wanted', 'requests'],
+        'modules' => ['records', 'billing', 'wanted', 'requests', 'court'],
         'terms' => ['record' => 'Personenakte', 'records' => 'Personenakten', 'person' => 'Beteiligte/r', 'persons' => 'Beteiligte',
             'case' => 'Verfahren', 'cases' => 'Verfahren', 'billing' => 'Kostenrechnungen', 'catalog' => 'Kostenverzeichnis', 'staff' => 'Personal'],
     ],
     'fire' => [
         'label' => 'Feuerwehr', 'logo' => 'assets/img/kinds/fire.svg', 'color' => '#a3161a',
-        'modules' => ['billing', 'requests'],
+        'modules' => ['billing', 'requests', 'objects', 'joint'],
         'terms' => ['record' => 'Akte', 'records' => 'Akten', 'person' => 'Betroffene/r', 'persons' => 'Betroffene',
             'case' => 'Einsatz', 'cases' => 'Einsätze', 'billing' => 'Gebührenbescheide', 'catalog' => 'Gebührenordnung', 'staff' => 'Personal'],
     ],
     'government' => [
         'label' => 'Verwaltung / Sonstige', 'logo' => 'assets/img/kinds/government.svg', 'color' => '#2f5d50',
-        'modules' => ['records', 'billing', 'requests'],
+        'modules' => ['records', 'billing', 'requests', 'licenses', 'vehicles'],
         'terms' => ['record' => 'Bürgerakte', 'records' => 'Bürgerakten', 'person' => 'Bürger/in', 'persons' => 'Bürger',
             'case' => 'Vorgang', 'cases' => 'Vorgänge', 'billing' => 'Gebührenbescheide', 'catalog' => 'Gebührenverzeichnis', 'staff' => 'Personal'],
     ],
@@ -146,9 +153,11 @@ const FACTION_CATALOG_TEMPLATES = [
 function faction_tier_permissions(string $tier): array
 {
     $trainee = ['patients.view', 'documents.view', 'duty.clock', 'duty.view', 'roster.view', 'roster.signup', 'training.view', 'wiki.view',
-        'board.view', 'messages.use', 'stock.view', 'wanted.view', 'requests.view'];
+        'board.view', 'messages.use', 'stock.view', 'wanted.view', 'requests.view', 'evidence.view', 'vehicles.view', 'custody.view', 'court.view',
+        'licenses.view', 'objects.view', 'joint.view'];
     $staff = array_merge($trainee, ['patients.edit', 'entries.create', 'attachments.upload', 'cases.manage', 'documents.revoke.own', 'documents.print',
-        'documents.share', 'stock.dispense', 'wanted.manage', 'requests.manage']);
+        'documents.share', 'stock.dispense', 'wanted.manage', 'requests.manage', 'evidence.manage', 'vehicles.manage', 'custody.manage', 'court.manage',
+        'licenses.manage', 'objects.manage', 'joint.write']);
     $senior = array_merge($staff, ['entries.confidential', 'documents.approve', 'documents.addendum', 'users.view', 'personnel.view', 'patients.archive']);
     $lead = array_merge($senior, ['entries.edit_all', 'entries.all_departments', 'documents.revoke.all', 'documents.drafts_all', 'patients.merge',
         'users.create', 'users.edit', 'users.password_reset', 'users.deactivate', 'users.sessions', 'personnel.edit', 'duty.manage', 'roster.manage',
@@ -244,7 +253,8 @@ function permission_module(string $perm): ?string
     static $map = [
         'patients.' => 'records', 'entries.' => 'records', 'cases.' => 'records', 'attachments.' => 'records',
         'invoices.' => 'billing', 'prices.' => 'billing', 'stock.' => 'stock', 'btm.' => 'stock',
-        'wanted.' => 'wanted', 'portal.' => 'portal', 'requests.' => 'requests',
+        'wanted.' => 'wanted', 'portal.' => 'portal', 'requests.' => 'requests', 'evidence.' => 'evidence', 'vehicles.' => 'vehicles',
+        'custody.' => 'custody', 'court.' => 'court', 'licenses.' => 'licenses', 'objects.' => 'objects', 'joint.' => 'joint',
     ];
     foreach ($map as $prefix => $module) {
         if (str_starts_with($perm, $prefix)) {
@@ -278,7 +288,8 @@ function faction_filter_permissions(array $perms, ?int $factionId = null): array
 function faction_setting_scoped(string $key): bool
 {
     static $keys = ['city', 'phone', 'fax', 'email', 'web', 'ik_number', 'bsnr', 'director', 'admin_head', 'bank', 'iban', 'bic', 'register',
-        'tax_id', 'seal_text', 'currency', 'doc_prefix', 'logo', 'discord_role_map', 'discord_duty_log', 'language', 'doc_type_config', 'roster_lock_hours'];
+        'tax_id', 'seal_text', 'currency', 'doc_prefix', 'logo', 'discord_role_map', 'discord_duty_log', 'language', 'doc_type_config', 'roster_lock_hours',
+        'license_types', 'evidence_storage', 'court_rooms', 'custody_unit_minutes', 'custody_cells'];
     return in_array($key, $keys, true) || (bool) preg_match('/^(org_|theme_|webhook_|report_|game_)/', $key);
 }
 
@@ -309,6 +320,10 @@ function create_faction(string $name, string $short, string $kind, string $color
         foreach (FACTION_RANK_TEMPLATES[$kind] as [$rname, $rshort, $level, $rcolor, $tier, $roles]) {
             $rankId = insert('ranks', ['faction_id' => $id, 'name' => $rname, 'short' => $rshort, 'level' => $level, 'color' => $rcolor, 'description' => '', 'created_at' => $now, 'updated_at' => $now]);
             $perms = faction_tier_permissions($tier);
+            if (in_array('lawyer', $roles, true)) {
+                // Anwaltszugang: im Gerichtskalender nur eigene Termine und Fristen
+                $perms = array_merge(array_diff($perms, ['court.manage']), ['court.own']);
+            }
             foreach (document_types($id) as $key => $t) {
                 $role = $t['role'] ?? '';
                 // Für alle Fraktionen gültige Arten: Personaldokumente für die Leitung, Schreiben für alle außer Auszubildenden

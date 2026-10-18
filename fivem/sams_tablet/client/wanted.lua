@@ -20,6 +20,11 @@ local function showResult(label, res)
     if not res or res.error then
         return Notify(res and res.error or Config.Text.offline, 'error')
     end
+    -- Halter aus dem Fahrzeugregister (Polizei/DMV)
+    for _, v in ipairs(res.registry or {}) do
+        Notify(Config.Text.vehicleOwner:format(v.plate, v.model ~= '' and v.model or '?', v.owner ~= '' and v.owner or '?', v.status_label .. (v.expired and ', Zulassung abgelaufen' or '')),
+            (v.status == 'stolen' or v.status == 'seized') and 'error' or 'inform')
+    end
     if not res.wanted then
         return Notify(Config.Text.wantedNone:format(label), 'success')
     end

@@ -103,4 +103,5 @@ Config.Text = {
     akteJob = 'Aktenabruf nur im passenden Job.',
     billReceived = 'Neue Rechnung: %s über $%s. Bezahlen im Rechnungsmenü.',
     wantedDuty = 'Fahndungsabfragen nur im Dienst.',
+    vehicleOwner = '%s: %s · Halter/in %s (%s)',
 }

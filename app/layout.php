@@ -12,6 +12,13 @@ $navGroups = [
         'patients'     => [term('records'), 'patients.view', 'patients'],
         'wanted'       => ['Fahndung', 'wanted.view|wanted.manage', 'search'],
         'requests'     => ['Behördenanfragen', 'requests.view|requests.manage', 'external'],
+        'custody'      => ['Haftbuch', 'custody.view|custody.manage', 'shield'],
+        'evidence'     => ['Asservaten', 'evidence.view|evidence.manage', 'folder'],
+        'vehicles'     => ['Fahrzeugregister', 'vehicles.view|vehicles.manage', 'search'],
+        'licenses'     => ['Lizenzen', 'licenses.view|licenses.manage', 'docs'],
+        'court'        => ['Gerichtskalender', 'court.view|court.manage', 'clock'],
+        'objects'      => ['Objektpläne', 'objects.view|objects.manage', 'folder'],
+        'joint'        => ['Einsatzberichte', 'joint.view|joint.write', 'docs'],
         'documents'    => ['Dokumente', 'documents.view', 'docs'],
         'document_new' => ['Neues Dokument', 'documents.issue.*', 'doc-plus'],
         'drafts'       => ['Entwürfe & Freigaben', 'documents.issue.*|documents.approve|documents.drafts_all', 'edit'],
@@ -43,7 +50,7 @@ $navGroups = [
 ];
 // Unterseiten der passenden Navigation zuordnen
 $activeMap = ['patient' => 'patients', 'patient_edit' => 'patients', 'patient_print' => 'patients', 'entry_edit' => 'patients', 'case' => 'patients', 'case_edit' => 'patients', 'patient_merge' => 'patients', 'btm' => 'stock',
-    'document' => 'documents', 'draft' => 'drafts', 'user_edit' => 'users', 'personnel' => 'users', 'course' => 'training', 'exam' => 'training', 'course_edit' => 'training', 'wiki_page' => 'wiki', 'wiki_edit' => 'wiki', 'wiki_lists' => 'wiki', 'rank_edit' => 'ranks', 'password_change' => 'profile', 'twofa' => 'profile'];
+    'document' => 'documents', 'draft' => 'drafts', 'user_edit' => 'users', 'personnel' => 'users', 'course' => 'training', 'exam' => 'training', 'course_edit' => 'training', 'wiki_page' => 'wiki', 'wiki_edit' => 'wiki', 'wiki_lists' => 'wiki', 'rank_edit' => 'ranks', 'evidence_item' => 'evidence', 'object' => 'objects', 'joint_report' => 'joint', 'password_change' => 'profile', 'twofa' => 'profile'];
 $active = $activeMap[$current] ?? $current;
 ?><!doctype html>
 <html lang="<?= e(ui_lang()) ?>">
@@ -110,7 +117,7 @@ $active = $activeMap[$current] ?? $current;
         if (!$visible) continue; ?>
         <div class="nav-group"><?= e(t($group)) ?></div>
         <?php foreach ($visible as $p => [$label, $role, $ic]): ?>
-            <a href="<?= e(url($p)) ?>" title="<?= e(t($label)) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e(t($label)) ?></span><?php $cnt = match ($p) { 'drafts' => draft_inbox_count(), 'board' => board_unread_count(), 'messages' => messages_unread_count(), 'portal_admin' => portal_open_count(), 'wanted' => wanted_open_count(), 'requests' => request_open_count(), default => 0 }; if ($cnt): ?><b class="nav-count"><?= $cnt ?></b><?php endif; ?></a>
+            <a href="<?= e(url($p)) ?>" title="<?= e(t($label)) ?>" class="<?= $active === $p ? 'active' : '' ?>"><?= icon($ic) ?><span><?= e(t($label)) ?></span><?php $cnt = match ($p) { 'drafts' => draft_inbox_count(), 'board' => board_unread_count(), 'messages' => messages_unread_count(), 'portal_admin' => portal_open_count(), 'wanted' => wanted_open_count(), 'requests' => request_open_count(), 'custody' => custody_open_count(), 'court' => court_open_count(), 'joint' => joint_open_count(), default => 0 }; if ($cnt): ?><b class="nav-count"><?= $cnt ?></b><?php endif; ?></a>
         <?php endforeach; ?>
     <?php endforeach; ?>
     <div class="nav-group"><?= e(t('Extern')) ?></div>

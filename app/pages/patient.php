@@ -186,6 +186,38 @@ ob_start(); ?>
     </section>
 
     <section>
+        <?php
+        $cid = (string) $p['citizen_id'];
+        $register = criminal_record_visible() ? criminal_record($cid) : [];
+        $lics = (can('licenses.view') || in_array(faction_kind(), ['police', 'justice'], true)) && can('patients.view') && !$medical ? licenses_for_citizen($cid) : [];
+        $vehs = (can('vehicles.view') && $cid !== '') ? all('SELECT * FROM vehicles WHERE owner_citizen_id = ? AND faction_id IN (' . implode(',', factions_with_module('vehicles') ?: [0]) . ') ORDER BY plate', [$cid]) : [];
+        ?>
+        <?php if (criminal_record_visible() && $cid !== ''): ?>
+        <div class="card">
+            <div class="card-head"><h2>Strafregister</h2><span class="muted small">Polizei und Justiz · nur gültige Dokumente</span></div>
+            <table class="list compact">
+                <tbody>
+                <?php foreach ($register as $r): ?>
+                    <tr><td class="small"><?= e(fmt_date($r['date'])) ?></td><td><strong><?= e($r['kind']) ?></strong> <small class="muted"><?= e($r['agency']) ?></small><br><small><?= e($r['text']) ?></small></td>
+                        <td class="small mono right"><?= $r['document_id'] && $r['faction_id'] === fid() ? '<a href="' . e(url('document', ['id' => $r['document_id']])) . '">' . e($r['number']) . '</a>' : e($r['number']) ?></td></tr>
+                <?php endforeach; ?>
+                <?php if (!$register): ?><tr><td class="muted">Keine Einträge.</td></tr><?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+        <?php if ($lics || $vehs): ?>
+        <div class="card">
+            <?php if ($lics): ?><h2>Lizenzen</h2>
+            <table class="list compact"><tbody>
+                <?php foreach ($lics as $l): ?><tr><td><?= e($l['type']) ?><?= $l['classes'] !== '' ? ' <small class="muted">' . e($l['classes']) . '</small>' : '' ?></td><td class="small"><?= $l['expires_on'] ? 'bis ' . e(fmt_date($l['expires_on'])) : '' ?></td><td class="right"><?= status_badge(LICENSE_STATUS, $l['state']) ?></td></tr><?php endforeach; ?>
+            </tbody></table><?php endif; ?>
+            <?php if ($vehs): ?><h2>Fahrzeuge</h2>
+            <table class="list compact"><tbody>
+                <?php foreach ($vehs as $v): ?><tr><td class="mono"><?= e($v['plate']) ?></td><td><?= e(trim($v['model'] . ' ' . $v['color'])) ?></td><td class="right"><?= status_badge(VEHICLE_STATUS, $v['status']) ?></td></tr><?php endforeach; ?>
+            </tbody></table><?php endif; ?>
+        </div>
+        <?php endif; ?>
         <div class="card">
             <div class="card-head"><h2><?= e(term('cases')) ?></h2>
                 <?php if (!$archived && can('cases.manage')): ?><a class="btn small" href="<?= e(url('case_edit', ['patient' => $id])) ?>">+ <?= e(term('case')) ?></a><?php endif; ?></div>

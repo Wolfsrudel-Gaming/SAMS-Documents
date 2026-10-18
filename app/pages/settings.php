@@ -55,6 +55,13 @@ $keys = [
         'duty_max_hours' => ['Vergessene Schichten automatisch beenden nach (Stunden)', '12'],
         'roster_lock_hours' => ['Dienstplan: Austragen bis … Stunden vor Schichtbeginn (danach nur Tausch)', '12'],
     ],
+    'Behörden-Werkzeuge' => [
+        'license_types'        => ['Lizenzarten (durch | getrennt)', implode(' | ', array_map('trim', explode('|', LICENSE_DEFAULT_TYPES[faction_kind()] ?? LICENSE_DEFAULT_TYPES['default'])))],
+        'evidence_storage'     => ['Lagerorte für Asservaten (durch | getrennt)', 'Asservatenkammer | Waffenschrank | Kühlraum (biologische Spuren) | Fahrzeughalle'],
+        'custody_cells'        => ['Zellen / Gewahrsamsräume (durch | getrennt)', 'Zelle 1 | Zelle 2 | Zelle 3 | Sammelzelle'],
+        'custody_unit_minutes' => ['Haft-Einheit entspricht … Minuten (für die geplante Entlassung)', '1'],
+        'court_rooms'          => ['Sitzungssäle (durch | getrennt)', 'Saal 1 | Saal 2 | Besprechungsraum'],
+    ],
     'Spielserver' => [
         'game_jobs'      => ['ESX-Jobs dieser Fraktion (Komma)', implode(',', GAME_DEFAULT_JOBS[faction_kind()] ?? [])],
         'game_society'   => ['Society-Konto für Zahlungen', 'society_' . (GAME_DEFAULT_JOBS[faction_kind()][0] ?? 'job')],
@@ -75,6 +82,15 @@ $keys = [
     ],
 ];
 // Weitere Fraktionen pflegen nur ihre eigenen Angaben; systemweite Einstellungen bleiben der Hauptfraktion vorbehalten
+// Werkzeuge nur zeigen, wenn die Fraktion das passende Modul nutzt
+foreach (['license_types' => 'licenses', 'evidence_storage' => 'evidence', 'custody_cells' => 'custody', 'custody_unit_minutes' => 'custody', 'court_rooms' => 'court'] as $sk => $sm) {
+    if (!module_enabled($sm)) {
+        unset($keys['Behörden-Werkzeuge'][$sk]);
+    }
+}
+if (!$keys['Behörden-Werkzeuge']) {
+    unset($keys['Behörden-Werkzeuge']);
+}
 if (fid() !== 1) {
     unset($keys['Sicherheit'], $keys['Bürgerportal'], $keys['Apotheke'], $keys['Dienstzeiten']['duty_max_hours'], $keys['Spielserver – alle Fraktionen']);
 }
@@ -86,7 +102,7 @@ if (is_post()) {
             if (str_starts_with($k, 'theme_') && $v !== '' && !preg_match('/^#[0-9a-f]{6}$/i', $v)) {
                 $v = '';
             }
-            if ($k === 'portal_appointment_kinds') {
+            if (in_array($k, ['portal_appointment_kinds', 'license_types', 'evidence_storage', 'custody_cells', 'court_rooms'], true)) {
                 $v = implode("\n", array_filter(array_map('trim', explode('|', $v))));
             } elseif ($k === 'portal_enabled') {
                 $v = $v === '0' ? '0' : '1';
@@ -101,6 +117,8 @@ if (is_post()) {
                 $v = (string) max(1, min(48, (int) $v ?: 12));
             } elseif (in_array($k, ['rx_valid_days', 'rx_valid_days_btm'], true)) {
                 $v = (string) max(1, min(365, (int) $v ?: 28));
+            } elseif ($k === 'custody_unit_minutes') {
+                $v = $v === '' ? '' : (string) max(1, min(60, (int) $v));
             } elseif ($k === 'roster_lock_hours') {
                 $v = (string) max(0, min(168, (int) $v));
             } elseif ($k === 'duty_command' || $k === 'game_society' || str_starts_with($k, 'ingame_cmd_') || $k === 'ingame_billing_table') {
