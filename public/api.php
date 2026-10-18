@@ -4,6 +4,12 @@
  * Authentifizierung: Header "X-API-Key" (Wert API_KEY aus der .env).
  * Der Schlüssel gehört ausschließlich auf den Spielserver, nie in den Client.
  *
+ * WICHTIG – HTTP-Statuscodes: FXServer (PerformHttpRequest) reicht bei Nicht-2xx-Antworten KEINEN Antworttext an die
+ * Resource weiter. Fachliche Ergebnisse und Fehler (falsches Passwort, 2FA nötig, Auftrag schon abgeholt, keine Berechtigung …)
+ * deshalb immer mit HTTP 200 und Text im JSON (ok:false + error bzw. status) beantworten. Erlaubt sind nur 401 (Schlüssel/
+ * Anmeldung ungültig – die Resource wertet den Code aus) und 503 (Wartung/API aus). tests/cases/22_api_fivem_vertrag.php
+ * prüft das automatisch.
+ *
  * Abfragen (GET):
  *   ?action=verify&code=XXXX                 Dokument prüfen
  *   ?action=patient&citizen_id=ABC123         Notfalldaten eines Patienten

@@ -240,6 +240,8 @@ Header: X-API-Key: <api_key>
 
 Details zu allen Aktionen stehen im Kopf von [`public/api.php`](public/api.php).
 
+**Antwortcodes:** Die API antwortet auf fachliche Fehler (z. B. falsches Passwort, 2FA-Code nötig, Auftrag bereits abgeholt) immer mit HTTP 200 und `ok: false` + `error` bzw. `status` im JSON. Grund: FXServer liefert bei Nicht-2xx-Antworten keinen Antworttext an die Resource – das Tablet würde sonst „nicht erreichbar“ melden. Nur 401 (ungültiger Schlüssel/abgelaufene Anmeldung) und 503 (Wartung) sind Fehlercodes. Neue Aktionen bitte genauso bauen; `tests/cases/22_api_fivem_vertrag.php` schlägt sonst fehl.
+
 ## Eigene Dokumentarten
 
 Dokumentarten sind in `app/documents.php` (Felder, Rolle, Kürzel) und `app/templates/<name>.php` (Druckvorlage)
