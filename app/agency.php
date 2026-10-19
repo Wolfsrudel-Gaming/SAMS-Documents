@@ -62,6 +62,7 @@ function wanted_from_warrant(int $documentId): int
             'recipient' => (string) $f['name'], 'purpose' => 'Haftbefehl zur Vollstreckung', 'expires_at' => !empty($d['gueltig_bis']) ? $d['gueltig_bis'] . ' 23:59:59' : null,
             'created_by' => $doc['issued_by'], 'created_at' => now()]);
         $n++;
+        integration_wanted_event('wanted.created', (int) scalar('SELECT MAX(id) FROM wanted WHERE document_id = ? AND faction_id = ?', [$documentId, $f['id']]));
         $prev = fid();
         set_faction_context((int) $f['id']);
         notify_users_with('wanted.view', 'wanted', 'Neuer Haftbefehl: ' . ($p ? patient_name($p) : 'unbekannt'), url('wanted'));
@@ -73,7 +74,11 @@ function wanted_from_warrant(int $documentId): int
 /** Fahndungen zu einem Dokument beenden (z. B. Haftbefehl storniert). */
 function wanted_close_for_document(int $documentId, string $note): void
 {
+    $ids = array_column(all("SELECT id FROM wanted WHERE document_id = ? AND status = 'open'", [$documentId]), 'id');
     q("UPDATE wanted SET status = 'closed', closed_at = ?, close_note = ? WHERE document_id = ? AND status = 'open'", [now(), mb_substr($note, 0, 190), $documentId]);
+    foreach ($ids as $id) {
+        integration_wanted_event('wanted.closed', (int) $id);
+    }
 }
 
 /** Offene Fahndungen zu einer Akte der eigenen Fraktion (für den Hinweis in der Akte). */

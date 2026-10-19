@@ -168,6 +168,41 @@ Dienstausweise erscheinen nicht auf dem Klemmbrett, sondern als Karte in der Han
 - Der Bestand wird ausgebucht (bei BtM im BtM-Buch). Jede Position lässt sich nur einmal einlösen; das Rezept bleibt als Beleg im Inventar und ist als „eingelöst“ gekennzeichnet.
 - Die Medikamenten-Items selbst (z. B. `painkillers`) müssen in `ox_inventory/data/items.lua` existieren – ihre Wirkung regelt dein Medizin-Script.
 
+## Eigene Resourcen andocken
+
+`sams_tablet` ist die Brücke für alle weiteren Skripte auf dem Server: Sie brauchen **keinen eigenen Schlüssel** und keine eigene Verbindung zum Websystem. Exports nur **serverseitig** und aus einem Thread (`CreateThread`) aufrufen, denn sie warten auf die Antwort.
+
+```lua
+-- Allgemein: jeder Aufruf aus docs/API.md
+local res = exports.sams_tablet:Call('person', { citizen_id = 'ABC123' })
+
+-- Kurzformen
+exports.sams_tablet:GetUser(source)                         -- SAMS-Konto des Spielers (oder nil)
+exports.sams_tablet:GetOnDuty('lspd')                       -- wer ist im Dienst (ID, Code oder Kürzel; nil = alle)
+exports.sams_tablet:SetDuty(source, true)                   -- Dienst für das eigene Konto des Spielers
+exports.sams_tablet:VerifyDocument('ABCD1234')              -- Echtheitsprüfung
+exports.sams_tablet:GetDocument(source, slot)               -- Dokument-Item im Inventarplatz
+exports.sams_tablet:PersonCheck('ABC123')
+exports.sams_tablet:WantedCheck({ plate = 'SAMS123' })
+exports.sams_tablet:AddRecordEntry({ faction = 'sams', citizen_id = 'ABC123', title = 'Behandlung im Krankenbett', content = '…' }, source)
+exports.sams_tablet:SendAlert('lspd', 'Blitzer A1', 'SAMS123 mit 142 km/h', { on_duty = true })
+exports.sams_tablet:CreateRequest({ from = 'lspd', to = 'sams', subject = 'Blutentnahme', body = '…' }, source)
+exports.sams_tablet:CreateWanted({ faction = 'lspd', kind = 'vehicle', plate = 'SAMS123', reason = 'Flucht vor Kontrolle', danger = 1 })
+exports.sams_tablet:CloseWanted(id, 'gestellt')
+exports.sams_tablet:GetLaws(nil, 'Raub')
+```
+
+Ereignisse aus dem Websystem (alle 10 Sekunden abgeglichen, `Config.EventRelay`):
+
+```lua
+AddEventHandler('sams:event', function(name, data, id) print(name, json.encode(data)) end)
+AddEventHandler('sams:event:document.issued', function(data) … end)
+AddEventHandler('sams:event:wanted.created', function(data) … end)
+AddEventHandler('sams:dutyChanged', function(src, onDuty) … end) -- sofort, nur Spieler dieses Servers
+```
+
+Für Skripte außerhalb des Spielservers (Discord-Bot, Webseite) gibt es eigene Schlüssel mit Rechten und Webhooks unter **Administration → Schnittstellen**.
+
 ## Exports
 
 ```lua

@@ -196,6 +196,7 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
     rescue_document_issued($id, $type['key'], $data, (int) $issuer['id']); // Flugbericht → Flugbuch
     fitness_document_issued($id, $type['key'], $data, $patient, $issuer, $liveSignature); // Einsatztauglichkeit → Dienststelle
     law_document_issued($id, $type, $data, $patient, $issuer); // Kanzlei: Schriftsatz einreichen
+    integration_document_event('document.issued', $id); // angebundene Skripte (ohne Personendaten bei Rettungsdienst/Kanzlei)
     if (!empty($data['_dispatch'])) {
         q('UPDATE dispatch_incidents SET document_id = ? WHERE id = ? AND faction_id = ?', [$id, (int) $data['_dispatch'], fid()]);
     }

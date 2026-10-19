@@ -8,7 +8,7 @@ defined('SAMS_ROOT') || exit;
  * werden nach der eingestellten Höchstdauer automatisch beendet.
  */
 
-const DUTY_SOURCES = ['web' => 'Browser', 'game' => 'Spiel', 'manual' => 'nachgetragen', 'auto' => 'automatisch'];
+const DUTY_SOURCES = ['web' => 'Browser', 'game' => 'Spiel', 'manual' => 'nachgetragen', 'auto' => 'automatisch', 'api' => 'Schnittstelle'];
 
 function duty_max_hours(): int
 {
@@ -52,6 +52,11 @@ function duty_set(int $userId, bool $on, string $source, ?int $actingUserId = nu
             notify_webhook('personnel', '🔴 **' . user_display(one('SELECT name, title FROM users WHERE id = ?', [$userId])) . '** ist außer Dienst (' . duty_format(duty_seconds($open)) . ').');
         }
         audit_as($actingUserId ?? $userId, 'duty.off', 'user', $userId, (DUTY_SOURCES[$source] ?? $source) . ' · ' . duty_format(duty_seconds($open)));
+    }
+    if (($on && !$open) || (!$on && $open)) {
+        $u = one('SELECT id, name, title, badge_number, faction_id FROM users WHERE id = ?', [$userId]);
+        integration_event('duty.changed', ['user_id' => $userId, 'name' => user_display($u), 'badge' => (string) ($u['badge_number'] ?? ''), 'on_duty' => $on, 'source' => $source,
+            'seconds' => $open ? duty_seconds($open) : 0] + integration_faction_part((int) ($u['faction_id'] ?? 1)), (int) ($u['faction_id'] ?? 1));
     }
     return $on;
 }

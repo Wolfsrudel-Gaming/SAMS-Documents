@@ -103,6 +103,7 @@ Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt au
 - **Im Spiel**: eigenes Tablet, Drucker in der Spielwelt, gedruckte Dokumente als Item (ansehen, zeigen, weitergeben) – siehe unten
 - **ESX-Anbindung** (*Einstellungen → Spielserver*): Rechnungen und Bußgelder per Knopf „Ins Spiel senden“ an esx_billing (Zahlung geht auf das Society-Konto der Fraktion und wird im System automatisch verbucht), `/akte` am nächsten Spieler mit Kurzfassung (Allergien, Blutgruppe, Hinweise, offene Fälle) und Akte direkt im Tablet – neue Akten übernehmen Bürger-ID, Name, Geburtsdatum und Geschlecht aus ESX. Society-Konten, Jobs, Befehlsnamen, Schalter und der Umfang (Module) jeder Fraktion werden im Websystem eingestellt
 - **JSON-API** für FiveM-Resourcen
+- **Andock-Schnittstelle** für eigene Skripte (*Administration → Schnittstellen*): Schlüssel mit Rechten und Fraktionen, Abfragen (Person, Fahndung, Dokumente, Dienst, Gesetze), Schreiben (Akteneintrag, Meldung, Anfrage, Fahndung), Ereignisse per Abfrage oder signiertem Webhook; im Spiel als Exports von `sams_tablet` – siehe [`docs/API.md`](docs/API.md)
 
 ## Installation
 
@@ -299,7 +300,7 @@ POST api.php?action=game_config | bills_sync | bill_result | record_lookup | rec
 Header: X-API-Key: <api_key>
 ```
 
-Details zu allen Aktionen stehen im Kopf von [`public/api.php`](public/api.php).
+Details zu allen Aktionen stehen im Kopf von [`public/api.php`](public/api.php). **Eigene Skripte** (weitere Resourcen, Discord-Bots, Webseiten) nutzen die Andock-Schnittstelle: [`docs/API.md`](docs/API.md).
 
 **Antwortcodes:** Die API antwortet auf fachliche Fehler (z. B. falsches Passwort, 2FA-Code nötig, Auftrag bereits abgeholt) immer mit HTTP 200 und `ok: false` + `error` bzw. `status` im JSON. Grund: FXServer liefert bei Nicht-2xx-Antworten keinen Antworttext an die Resource – das Tablet würde sonst „nicht erreichbar“ melden. Nur 401 (ungültiger Schlüssel/abgelaufene Anmeldung) und 503 (Wartung) sind Fehlercodes. Neue Aktionen bitte genauso bauen; `tests/cases/22_api_fivem_vertrag.php` schlägt sonst fehl.
 

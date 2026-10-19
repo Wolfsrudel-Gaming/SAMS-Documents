@@ -234,6 +234,8 @@ function game_bill_result(int $id, string $result, int $esxId = 0, string $error
         update('documents', (int) $doc['id'], ['pay_status' => 'paid', 'paid_at' => now(), 'pay_note' => 'im Spiel bezahlt']);
         audit_as(null, 'invoice.status', 'document', (int) $doc['id'], $doc['number'] . ' → im Spiel bezahlt');
         notify_users_with('invoices.manage', 'billing', billing_labels()['title'] . ' ' . $doc['number'] . ' im Spiel bezahlt', url('document', ['id' => $doc['id']]));
+        integration_event('bill.paid', ['document_id' => (int) $doc['id'], 'number' => $doc['number'], 'type' => $doc['type'], 'amount' => (int) $b['amount'],
+            'citizen_id' => (string) ($b['citizen_id'] ?? '')] + integration_faction_part((int) $doc['faction_id']), (int) $doc['faction_id']);
     } elseif ($result === 'failed' && $doc) {
         audit_as(null, 'invoice.game_failed', 'document', (int) $doc['id'], $doc['number'] . ': ' . $row['error']);
     }

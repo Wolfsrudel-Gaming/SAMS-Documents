@@ -34,6 +34,10 @@
  *   wanted_check   {plate? | citizen_id?}                          → offene Fahndungen/Haftbefehle, Fahrzeugregister (Halter, gestohlen/beschlagnahmt)
  *   person_check   {citizen_id}                                    → Fahndung, Führerschein-/Waffenschein-Status, Erlaubnisse, Lizenzregister
  *
+ * Andock-Schnittstelle (eigene Skripte, siehe docs/API.md):
+ *   ext            {call, params: {…}, token?}                     → dieselben Aufrufe wie integration.php (ping, person, wanted, wanted_create,
+ *                                                                    verify, documents, duty, duty_set, entry_create, alert, request_create, laws, events …)
+ *
  * Spielserver (ESX):
  *   game_config    {}                                              → Befehle, Schalter, Society-Konten und Jobs je Fraktion
  *   bills_sync     {}                                              → neue, zurückzuziehende und offene Rechnungen (esx_billing)
@@ -110,22 +114,7 @@ $tokenUser = function () use ($in): ?array {
 switch ($action) {
     // ------------------------------------------------------------ Bestand
     case 'verify':
-        $code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $in('code')));
-        $doc = one('SELECT * FROM documents WHERE verify_code = ?', [$code]);
-        if (!$doc) {
-            forgery_note_check($code);
-            respond(['found' => false]);
-        }
-        $issuer = json_decode((string) $doc['issuer_snapshot'], true) ?: [];
-        $patient = json_decode((string) $doc['patient_snapshot'], true) ?: [];
-        respond([
-            'found' => true, 'status' => $doc['status'],
-            'expired' => $doc['valid_until'] !== '' && $doc['valid_until'] < date('Y-m-d'),
-            'type' => doc_type($doc['type'])['title'] ?? $doc['type'], 'number' => $doc['number'],
-            'issued_at' => $doc['issued_at'], 'valid_until' => $doc['valid_until'],
-            'issuer' => user_display($issuer), 'patient' => $patient ? patient_name($patient) : null,
-            'citizen_id' => $patient['citizen_id'] ?? null, 'url' => verify_url($doc['verify_code']),
-        ]);
+        respond(document_verify_data($in('code')));
         // no break
     case 'patient':
         // Notfalldaten nur aus den Akten des Rettungsdienstes
@@ -323,39 +312,21 @@ switch ($action) {
                 respond(['ok' => false, 'error' => 'Keine Berechtigung für Fahndungsabfragen.']);
             }
         }
-        $hits = wanted_lookup($in('citizen_id'), $in('plate'));
-        $registry = $in('plate') !== '' ? array_map(fn($v) => ['plate' => $v['plate'], 'model' => $v['model'], 'color' => $v['color'], 'owner' => $v['owner_name'],
-            'owner_citizen_id' => $v['owner_citizen_id'], 'status' => $v['status'], 'status_label' => VEHICLE_STATUS[$v['status']][1] ?? $v['status'],
-            'valid_until' => fmt_date($v['valid_until']), 'expired' => $v['valid_until'] !== '' && $v['valid_until'] < date('Y-m-d'),
-            'agency' => faction_by_id((int) $v['faction_id'])['short'] ?? ''], vehicle_lookup($in('plate'))) : [];
-        $flagged = array_values(array_filter($registry, fn($v) => in_array($v['status'], ['stolen', 'seized'], true)));
-        respond(['ok' => true, 'wanted' => $hits !== [] || $flagged !== [], 'registry' => $registry, 'flagged' => $flagged, 'entries' => array_map(fn($w) => [
-            'kind' => $w['kind'], 'name' => $w['name'], 'citizen_id' => $w['citizen_id'], 'plate' => $w['plate'], 'vehicle' => $w['vehicle'],
-            'reason' => mb_strimwidth((string) $w['reason'], 0, 240, '…'), 'danger' => (int) $w['danger'], 'danger_label' => WANTED_DANGER[(int) $w['danger']],
-            'warrant' => $w['source'] === 'warrant', 'agency' => faction_by_id((int) $w['faction_id'])['short'] ?? '', 'since' => fmt_date($w['created_at']),
-        ], $hits)]);
+        respond(wanted_check_data($in('citizen_id'), $in('plate')));
         // no break
     case 'person_check':
-        $cid = $in('citizen_id');
-        if ($cid === '') {
-            respond(['ok' => false, 'error' => 'citizen_id fehlt']);
+        respond(person_check_data($in('citizen_id')));
+        // no break
+
+    // ------------------------------------- Andock-Schnittstelle (eigene Skripte)
+    case 'ext':
+        // Gleiche Aufrufe wie integration.php; der Spielserver darf alles. Mit Tablet-Token wird der Spieler Urheber.
+        $tu = $in('token') !== '' ? $tokenUser() : null;
+        if ($in('token') !== '' && !$tu) {
+            respond(['ok' => false, 'error' => 'Anmeldung abgelaufen']);
         }
-        $licenses = ['driver' => '', 'weapon' => ''];
-        foreach (all("SELECT extra FROM patients WHERE citizen_id = ? AND merged_into IS NULL AND faction_id IN (" . implode(',', faction_ids_of_kind('police')) . ')', [$cid]) as $r) {
-            $x = json_decode((string) $r['extra'], true) ?: [];
-            $licenses['driver'] = $licenses['driver'] ?: (string) ($x['license_driver'] ?? '');
-            $licenses['weapon'] = $licenses['weapon'] ?: (string) ($x['license_weapon'] ?? '');
-        }
-        $permits = all("SELECT d.type, d.number, d.valid_until, d.faction_id FROM documents d JOIN patients p ON p.id = d.patient_id
-            WHERE p.citizen_id = ? AND d.status = 'valid' AND d.type IN ('pd_waffenschein', 'gov_genehmigung') AND (d.valid_until = '' OR d.valid_until >= ?)", [$cid, date('Y-m-d')]);
-        $hits = wanted_lookup($cid);
-        respond(['ok' => true, 'wanted' => $hits !== [], 'warrant' => (bool) array_filter($hits, fn($w) => $w['source'] === 'warrant'),
-            'danger' => $hits ? max(array_map(fn($w) => (int) $w['danger'], $hits)) : 0,
-            'license_driver' => LICENSE_STATES[$licenses['driver']] ?? 'unbekannt', 'license_weapon' => LICENSE_STATES[$licenses['weapon']] ?? 'unbekannt',
-            'permits' => array_map(fn($d) => ['title' => doc_type($d['type'])['title'] ?? $d['type'], 'number' => $d['number'], 'valid_until' => fmt_date($d['valid_until'])], $permits),
-            'licenses' => array_map(fn($l) => ['type' => $l['type'], 'classes' => $l['classes'], 'number' => $l['number'], 'state' => $l['state'],
-                'label' => LICENSE_STATUS[$l['state']][1] ?? $l['state'], 'expires' => fmt_date($l['expires_on']), 'agency' => faction_by_id((int) $l['faction_id'])['short'] ?? ''],
-                licenses_for_citizen($cid))]);
+        $params = is_array($body['params'] ?? null) ? $body['params'] : $body;
+        respond(integration_call($in('call'), $params, null, $tu[1] ?? null));
         // no break
 
     // --------------------------------------------------- Spielserver (ESX)

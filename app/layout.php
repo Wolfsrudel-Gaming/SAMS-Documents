@@ -55,6 +55,7 @@ $navGroups = [
         'factions' => ['Fraktionen', !empty($user['is_superadmin']) ? '' : 'factions.none', 'users'],
         'servers' => ['Spielserver', !empty($user['is_superadmin']) ? '' : 'factions.none', 'server'],
         'forgery' => ['Fälschungen', !empty($user['is_superadmin']) ? '' : 'factions.none', 'warn'],
+        'integrations' => ['Schnittstellen', !empty($user['is_superadmin']) ? '' : 'factions.none', 'link'],
     ],
 ];
 // Unterseiten der passenden Navigation zuordnen

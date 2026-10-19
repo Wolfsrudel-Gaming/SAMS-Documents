@@ -55,6 +55,11 @@ Config.AkteCommand = 'akte'
 -- Absender-Kennung in der Tabelle billing (esx_billing braucht keinen angemeldeten Absender für Society-Rechnungen).
 Config.BillSender = 'sams'
 
+-- Andock-Schnittstelle für eigene Resourcen: Ereignisse aus dem Websystem als Server-Events weitergeben
+-- (AddEventHandler('sams:event', function(name, data) … end)). false = keine Abfrage.
+Config.EventRelay = true
+Config.EventRelayInterval = 10         -- Sekunden
+
 -- Dokument zeigen: maximale Entfernung zum anderen Spieler
 Config.ShowDistance = 3.0
 

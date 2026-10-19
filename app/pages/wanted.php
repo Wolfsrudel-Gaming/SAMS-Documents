@@ -30,11 +30,13 @@ if (is_post()) {
             $id = insert('wanted', $row);
             audit('wanted.create', 'wanted', (int) $id, ($kind === 'vehicle' ? $row['plate'] : $row['name']) . ': ' . mb_substr($row['reason'], 0, 120));
             notify_users_with('wanted.view', 'wanted', 'Neue Fahndung: ' . ($kind === 'vehicle' ? 'Fahrzeug ' . $row['plate'] : $row['name']), url('wanted'));
+            integration_wanted_event('wanted.created', (int) $id);
             flash('success', 'Zur Fahndung ausgeschrieben.');
         }
     } elseif ($action === 'close' && ($w = fone('wanted', (int) post('id'))) && $w['status'] === 'open') {
         update('wanted', (int) $w['id'], ['status' => 'closed', 'closed_at' => now(), 'closed_by' => $me['id'], 'close_note' => mb_substr(trim((string) post('note')) ?: 'erledigt', 0, 190)]);
         audit('wanted.close', 'wanted', (int) $w['id'], ($w['plate'] ?: $w['name']) . ': ' . post('note'));
+        integration_wanted_event('wanted.closed', (int) $w['id']);
         flash('success', 'Fahndung erledigt.');
     }
     redirect(url('wanted'));

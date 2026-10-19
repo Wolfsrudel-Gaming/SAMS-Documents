@@ -234,6 +234,12 @@ switch ($cmd) {
                 $out($tag . "Gericht: $r Erinnerung(en) zu Terminen und Fristen.");
             }
         });
+        if ($r = integration_deliver()) {
+            $out("Schnittstellen: $r Ereignis(se) per Webhook zugestellt.");
+        }
+        if ($r = integration_cleanup()) {
+            $out("Schnittstellen: $r alte(s) Ereignis(se) gelöscht.");
+        }
         $n = discord_flush(100);
         if ($n) {
             $out("$n Discord-Nachricht(en) gesendet.");

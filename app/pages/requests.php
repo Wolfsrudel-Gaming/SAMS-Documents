@@ -32,6 +32,7 @@ if (is_post()) {
         set_faction_context($to);
         notify_users_with('requests.manage', 'request', ($row['urgent'] ? '❗ ' : '') . 'Anfrage von ' . ($from['short'] ?: $from['name']) . ': ' . $row['subject'], url('requests', ['id' => $rid]));
         set_faction_context($prev);
+        integration_request_event('request.created', (int) $rid);
         flash('success', 'Anfrage gesendet.');
         redirect(url('requests', ['id' => $rid]));
     }
@@ -64,6 +65,9 @@ if (is_post()) {
             }
         }
         audit('request.' . $action, 'request', (int) $r['id'], $r['subject'] . ($shared ? " · $shared Dokument(e) freigegeben" : ''));
+        if ($action !== 'progress') {
+            integration_request_event('request.answered', (int) $r['id']);
+        }
         if ($action !== 'progress' && $r['created_by']) {
             $prev = fid();
             set_faction_context((int) $r['faction_id']);

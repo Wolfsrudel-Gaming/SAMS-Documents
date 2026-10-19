@@ -18,6 +18,7 @@ const NOTIFY_KINDS = [
     'stock'     => 'Medikamentenbestand',
     'wanted'    => 'Fahndung',
     'request'   => 'Behördenanfragen',
+    'integration' => 'Meldungen aus angebundenen Skripten',
 ];
 
 /** Benachrichtigung an ein Konto (nicht an sich selbst). */

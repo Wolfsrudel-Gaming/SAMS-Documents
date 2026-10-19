@@ -22,6 +22,7 @@ if (is_post() && post('action') === 'revoke') {
         wanted_close_for_document($id, 'Dokument storniert: ' . $reason);
         game_bill_cancel_for($id);
         fitness_revoke_for($id);
+        integration_document_event('document.revoked', $id, $reason);
         notify_webhook('documents', log_embed('🚫 ' . ($type['title'] ?? 'Dokument') . ' storniert', '', 0xb3261e, [
             ['name' => 'Nummer', 'value' => $doc['number'], 'inline' => true], ['name' => 'Storniert von', 'value' => user_display($me), 'inline' => true]]));
         flash('success', 'Dokument wurde storniert. Die Echtheitsprüfung zeigt es ab sofort als ungültig an.');
