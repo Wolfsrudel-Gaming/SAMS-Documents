@@ -121,11 +121,12 @@ Hinweis: Die Vitalwerte stammen aus dem Spiel des Patienten und dienen nur der D
 
 ## Leitstelle tetrascript (tetra-core)
 
-Optional und ohne Änderungen an tetra-core. Einschalten unter *Einstellungen → Spielserver → „Leitstelle tetrascript anbinden“*; je Fraktion wird die Organisation der Leitstelle eingetragen (Vorgabe: Feuerwehr `fire`, Rettungsdienst `ems`, Polizei `police`).
+SAMS und tetrascript sind zwei eigenständige Systeme. Jedes läuft allein; `sams_tablet` hat **keine** Abhängigkeit zu tetra-core, und SAMS bringt tetrascript weder mit noch installiert oder startet es. Die Verbindung entsteht nur, wenn beide auf dem Server laufen **und** sie ausdrücklich eingeschaltet wird: *Einstellungen → Spielserver → „Leitstelle tetrascript anbinden“* (Vorgabe: aus). Je Fraktion wird die Organisation der Leitstelle eingetragen (Vorgabe: Feuerwehr `fire`, Rettungsdienst `ems`, Polizei `police`).
 
 - **FMS-Status**: Die Brücke hängt sich an den Hook `statusChanged` von tetra-core. Ist der Träger des Funkgeräts im Tablet angemeldet, erscheint sein Status (mit Rufname) im Websystem. Mit „Dienst automatisch mit Funkstatus“ beginnt Status 1–4 den Dienst, Status 6 beendet ihn.
 - **Einsätze**: Die Brücke liest den Einsatzstand der Leitstelle aus der gemeinsamen Datenbank (Tabelle `tetra_dispatch_cad`, nur lesend) und überträgt neue bzw. geänderte Einsätze alle 20 Sekunden (einstellbar). Im Tablet unter *Leitstelle*: laufende und abgeschlossene Einsätze, Einheiten, Verlauf, Gefahren, passender Objektplan; „Einsatzbericht erstellen“ übernimmt Ort, Zeiten, Kräfte und Verlauf.
-- Läuft tetra-core nicht (oder die Anbindung ist aus), passiert nichts. Umgekehrt merkt tetra-core von SAMS nichts.
+- Mit tetra-core ab Schnittstelle 2 (Branch `claude/sams-anbindung` von tetrascript, Export `GetApiVersion`) kommen Einsätze sofort über den Hook `incidentsChanged` statt alle 20 Sekunden. Zusätzlich lassen sich – jeweils einzeln einzuschalten, Vorgabe aus – der **FMS-Status bei Dienstbeginn/-ende** setzen und **Objektpläne mit Position als POI** ins Objektverzeichnis der Leitstelle übertragen. Ältere tetra-core-Stände funktionieren weiter wie oben.
+- Läuft tetra-core nicht (oder die Anbindung ist aus), passiert nichts. tetra-core selbst kennt SAMS nicht: Es bietet nur allgemeine Exports/Hooks an, die jede Ressource nutzen kann.
 
 ## Dienstausweis als Karte
 

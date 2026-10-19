@@ -133,3 +133,27 @@ function dispatch_fms(array $u, int $status, string $issi, string $opta): array
     }
     return ['ok' => true, 'duty' => $duty];
 }
+
+/** Objektpläne mit Position als POI für das Objektverzeichnis der Leitstelle (je Fraktion mit Leitstellen-Organisation). */
+function dispatch_pois(): array
+{
+    $out = [];
+    foreach (factions() as $f) {
+        $fid = (int) $f['id'];
+        $org = dispatch_org($fid);
+        if ($org === '' || !module_enabled('objects', $fid)) {
+            continue;
+        }
+        foreach (all('SELECT * FROM objects WHERE faction_id = ? AND x IS NOT NULL AND y IS NOT NULL ORDER BY id', [$fid]) as $o) {
+            $notes = array_filter([
+                $o['hazards'] !== '' ? 'Gefahren: ' . $o['hazards'] : '', $o['access'] !== '' ? 'Zufahrt: ' . $o['access'] : '',
+                $o['keybox'] !== '' ? 'Schlüssel: ' . $o['keybox'] : '', (int) $o['risk'] ? 'Risiko: ' . (OBJECT_RISK[(int) $o['risk']] ?? $o['risk']) : '',
+                $o['notes'], 'Objektplan in SAMS (' . ($f['short'] ?: $f['name']) . ')',
+            ]);
+            $out[] = ['id' => 'sams-obj-' . $o['id'], 'name' => mb_substr($o['name'], 0, 120), 'category' => mb_substr('Objekt: ' . ($o['kind'] ?: 'Sonstiges'), 0, 40),
+                'org' => $org, 'x' => (float) $o['x'], 'y' => (float) $o['y'], 'address' => mb_substr((string) $o['address'], 0, 180),
+                'phone' => mb_substr((string) $o['contact'], 0, 80), 'notes' => mb_substr(implode("\n", $notes), 0, 3000)];
+        }
+    }
+    return $out;
+}

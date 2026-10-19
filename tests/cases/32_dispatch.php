@@ -58,4 +58,20 @@ check($fdc->get('/index.php?p=duty')->has('FMS 2') && $fdc->get('/index.php?p=di
 check($r['duty'] === false, 'Status 6 beendet den Dienst');
 [, $r] = api('tetra_status', ['token' => $tok, 'status' => 12]);
 check($r['ok'] === false, 'Ungültiger Status abgelehnt');
+
+// Objektpläne als POI: nur auf ausdrücklichen Wunsch, nur mit Position
+check($cfg['tetra_pois'] === false && $cfg['tetra_status_on'] === '-' && $cfg['tetra_status_off'] === '-', 'Zusatzfunktionen der Leitstelle standardmäßig aus');
+[, $r] = api('dispatch_pois', []);
+check($r['ok'] === false, 'Ohne Einschalten keine POI-Übertragung');
+$set('ingame_tetra_pois', '1');
+$obj = (int) tval('SELECT id FROM objects WHERE faction_id = ? ORDER BY id LIMIT 1', [$fd]);
+$fdc->post('/index.php?p=object&id=' . $obj, ['action' => 'save', 'name' => 'Lagerhalle Elysian', 'kind' => 'Industrie', 'risk' => '2', 'address' => 'Elysian Fields Fwy 3', 'hazards' => 'Gasflaschenlager',
+    'x' => '512,5', 'y' => '-2210.25', 'z' => '6']);
+[, $r] = api('dispatch_pois', []);
+$poi = array_values(array_filter($r['pois'] ?? [], fn($p) => $p['id'] === 'sams-obj-' . $obj))[0] ?? null;
+check($poi && $poi['org'] === 'fire' && $poi['x'] === 512.5 && $poi['y'] === -2210.25 && str_contains($poi['notes'], 'Gasflaschenlager'), 'Objektplan mit Position als POI für die Leitstelle');
+$fdc->post('/index.php?p=object&id=' . $obj, ['action' => 'save', 'name' => 'Lagerhalle Elysian', 'kind' => 'Industrie', 'risk' => '2', 'x' => '', 'y' => '']);
+[, $r] = api('dispatch_pois', []);
+check(!array_filter($r['pois'] ?? [], fn($p) => $p['id'] === 'sams-obj-' . $obj), 'Ohne Position kein POI');
+$set('ingame_tetra_pois', '0');
 $set('ingame_tetra', '0');

@@ -36,6 +36,11 @@ function game_global(): array
         // Leitstelle tetrascript (tetra-core): FMS-Status und Einsätze über die Brücke in sams_tablet
         'tetra' => game_setting('ingame_tetra', '0') === '1',
         'tetra_poll' => max(10, min(300, (int) game_setting('ingame_tetra_poll', '20'))),
+        // mit tetra-core ab Schnittstelle 2: FMS-Status bei Dienstbeginn/-ende setzen (leer = nicht), Objektpläne als POI
+        // alles nur auf ausdrücklichen Wunsch (Vorgabe aus)
+        'tetra_status_on' => game_setting('ingame_tetra_status_on', '-'),
+        'tetra_status_off' => game_setting('ingame_tetra_status_off', '-'),
+        'tetra_pois' => game_setting('ingame_tetra_pois', '0') === '1',
     ];
 }
 

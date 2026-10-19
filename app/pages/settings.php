@@ -1,6 +1,7 @@
 <?php
 defined('SAMS_ROOT') || exit;
 $yn = ['1' => 'ja', '0' => 'nein'];
+$fms = ['-' => 'nicht setzen', '1' => '1 – Einsatzbereit über Funk', '2' => '2 – Einsatzbereit auf Wache', '6' => '6 – Nicht einsatzbereit / außer Dienst'];
 $keys = [
     'Einrichtung' => [
         'org_name'   => ['Name der Einrichtung', 'San Andreas Medical Services'],
@@ -86,8 +87,11 @@ $keys = [
         'ingame_sky'           => ['Sky Ambulance (sky_ambulancejob) anbinden', '0', 'select', $yn],
         'ingame_sky_death'     => ['Sky: Tod/Wiederbelebung in die Akte', '1', 'select', $yn],
         'ingame_sky_meds'      => ['Sky: Medikamentengabe im Bestand/BtM-Buch buchen', '1', 'select', $yn],
-        'ingame_tetra'         => ['Leitstelle tetrascript (tetra-core) anbinden', '0', 'select', $yn],
-        'ingame_tetra_poll'    => ['Leitstelle: Einsätze abgleichen alle … Sekunden', '20'],
+        'ingame_tetra'         => ['Leitstelle tetrascript (tetra-core) anbinden – nur wenn beides genutzt und verbunden werden soll', '0', 'select', $yn],
+        'ingame_tetra_poll'    => ['Leitstelle: Einsätze abgleichen alle … Sekunden (ohne Hook)', '20'],
+        'ingame_tetra_status_on'  => ['Leitstelle: FMS-Status bei Dienstbeginn setzen', '-', 'select', $fms],
+        'ingame_tetra_status_off' => ['Leitstelle: FMS-Status bei Dienstende setzen', '-', 'select', $fms],
+        'ingame_tetra_pois'    => ['Leitstelle: Objektpläne mit Position als POI übertragen', '0', 'select', $yn],
     ],
 ];
 // Weitere Fraktionen pflegen nur ihre eigenen Angaben; systemweite Einstellungen bleiben der Hauptfraktion vorbehalten

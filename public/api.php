@@ -49,6 +49,7 @@
  * Leitstelle (tetrascript / tetra-core, optional):
  *   tetra_status       {token, status 0–9, issi, opta}             → FMS-Status des Spielers, optional Dienst automatisch
  *   dispatch_incidents {incidents: [Incident aus dem CAD …]}       → Einsätze je Organisation (fire/ems/police) speichern
+ *   dispatch_pois      {}                                          → Objektpläne mit Position als POI fürs Objektverzeichnis
  */
 declare(strict_types=1);
 define('SAMS_IGNORE_MAINTENANCE', true);
@@ -476,6 +477,12 @@ switch ($action) {
             $n += is_array($inc) ? dispatch_upsert($inc, game_server_id() && game_server_id() !== game_server_default_id() ? 'tetra-s' . game_server_id() : 'tetra') : 0;
         }
         respond(['ok' => true, 'stored' => $n]);
+        // no break
+    case 'dispatch_pois':
+        if (!game_global()['tetra'] || !game_global()['tetra_pois']) {
+            respond(['ok' => false, 'error' => 'POI-Übertragung ist ausgeschaltet.']);
+        }
+        respond(['ok' => true, 'pois' => dispatch_pois()]);
         // no break
 
     default:

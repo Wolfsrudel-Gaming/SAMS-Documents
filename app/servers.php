@@ -25,6 +25,9 @@ const GAME_SERVER_OVERRIDES = [
     'ingame_sky_meds'         => ['Sky: Medikamentengabe', ['1' => 'an', '0' => 'aus']],
     'ingame_tetra'            => ['Leitstelle tetrascript', ['1' => 'an', '0' => 'aus']],
     'ingame_tetra_poll'       => ['Leitstelle abgleichen alle … Sekunden', null],
+    'ingame_tetra_status_on'  => ['Leitstelle: FMS bei Dienstbeginn (0–9, - = nicht)', null],
+    'ingame_tetra_status_off' => ['Leitstelle: FMS bei Dienstende (0–9, - = nicht)', null],
+    'ingame_tetra_pois'       => ['Leitstelle: Objekte als POI', ['1' => 'an', '0' => 'aus']],
 ];
 
 function game_servers(bool $activeOnly = false): array

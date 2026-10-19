@@ -18,6 +18,14 @@ if (is_post()) {
         foreach ($text as $k => $max) {
             $row[$k] = mb_substr(trim((string) post($k)), 0, $max);
         }
+        // Koordinaten im Spiel (leer = keine): damit erscheint das Objekt in der Leitstelle auf der Karte
+        foreach (['x', 'y', 'z'] as $c) {
+            $v = str_replace(',', '.', trim((string) post($c)));
+            $row[$c] = is_numeric($v) && abs((float) $v) <= 100000 ? round((float) $v, 2) : null;
+        }
+        if ($row['x'] === null || $row['y'] === null) {
+            $row['x'] = $row['y'] = $row['z'] = null;
+        }
         update('objects', $id, $row);
         audit('object.update', 'object', $id, $row['name']);
         flash('success', 'Objekt gespeichert.');
@@ -81,7 +89,7 @@ ob_start(); ?>
     <?php endif; ?>
 </section>
 <?php if ($manage): ?>
-<form method="post" class="card form-grid">
+<form method="post" class="card form-grid" id="object-form">
     <?= csrf_field() ?><input type="hidden" name="action" value="save">
     <div class="field w-full"><label>Name</label><input name="name" required maxlength="190" value="<?= e($o['name']) ?>"></div>
     <div class="field"><label>Art</label><select name="kind"><?php foreach (OBJECT_KINDS as $k): ?><option<?= selected($k, $o['kind']) ?>><?= e($k) ?></option><?php endforeach; ?></select></div>
@@ -91,8 +99,28 @@ ob_start(); ?>
     <?php endforeach; ?>
     <div class="field"><label>Letzte Brandschau</label><input type="date" name="last_inspection" value="<?= e($o['last_inspection']) ?>"></div>
     <div class="field"><label>Nächste Brandschau</label><input type="date" name="next_inspection" value="<?= e($o['next_inspection']) ?>"></div>
+    <h3 class="form-heading w-full">Position im Spiel <small class="muted">(für die Leitstellenkarte)</small></h3>
+    <div class="field w-full" data-game-only hidden><button type="button" class="btn block" id="use-position"><?= icon('home') ?>Aktuelle Position übernehmen</button></div>
+    <div class="field w-third"><label>X</label><input name="x" inputmode="decimal" value="<?= e($o['x'] ?? '') ?>"></div>
+    <div class="field w-third"><label>Y</label><input name="y" inputmode="decimal" value="<?= e($o['y'] ?? '') ?>"></div>
+    <div class="field w-third"><label>Z</label><input name="z" inputmode="decimal" value="<?= e($o['z'] ?? '') ?>"></div>
+    <?php if (game_global()['tetra']): ?><p class="hint w-full">Mit Position erscheint das Objekt (mit Gefahren, Zugang und Ansprechpartner) im Objektverzeichnis der Leitstelle.</p><?php endif; ?>
     <div class="form-actions"><button class="btn primary">Speichern</button></div>
 </form>
+<script>
+(function () {
+    var btn = document.getElementById('use-position');
+    btn && btn.addEventListener('click', function () {
+        if (!window.SAMSGame) { return; }
+        btn.disabled = true;
+        window.SAMSGame.request('getCoords').then(function (c) {
+            var f = document.getElementById('object-form');
+            f.x.value = c.x.toFixed(2); f.y.value = c.y.toFixed(2); f.z.value = (c.ground != null ? c.ground : c.z).toFixed(2);
+            if (!f.address.value && c.street) { f.address.value = c.street; }
+        }).catch(function (e) { alert(e.message); }).finally(function () { btn.disabled = false; });
+    });
+})();
+</script>
 <?php endif; ?>
 </div>
 <?php
