@@ -19,6 +19,17 @@ $findPatient = function (string $v): ?array {
 if (is_post()) {
     csrf_check();
     $action = post('action');
+    if ($action === 'default_items') {
+        // Item-Namen aus fivem/sams_tablet/install/ox_inventory_items.lua (Abschnitt C) beim Grundbestand eintragen – nur wo noch keins steht
+        require_perm('stock.manage');
+        $n = 0;
+        foreach (STOCK_DEFAULT_ITEMS as $name => $item) {
+            $n += q("UPDATE medications SET item_name = ?, item_count = 1 WHERE name = ? AND (item_name = '' OR item_name IS NULL) AND " . fw(), [$item, $name])->rowCount();
+        }
+        audit('stock.items', 'medication', 0, "$n Standard-Items eingetragen");
+        flash('success', $n ? "$n Artikel mit Standard-Item versehen. Die Items müssen in ox_inventory angelegt sein." : 'Keine Artikel ohne Item gefunden.');
+        redirect(url('stock'));
+    }
     if ($action === 'save_med') {
         require_perm('stock.manage');
         $data = [
@@ -118,7 +129,8 @@ ob_start(); ?>
     <div><h1>Medikamentenbestand</h1><p class="muted"><?= count($meds) ?> Artikel<?= $low ? ' · <span class="badge red">' . $low . ' am Mindestbestand</span>' : '' ?> · alle Buchungen werden protokolliert</p></div>
     <div class="btn-row">
         <a class="btn" href="<?= e(url('btm')) ?>">BtM-Buch</a>
-        <?php if ($manage): ?><a class="btn primary" href="<?= e(url('stock', ['edit' => 0])) ?>#med-form"><?= icon('plus') ?>Artikel anlegen</a><?php endif; ?>
+        <?php if ($manage): ?><form method="post" class="inline" onsubmit="return confirm('Für alle Artikel des Grundbestands ohne Item die Standard-Items (sams_…) eintragen?')"><?= csrf_field() ?><input type="hidden" name="action" value="default_items"><button class="btn" title="Passend zu den mitgelieferten ox_inventory-Items">Standard-Items eintragen</button></form>
+        <a class="btn primary" href="<?= e(url('stock', ['edit' => 0])) ?>#med-form"><?= icon('plus') ?>Artikel anlegen</a><?php endif; ?>
     </div>
 </div>
 <form class="card filter" method="get"><input type="hidden" name="p" value="stock">

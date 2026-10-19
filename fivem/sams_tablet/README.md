@@ -26,7 +26,10 @@ Bringt das SAMS-Dokumentensystem ins Spiel:
    ensure sams_tablet
    ```
    Wichtig: `set`, **nicht** `setr` – sonst könnten Spieler den Schlüssel auslesen.
-3. Items aus [`install/ox_inventory_items.lua`](install/ox_inventory_items.lua) in `ox_inventory/data/items.lua` einfügen.
+3. Items aus [`install/ox_inventory_items.lua`](install/ox_inventory_items.lua) in `ox_inventory/data/items.lua` einfügen und alle Bilder aus `install/images/` nach `ox_inventory/web/images/` kopieren. Enthalten sind:
+   - **A – Pflicht:** `sams_tablet`, `sams_document`
+   - **B – Fälscherwerkstatt:** `forgery_paper`, `forgery_ink` (nur nötig, wenn Fälschungen eingeschaltet sind)
+   - **C – Medikamente (optional):** 14 Items passend zum Grundbestand (`sams_ibuprofen600`, `sams_morphin`, `sams_bandage` …). Im Websystem unter *Medikamente & BtM* mit „Standard-Items eintragen“ zuordnen, dann gibt die Apotheke sie bei Rezepten aus. Beim Benutzen spielt eine Animation, das Item wird verbraucht und das Client-Ereignis `sams:medicationTaken(itemName, label)` ausgelöst – die Wirkung regelt euer Medizin-Script.
 4. Bilder aus `install/images/` nach `ox_inventory/web/images/` kopieren.
 5. Tablet an Mitarbeitende ausgeben, z. B. per Admin-Befehl von ox_inventory: `/giveitem <id> sams_tablet 1`.
 
@@ -144,12 +147,7 @@ Damit die Echtheitsprüfung im RP etwas bringt, können Kriminelle Dokumente fä
 - Die Fälschung sieht echt aus, aber ihr **Prüfcode existiert nicht** – die Echtheitsprüfung meldet „Kein Dokument gefunden … wahrscheinlich eine Fälschung“. Je schlechter die Qualität, desto mehr **sichtbare Mängel**: Unter 85 % fehlt die Mikroschrift am unteren Rand (echtes Sicherheitsmerkmal), unter 60 % stimmen Farben und Stempel nicht, unter 35 % auch Schrift, Papier und QR-Code.
 - Gefälschte Rezepte lassen sich in der Apotheke nicht automatisch einlösen.
 
-Beispiel-Items für `ox_inventory/data/items.lua`:
-
-```lua
-['forgery_paper'] = { label = 'Sicherheitspapier (Rohling)', weight = 50, stack = true },
-['forgery_ink']   = { label = 'Spezialtoner', weight = 200, stack = true },
-```
+Die Material-Items `forgery_paper` und `forgery_ink` (mit Bildern) liegen in [`install/ox_inventory_items.lua`](install/ox_inventory_items.lua), Abschnitt B.
 
 ## Dienstausweis als Karte
 

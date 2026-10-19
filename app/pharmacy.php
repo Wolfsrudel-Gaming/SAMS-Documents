@@ -196,3 +196,12 @@ function rx_redeem(array $doc, string $source, ?int $userId, string $player = ''
     }
     return [$given, $notes];
 }
+
+/** Grundbestand → mitgelieferte ox_inventory-Items (fivem/sams_tablet/install/ox_inventory_items.lua, Abschnitt C). */
+const STOCK_DEFAULT_ITEMS = [
+    'Ibuprofen 600 mg Filmtbl. N2' => 'sams_ibuprofen600', 'Ibuprofen 400 mg Filmtbl. N1' => 'sams_ibuprofen400', 'Paracetamol 500 mg Tbl. N2' => 'sams_paracetamol',
+    'Metamizol 500 mg Tbl. N2' => 'sams_metamizol', 'Tramadol 50 mg Kps. N1' => 'sams_tramadol', 'Morphin 10 mg Retardtbl. N1 (BtM)' => 'sams_morphin',
+    'Oxycodon 10 mg Retardtbl. N1 (BtM)' => 'sams_oxycodon', 'Fentanyl 0,1 mg/2 ml Ampulle (BtM)' => 'sams_fentanyl', 'Amoxicillin 1000 mg Filmtbl. N2' => 'sams_amoxicillin',
+    'Ondansetron 4 mg Schmelztbl. N1' => 'sams_ondansetron', 'Salbutamol Dosieraerosol 100 µg' => 'sams_salbutamol', 'Cetirizin 10 mg Filmtbl. N1' => 'sams_cetirizin',
+    'Bepanthen Wund- und Heilsalbe 20 g' => 'sams_bepanthen', 'Mullbinde / Verbandsmaterial' => 'sams_bandage',
+];
