@@ -242,6 +242,10 @@ Voraussetzung ist HTTPS für das Websystem (das Einrichtungsskript richtet es ei
 
 In der `.env` steht `API_KEY` (leer = API deaktiviert). Den Schlüssel nur serverseitig verwenden (server.lua bzw. `set sams_api_key` in der server.cfg), nie im Client.
 
+### Fälschungen (optional)
+
+Unter *Administration → Fälschungen* (nur Hauptadministrator, Vorgabe aus) lassen sich geheime **Fälscherwerkstätten** für das Spiel anlegen. Mit Material, einem echten Original als Vorlage, Geschicklichkeitsprüfungen, Arbeitszeit, Abklingzeit und Alarm-Risiko können Kriminelle dort Dokumente nachmachen. Fälschungen stehen nicht in der Dokumentenliste: Ihr Prüfcode existiert nicht, die **Echtheitsprüfung schlägt fehl**. Schlechte Fälschungen haben zusätzlich sichtbare Mängel; echte Dokumente tragen dafür als Sicherheitsmerkmal eine Mikroschrift am unteren Rand. Die Administration sieht alle Fälschungen (Werkstatt, Spieler, Qualität, wie oft der Code geprüft wurde). Details zur Spielseite: `fivem/sams_tablet/README.md`.
+
 ### Gesetzbücher
 
 Unter *Gesetze* lesen und durchsuchen alle Fraktionen die Gesetzbücher (Bücher, Paragraphen, Strafmaße; Treffer werden markiert). Importieren und bearbeiten dürfen der Hauptadministrator und die Leitung von Justiz und Verwaltung (Recht `laws.manage`).

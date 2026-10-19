@@ -693,3 +693,4 @@ details.card:not([open]) > summary { margin-bottom: 0; }
 .lawyer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
 .firm-logo { width: 26px; height: 26px; vertical-align: middle; border-radius: 50%; }
 .law-cited > summary { cursor: pointer; list-style: none; } .law-cited > summary::-webkit-details-marker { display: none; }
+.choices.columns { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .2rem .8rem; }

@@ -434,3 +434,18 @@
 .sv-table td.r-geeignet { color: #1e6b3a; font-weight: 700; } .sv-table td.r-bedingt { color: #8a5a00; font-weight: 700; }
 .sv-table td.r-befristet, .sv-table td.r-nicht { color: #a00; font-weight: 700; }
 .sv-profile { font-family: "Courier New", monospace; font-size: 12pt; font-weight: 700; letter-spacing: .12em; }
+
+/* Sicherheitsmerkmal: Mikroschrift am Fuß jedes echten Dokuments (mit bloßem Auge nur als feine Linie erkennbar) */
+.df-micro { font-family: Arial, sans-serif; font-size: 2.6pt; line-height: 1; letter-spacing: .02em; color: #6a7f99; white-space: nowrap; overflow: hidden;
+    border-top: .15mm solid #c7d2df; padding-top: .4mm; margin-top: 1mm; opacity: .85; }
+
+/* Fälschungen: je nach Qualität sichtbare Mängel (gute Fälschungen sehen echt aus – nur die Echtheitsprüfung schlägt fehl) */
+.forged.q-hi .sig-stamp, .forged.q-mid .sig-stamp, .forged.q-low .sig-stamp { filter: blur(.5px); }
+.forged.q-mid .sig-stamp { transform: translate(2.5mm, -1.5mm) rotate(-3deg); opacity: .75; }
+.forged.q-mid .doc-logo, .forged.q-mid .lh-name, .forged.q-mid .seal, .forged.q-mid .psec, .forged.q-mid .ph-title { filter: hue-rotate(14deg) saturate(.75); }
+.forged.q-mid .doc-title { letter-spacing: .04em; }
+.forged.q-low .paper { background: #fbf6e6; font-family: "Times New Roman", Times, serif; }
+.forged.q-low .paper * { font-family: "Times New Roman", Times, serif !important; }
+.forged.q-low .sig-stamp { filter: blur(1.1px) grayscale(.3); transform: translate(4mm, -2mm) rotate(-6deg); opacity: .6; }
+.forged.q-low .doc-logo, .forged.q-low .lh-name, .forged.q-low .seal, .forged.q-low .psec { filter: hue-rotate(28deg) saturate(.6) contrast(.9); }
+.forged.q-low .qr, .forged.q-low .df-barcode { filter: blur(1.2px); }

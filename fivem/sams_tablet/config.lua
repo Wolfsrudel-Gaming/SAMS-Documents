@@ -60,6 +60,8 @@ Config.ShowDistance = 3.0
 
 -- Animationen
 Config.Anim = {
+    -- Fälscherwerkstatt: am Rechner tippen (lib.progressBar-Format)
+    forge = { dict = 'anim@heists@prison_heiststation@cop_reactions', clip = 'cop_b_idle', flag = 1 },
     tablet = {
         dict = 'amb@code_human_in_bus_passenger_idles@female@tablet@base', clip = 'base',
         prop = 'prop_cs_tablet', bone = 60309, pos = vec3(0.03, 0.002, -0.0), rot = vec3(10.0, 160.0, 0.0),
@@ -78,6 +80,19 @@ Config.Anim = {
 
 -- Texte
 Config.Text = {
+    -- Fälscherwerkstatt
+    forgeUse = '[E] Rechner benutzen',
+    forgeNothing = 'Hier lässt sich gerade nichts drucken.',
+    forgeBusy = 'Du bist schon beschäftigt.',
+    forgeCooldown = 'Der Drucker ist noch heiß. Versuch es in %d Minuten wieder.',
+    forgeMaterial = 'Dir fehlt Material: %dx %s.',
+    forgeOriginal = 'Ohne echtes Original als Vorlage kannst du nichts nachmachen.',
+    forgeWorking = 'Vorlage nachbauen … (%d/%d)',
+    forgePrepare = 'Druck wird vorbereitet …',
+    forgeAborted = 'Abgebrochen.',
+    forgeFailed = 'Der Druck ist misslungen – das Material ist hinüber.',
+    forgePrinting = 'Drucken …',
+    forgeDone = 'Du hast %s gedruckt.',
     printerTarget = 'Drucker benutzen',
     printerHelp = '[E] Drucker benutzen',
     noJobs = 'Am Drucker liegen keine Dokumente für dich.',

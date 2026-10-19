@@ -80,6 +80,7 @@
         var msg = e.data;
         if (!msg || typeof msg.sams !== 'string') { return; }
         if (msg.sams === 'closeDocument' && e.origin === state.viewerOrigin) { nui('closeDocument'); return; }
+        if ((msg.sams === 'forgeDone' || msg.sams === 'forgeCancel') && state.forgeOrigin && e.origin === state.forgeOrigin) { nui(msg.sams); return; }
         if (e.origin !== state.origin) { return; }
         if (msg.sams === 'closeTablet') { nui('closeTablet'); return; }
         var frame = $('frame').contentWindow;
@@ -228,12 +229,23 @@
             case 'closeDocument':
                 closeViewer();
                 break;
+            case 'openForge':
+                state.forgeOrigin = d.origin;
+                $('forge-frame').src = d.url;
+                show('forge', true);
+                break;
+            case 'closeForge':
+                show('forge', false);
+                $('forge-frame').src = 'about:blank';
+                state.forgeOrigin = null;
+                break;
         }
     });
 
     document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') { return; }
-        if (!$('sigmodal').classList.contains('hidden')) { show('sigmodal', false); }
+        if (!$('forge').classList.contains('hidden')) { nui('forgeCancel'); }
+        else if (!$('sigmodal').classList.contains('hidden')) { show('sigmodal', false); }
         else if (!$('viewer').classList.contains('hidden')) { nui('closeDocument'); }
         else if (!$('tablet').classList.contains('hidden')) { nui('closeTablet'); }
     });

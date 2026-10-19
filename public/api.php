@@ -50,6 +50,11 @@
  *   tetra_status       {token, status 0–9, issi, opta}             → FMS-Status des Spielers, optional Dienst automatisch
  *   dispatch_incidents {incidents: [Incident aus dem CAD …]}       → Einsätze je Organisation (fire/ems/police) speichern
  *   dispatch_pois      {}                                          → Objektpläne mit Position als POI fürs Objektverzeichnis
+ *
+ * Fälscherwerkstatt (optional, Administration → Fälschungen):
+ *   forge_start  {site_id, quality, originals: [Ansichts-Schlüssel], license, player} → Sitzung + URL des Fälscherrechners
+ *   forge_result {session, license}                                → Item-Metadaten der gedruckten Fälschung
+ *   forge_alert  {street}                                          → anonymer Hinweis an die Polizei
  */
 declare(strict_types=1);
 define('SAMS_IGNORE_MAINTENANCE', true);
@@ -108,6 +113,7 @@ switch ($action) {
         $code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $in('code')));
         $doc = one('SELECT * FROM documents WHERE verify_code = ?', [$code]);
         if (!$doc) {
+            forgery_note_check($code);
             respond(['found' => false]);
         }
         $issuer = json_decode((string) $doc['issuer_snapshot'], true) ?: [];
@@ -223,6 +229,11 @@ switch ($action) {
         // no break
     case 'document_item':
         $doc = $in('token') !== '' ? one('SELECT * FROM documents WHERE view_token = ?', [$in('token')]) : null;
+        if (!$doc && ($forged = forgery_by_view_token($in('token')))) {
+            // Fälschung: wie ein echtes Blatt anzeigen (ohne Unterschriftenleiste)
+            set_faction_context((int) $forged['faction_id']);
+            respond(['ok' => true, 'number' => $forged['number'], 'revoked' => false, 'url' => document_view_url($in('token'), ''), 'signing' => null, 'card' => doc_is_card(forgery_doc($forged))]);
+        }
         if (!$doc) {
             respond(['ok' => false, 'error' => 'Dokument nicht gefunden.']);
         }
@@ -477,6 +488,21 @@ switch ($action) {
             $n += is_array($inc) ? dispatch_upsert($inc, game_server_id() && game_server_id() !== game_server_default_id() ? 'tetra-s' . game_server_id() : 'tetra') : 0;
         }
         respond(['ok' => true, 'stored' => $n]);
+        // no break
+    // -------------------------------------------- Fälscherwerkstatt (optional)
+    case 'forge_start':
+        // nach Material, Vorlage und Geschicklichkeitsprüfung in der Resource: Sitzung am Fälscherrechner
+        respond(forgery_start((int) $in('site_id'), (int) $in('quality'), is_array($body['originals'] ?? null) ? $body['originals'] : [], $in('license'), $in('player')));
+        // no break
+    case 'forge_result':
+        $fg = forgery_by_session($in('session'), false);
+        if (!$fg || $fg['status'] !== 'done' || $fg['license'] !== mb_substr($in('license'), 0, 190)) {
+            respond(['ok' => false, 'error' => 'Nichts gedruckt.']);
+        }
+        respond(['ok' => true, 'metadata' => forgery_item_metadata($fg)]);
+        // no break
+    case 'forge_alert':
+        respond(['ok' => true, 'notified' => forgery_enabled() ? forgery_alert($in('street')) : 0]);
         // no break
     case 'dispatch_pois':
         if (!game_global()['tetra'] || !game_global()['tetra_pois']) {

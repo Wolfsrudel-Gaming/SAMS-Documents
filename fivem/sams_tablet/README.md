@@ -128,6 +128,29 @@ SAMS und tetrascript sind zwei eigenständige Systeme. Jedes läuft allein; `sam
 - Mit tetra-core ab Schnittstelle 2 (Branch `claude/sams-anbindung` von tetrascript, Export `GetApiVersion`) kommen Einsätze sofort über den Hook `incidentsChanged` statt alle 20 Sekunden. Zusätzlich lassen sich – jeweils einzeln einzuschalten, Vorgabe aus – der **FMS-Status bei Dienstbeginn/-ende** setzen und **Objektpläne mit Position als POI** ins Objektverzeichnis der Leitstelle übertragen. Ältere tetra-core-Stände funktionieren weiter wie oben.
 - Läuft tetra-core nicht (oder die Anbindung ist aus), passiert nichts. tetra-core selbst kennt SAMS nicht: Es bietet nur allgemeine Exports/Hooks an, die jede Ressource nutzen kann.
 
+## Fälscherwerkstatt (optional)
+
+Damit die Echtheitsprüfung im RP etwas bringt, können Kriminelle Dokumente fälschen. Einschalten und einstellen nur im Websystem unter *Administration → Fälschungen* (Hauptadministrator, Vorgabe: aus).
+
+- **Werkstätten** sind geheime Orte (Rechner mit Drucker als Prop, keine Kartenmarkierung), angelegt im Websystem – am einfachsten im Spiel mit „Aktuelle Position übernehmen“.
+- **Hürden** (alle serverseitig geprüft):
+  1. Verbrauchsmaterial (z. B. `forgery_paper`, `forgery_ink` – Items selbst in ox_inventory anlegen, siehe unten). Es ist auch bei misslungenem Druck weg.
+  2. Echtes Original als Vorlage im Inventar (nur echte Dokumente zählen).
+  3. Geschicklichkeitsprüfungen (ox_lib `skillCheck`); ihr Anteil ergibt die Qualität.
+  4. Arbeitszeit (Fortschrittsbalken, abbrechbar).
+  5. Abklingzeit je Spieler.
+  6. Alarm-Risiko: anonymer Hinweis an die Polizei im Websystem, dazu das Server-Event `sams:forgeryAlert(src, coords, street)` für eigene Dispatch-Skripte.
+- Danach öffnet sich der **Fälscherrechner**: Behörde und Vorlage wählen, Person, Aussteller, Inhalt und Unterschrift eintragen, Vorschau, Drucken. Das Blatt ist ein normales `sams_document`-Item.
+- Die Fälschung sieht echt aus, aber ihr **Prüfcode existiert nicht** – die Echtheitsprüfung meldet „Kein Dokument gefunden … wahrscheinlich eine Fälschung“. Je schlechter die Qualität, desto mehr **sichtbare Mängel**: Unter 85 % fehlt die Mikroschrift am unteren Rand (echtes Sicherheitsmerkmal), unter 60 % stimmen Farben und Stempel nicht, unter 35 % auch Schrift, Papier und QR-Code.
+- Gefälschte Rezepte lassen sich in der Apotheke nicht automatisch einlösen.
+
+Beispiel-Items für `ox_inventory/data/items.lua`:
+
+```lua
+['forgery_paper'] = { label = 'Sicherheitspapier (Rohling)', weight = 50, stack = true },
+['forgery_ink']   = { label = 'Spezialtoner', weight = 200, stack = true },
+```
+
 ## Dienstausweis als Karte
 
 Dienstausweise erscheinen nicht auf dem Klemmbrett, sondern als Karte in der Hand (Animation `Config.Anim.card`). Klicken dreht die Karte um (Vorder-/Rückseite), Ziehen mit der Maus neigt und dreht sie frei, Leertaste/Pfeiltasten drehen ebenfalls. Beim „Zeigen“ sieht die andere Person die Karte genauso. Welche Dokumentarten als Karte gelten, steht in der Dokumentart (`'card' => true`).

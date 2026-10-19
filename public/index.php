@@ -43,6 +43,7 @@ $routes = [
     'locations'       => 'settings.manage',
     'factions'        => '',
     'servers'         => '',
+    'forgery'         => '',
     'laws'            => '',
     'lawyers'         => '',
     'law_import'      => 'laws.manage',

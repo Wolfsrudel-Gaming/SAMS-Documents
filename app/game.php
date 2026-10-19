@@ -73,7 +73,8 @@ function game_config(): array
         $factions[] = ['id' => (int) $f['id'], 'short' => (string) $f['short'], 'name' => (string) $f['name'], 'kind' => faction_kind((int) $f['id'])] + game_faction((int) $f['id']);
     }
     $srv = current_game_server();
-    return ['ok' => true] + game_global() + ['server' => ['id' => (int) ($srv['id'] ?? 0), 'name' => (string) ($srv['name'] ?? '')], 'factions' => $factions];
+    return ['ok' => true] + game_global() + ['server' => ['id' => (int) ($srv['id'] ?? 0), 'name' => (string) ($srv['name'] ?? '')], 'factions' => $factions,
+        'forgery' => function_exists('forgery_config') ? forgery_config() : ['enabled' => false]];
 }
 
 // ------------------------------------------------------------ Rechnungen

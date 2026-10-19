@@ -565,6 +565,7 @@ function doc_footer(array $doc, string $extra = ''): string
             <div><?= org('director') !== '' ? e(stamp_profile()['head']) . ':<br>' . e(org('director')) . '<br>' : '' ?><?= e(org('register')) ?><br><?= e(org('tax_id')) ?></div>
         </div>
         <?php if ($extra !== ''): ?><div class="df-extra"><?= $extra ?></div><?php endif; ?>
+        <?php if (!isset($doc['_forged']) || (int) $doc['_forged'] >= 85): ?><div class="df-micro" aria-hidden="true"><?= e(str_repeat(mb_strtoupper(org('org_short')) . ' · ECHT · ' . ($doc['number'] ?? '') . ' · ', 12)) ?></div><?php endif; ?>
     </footer>
     <?php
     return ob_get_clean();

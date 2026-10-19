@@ -17,6 +17,8 @@ if ($code !== '') {
     $type = $doc ? doc_type($doc['type']) : null;
     if ($doc) {
         set_faction_context((int) $doc['faction_id']); // Logo und Name der ausstellenden Behörde
+    } else {
+        forgery_note_check($code); // still mitzählen, falls es eine bekannte Fälschung ist (nur für die Administration)
     }
 }
 $issuer = $doc ? (json_decode((string) $doc['issuer_snapshot'], true) ?: []) : [];
@@ -29,7 +31,7 @@ $states = [
     'valid'   => ['ok', 'Dokument echt und gültig', 'Dieses Dokument wurde von ' . org('org_name') . ' ausgestellt und ist im System als gültig hinterlegt.'],
     'expired' => ['warn', 'Dokument echt, aber abgelaufen', 'Die Gültigkeitsdauer dieses Dokuments ist überschritten.'],
     'revoked' => ['bad', 'Dokument storniert', 'Dieses Dokument wurde vom Aussteller für ungültig erklärt und darf nicht mehr verwendet werden.'],
-    'unknown' => ['bad', 'Kein Dokument gefunden', 'Zu diesem Prüfcode existiert kein Dokument. Es könnte sich um eine Fälschung handeln.'],
+    'unknown' => ['bad', 'Kein Dokument gefunden', 'Zu diesem Prüfcode existiert kein Dokument. Es handelt sich sehr wahrscheinlich um eine Fälschung – Dokument einbehalten und die Polizei verständigen. Tippfehler im Code ausschließen: Prüfcode und Dokumentnummer stehen unten auf dem Blatt.'],
 ];
 ?><!doctype html>
 <html lang="de">

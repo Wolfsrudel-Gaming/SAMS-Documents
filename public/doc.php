@@ -8,6 +8,14 @@ require dirname(__DIR__) . '/app/bootstrap.php';
 
 $token = (string) ($_GET['t'] ?? '');
 $doc = strlen($token) >= 32 ? one('SELECT * FROM documents WHERE view_token = ?', [$token]) : null;
+// Gefälschtes Dokument (Fälscherwerkstatt): sieht aus wie echt, der Prüfcode existiert aber nicht
+$forged = !$doc ? forgery_by_view_token($token) : null;
+if ($forged) {
+    $doc = forgery_doc($forged);
+    $doc['data'] = json_encode($doc['data']);
+    $doc['patient_snapshot'] = json_encode($doc['patient_snapshot']);
+    $doc['issuer_snapshot'] = json_encode($doc['issuer_snapshot']);
+}
 if (!$doc) {
     http_response_code(404);
     exit('<!doctype html><meta charset="utf-8"><body style="font-family:system-ui;padding:2rem;color:#fff;background:#222">Dokument nicht gefunden.</body>');
@@ -20,7 +28,10 @@ $copy = preg_replace('/[^a-z]/', '', (string) ($_GET['copy'] ?? ''));
 if ($doc['type'] === 'au' && $copy === '') {
     $copy = 'versicherter';
 }
-$html = render_document($doc, ['copy' => $copy]);
+$html = render_document($doc, ['copy' => $copy] + ($forged ? ['no_addenda' => true] : []));
+if ($forged) {
+    $html = '<div class="' . e(forgery_flaw_class((int) $forged['quality'])) . '">' . $html . '</div>';
+}
 // Karten (Dienstausweis): Vorder- und Rückseite als drehbare Karte statt Blatt
 $card = doc_is_card($doc) && !isset($_GET['flat']);
 header('Cache-Control: private, max-age=60');
