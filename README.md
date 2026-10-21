@@ -83,6 +83,10 @@ Das Skript kann jederzeit erneut ausgeführt werden, z. B. um Domain oder Branch
 
 Voraussetzungen: Linux-Server mit Git und entweder **Docker** oder **nginx + PHP 8.2+ (php-fpm, pdo_mysql, gd, mbstring) + MariaDB**.
 
+> **Sicherheit (PHP2Shell, CVE-2026-109618/-109619):** Ohne Docker muss PHP mindestens 8.2.35, 8.3.36, 8.4.27 bzw. 8.5.12
+> sein oder das gepatchte Paket der Distribution (`sudo apt update && sudo apt upgrade`, danach PHP-FPM neu starten).
+> Das Docker-Image verwendet bereits PHP 8.3.36.
+
 #### 1. Code holen
 
 Das Repository ist privat, der Server braucht daher einen **Deploy-Key** (nur Lesezugriff):
