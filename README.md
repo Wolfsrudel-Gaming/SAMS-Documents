@@ -149,7 +149,7 @@ Den angezeigten Schlüssel in GitHub unter **Repository → Settings → Deploy 
 
 ```bash
 sudo mkdir -p /var/www/sams && sudo chown sams:www-data /var/www/sams
-sudo -u sams git clone git@github.com:Wolfsrudel-Gaming/SAMS-Documents.git /var/www/sams
+sudo -u sams git clone git@github.com:Wolfsrudel-Gaming/Wolfpack-Documents.git /var/www/sams
 cd /var/www/sams
 sudo -u sams cp .env.example .env
 sudo -u sams nano .env        # Passwörter, APP_URL, UPDATE_BRANCH setzen

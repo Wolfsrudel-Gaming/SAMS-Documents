@@ -13,7 +13,7 @@
 # zu ändern oder einen abgebrochenen Lauf fortzusetzen).
 #
 # Optionale Umgebungsvariablen:
-#   SAMS_REPO   Git-Adresse   (Standard: git@github.com:Wolfsrudel-Gaming/SAMS-Documents.git)
+#   SAMS_REPO   Git-Adresse   (Standard: git@github.com:Wolfsrudel-Gaming/Wolfpack-Documents.git)
 #   SAMS_DIR    Zielordner    (Standard: /var/www/sams)
 #   SAMS_USER   Systembenutzer (Standard: sams)
 # Unbeaufsichtigt (ohne Rückfragen):
@@ -22,7 +22,7 @@
 #
 set -euo pipefail
 
-REPO_URL="${SAMS_REPO:-git@github.com:Wolfsrudel-Gaming/SAMS-Documents.git}"
+REPO_URL="${SAMS_REPO:-git@github.com:Wolfsrudel-Gaming/Wolfpack-Documents.git}"
 APP_DIR="${SAMS_DIR:-/var/www/sams}"
 APP_USER="${SAMS_USER:-sams}"
 APP_HOME="/home/$APP_USER"
