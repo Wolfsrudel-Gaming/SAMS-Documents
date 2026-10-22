@@ -8,7 +8,10 @@ $draft = one('SELECT d.*, s.name AS submitter_name, o.name AS owner_name FROM do
 if (!$draft || !draft_visible($draft)) {
     not_found('Entwurf nicht gefunden.');
 }
-$type = doc_type($draft['type']);
+$type = doc_type($draft['type']) ?? doc_type_in('us', doc_lang(), (string) $draft['type']);
+if (!$type) {
+    not_found('Dokumentart nicht gefunden.');
+}
 $patient = $draft['patient_id'] ? one('SELECT * FROM patients WHERE id = ?', [$draft['patient_id']]) : null;
 $case = $draft['case_id'] ? one('SELECT * FROM cases WHERE id = ?', [$draft['case_id']]) : null;
 $data = json_decode((string) $draft['data'], true) ?: [];

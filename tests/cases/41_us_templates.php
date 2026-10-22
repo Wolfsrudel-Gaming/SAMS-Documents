@@ -149,6 +149,22 @@ if ($shot = getenv('SAMS_SHOT_DIR')) {
     echo implode("\n", $shotOut);
 }
 
+// Rechte nur für Ränge der passenden Rolle (DNR/POLST nur für Ärzte, nicht für Sanitäter)
+check((bool) tval("SELECT 1 FROM rank_permissions WHERE permission = 'documents.issue.us_dnr'")
+    && !tval("SELECT 1 FROM rank_permissions rp JOIN ranks r ON r.id = rp.rank_id WHERE rp.permission = 'documents.issue.us_dnr' AND (r.name LIKE '%sanitäter%' OR r.name LIKE 'Notfall%')"), 'DNR/POLST nur für Ärzte, nicht für Sanitäter');
+// US-eigenes Dokument bleibt nach dem Zurückschalten auf deutsche Gestaltung bedienbar
+$admin->post('/index.php?p=factions', ['action' => 'switch', 'faction_id' => '1']);
+$admin->get('/index.php?p=document_new&type=us_hipaa&patient=1');
+$admin->post('/index.php?p=document_new&type=us_hipaa', ['type' => 'us_hipaa', 'patient_id' => '1', 'action' => 'issue', 'sig_mode' => 'live', 'live_signature' => TEST_SIGNATURE,
+    'd[empfaenger]' => 'Los Santos Police Department', 'd[gueltig_bis]' => date('Y-m-d', strtotime('+30 days'))]);
+$hid = (int) tval("SELECT id FROM documents WHERE type = 'us_hipaa' ORDER BY id DESC LIMIT 1");
+check($hid > 0 && is_array(json_decode((string) tval('SELECT data FROM documents WHERE id = ?', [$hid]), true)['_tpl'] ?? null), 'US-Dokument friert seine Vorlage ein (_tpl)');
+texec("UPDATE settings SET value = 'de' WHERE name = 'doc_region'");
+$admin->get("/index.php?p=document&id=$hid");
+check($admin->status === 200 && $admin->has('class="paper letter us') && !$admin->has('Unbekannte Dokumentart'), 'US-Dokument bleibt nach Zurückschalten auf deutsche Gestaltung ansehbar (in seiner Gestaltung)');
+check((new Client(TEST_BASE))->get('/verify.php?c=' . tval('SELECT verify_code FROM documents WHERE id = ?', [$hid]))->has('echt und gültig'), 'Echtheitsprüfung des US-Dokuments nach dem Zurückschalten');
+texec("UPDATE settings SET value = 'us' WHERE name = 'doc_region'");
+
 // Älteres deutsches Dokument bleibt deutsch
 if ($deDoc) {
     check($admin->get("/index.php?p=document&id=$deDoc")->has('Ärztliches Attest'), 'Vorher ausgestellte deutsche Dokumente bleiben deutsch');

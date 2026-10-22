@@ -17,7 +17,7 @@ function render_document(array $doc, array $opts = []): string
     // Ausgestellte Dokumente im Vorlagenset ihres Ausstellungszeitpunkts (ältere ohne Angabe: deutsch), Vorschauen im aktuellen
     $prevRegion = $GLOBALS['sams_doc_region'] ?? null;
     $prevLang = $GLOBALS['sams_doc_lang'] ?? null;
-    $preview = empty($doc['id']) && empty($doc['_forged']);
+    $preview = empty($doc['id']) && !isset($doc['_forged']);
     $data = $doc['data'] ?? [];
     $GLOBALS['sams_doc_region'] = isset(DOC_REGIONS[$data['_region'] ?? '']) ? $data['_region'] : ($preview ? doc_region() : 'de');
     // Dokumente aus der ersten US-Fassung (nur _region) waren englisch

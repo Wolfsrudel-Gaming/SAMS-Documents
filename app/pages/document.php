@@ -6,7 +6,7 @@ $doc = one('SELECT d.*, u.name AS revoker FROM documents d LEFT JOIN users u ON 
 if (!$doc) {
     not_found('Dokument nicht gefunden.');
 }
-$type = doc_type($doc['type']);
+$type = doc_type_for($doc);
 
 if (is_post() && post('action') === 'revoke') {
     csrf_check();

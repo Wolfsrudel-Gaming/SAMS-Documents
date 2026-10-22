@@ -16,7 +16,7 @@ const IC_RECEIPT_FIELD = '_ic_receipt';
 function doc_sign_fields(array $doc): array
 {
     $data = is_array($doc['data']) ? $doc['data'] : (json_decode((string) $doc['data'], true) ?: []);
-    $type = doc_type((string) $doc['type']) ?? custom_type_from_snapshot(['data' => $data] + $doc);
+    $type = doc_type_for($doc) ?? custom_type_from_snapshot(['data' => $data] + $doc);
     $fields = is_array($data['_tpl']['fields'] ?? null) ? $data['_tpl']['fields'] : ($type['fields'] ?? []);
     $out = [];
     foreach ($fields as $f) {
@@ -31,7 +31,7 @@ function doc_sign_fields(array $doc): array
 /** Dokumentart wird als Karte (Vorder-/Rückseite) dargestellt? */
 function doc_is_card(array $doc): bool
 {
-    return !empty((doc_type((string) $doc['type']) ?? [])['card']);
+    return !empty((doc_type_for($doc) ?? [])['card']);
 }
 
 /** Stand der Unterschriften: final, Felder mit Status und Protokoll. */
@@ -150,7 +150,7 @@ function doc_hash_valid(array $doc): bool
 function receipt_sheet(array $doc): string
 {
     $sig = one('SELECT * FROM document_signatures WHERE document_id = ? AND field = ?', [$doc['id'] ?? 0, IC_RECEIPT_FIELD]);
-    $type = doc_type((string) $doc['type']);
+    $type = doc_type_for($doc);
     $img = (string) ($doc['data'][IC_RECEIPT_FIELD] ?? '');
     ob_start(); ?>
     <section class="paper a6l receipt-sheet">

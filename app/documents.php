@@ -527,6 +527,30 @@ function document_types_all(): array
     return $cache[$ck] = $types;
 }
 
+/** Dokumentart im angegebenen Set (Gestaltung/Sprache), ohne die Einstellung des Portals zu verändern. */
+function doc_type_in(string $region, string $lang, string $key): ?array
+{
+    $prevR = $GLOBALS['sams_doc_region'] ?? null;
+    $prevL = $GLOBALS['sams_doc_lang'] ?? null;
+    $GLOBALS['sams_doc_region'] = $region;
+    $GLOBALS['sams_doc_lang'] = $lang;
+    try {
+        return doc_type($key);
+    } finally {
+        $GLOBALS['sams_doc_region'] = $prevR;
+        $GLOBALS['sams_doc_lang'] = $prevL;
+    }
+}
+
+/** Dokumentart eines ausgestellten Dokuments in dem Set, in dem es ausgestellt wurde (ältere: deutsch). */
+function doc_type_for(array $doc): ?array
+{
+    $data = is_array($doc['data'] ?? null) ? $doc['data'] : (json_decode((string) ($doc['data'] ?? ''), true) ?: []);
+    $region = isset(DOC_REGIONS[$data['_region'] ?? '']) ? $data['_region'] : 'de';
+    $lang = isset(DOC_LANGS[$data['_lang'] ?? '']) ? $data['_lang'] : ($region === 'us' && !isset($data['_lang']) ? 'en' : 'de');
+    return doc_type_in($region, $lang, (string) ($doc['type'] ?? ''));
+}
+
 function doc_type(string $key): ?array
 {
     $types = document_types_all();

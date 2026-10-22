@@ -14,7 +14,7 @@ $doc = null;
 $type = null;
 if ($code !== '') {
     $doc = one('SELECT * FROM documents WHERE verify_code = ?', [$code]);
-    $type = $doc ? doc_type($doc['type']) : null;
+    $type = $doc ? doc_type_for($doc) : null;
     if ($doc) {
         set_faction_context((int) $doc['faction_id']); // Logo und Name der ausstellenden Behörde
     } else {

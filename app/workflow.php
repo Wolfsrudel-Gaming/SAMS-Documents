@@ -122,7 +122,7 @@ function clean_signature($raw): string
  */
 function issue_document(array $type, ?array $patient, ?array $case, array $data, array $issuer, ?array $cosigner = null, string $liveSignature = ''): int
 {
-    if (($type['template'] ?? '') === 'custom') {
+    if (in_array($type['template'] ?? '', ['custom', 'us_custom'], true)) {
         $data['_tpl'] = custom_template_snapshot($type); // Vorlage einfrieren
     }
     $data['_region'] = doc_region(); // Gestaltung (deutsch/US) und Sprache bleiben beim Dokument

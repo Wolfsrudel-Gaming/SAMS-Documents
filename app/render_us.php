@@ -77,7 +77,7 @@ function us_form_number(array $doc, array $cfg, array $type = []): string
     if ($form === '') {
         $form = mb_strtoupper(org('org_short')) . ' ' . ($type['code'] ?? 'DOC');
     }
-    return $form . ' (Rev. ' . date('m/y', strtotime((string) ($doc['issued_at'] ?? now()))) . ')';
+    return $form . ' (Rev. ' . date('m/y', strtotime((string) ($doc['issued_at'] ?? now())) ?: time()) . ')';
 }
 
 function us_paper_open(array $doc, bool $draft, string $extraClass = ''): string

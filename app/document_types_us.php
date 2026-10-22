@@ -38,7 +38,8 @@ function doc_type_us(string $key, array $t): array
         $tpl = (string) ($t['template'] ?? '');
         $t['template'] = DOC_US_TEMPLATES[$key] ?? ($tpl === 'custom' ? 'us_custom' : (is_file(SAMS_ROOT . '/app/templates/us_' . $tpl . '.php') ? 'us_' . $tpl : $tpl));
     }
-    $t['fields'] = array_map(fn($f) => doc_field_us($f, DOC_US_DROP_OPTIONS[$key][$f['name'] ?? ''] ?? []), $t['fields'] ?? []);
+    $us = doc_us();
+    $t['fields'] = array_map(fn($f) => doc_field_us($f, $us ? (DOC_US_DROP_OPTIONS[$key][$f['name'] ?? ''] ?? []) : []), $t['fields'] ?? []);
     if (isset($t['custom'])) {
         foreach (['title', 'body'] as $k) {
             if (isset($t['custom'][$k]) && is_string($t['custom'][$k])) {
@@ -104,17 +105,23 @@ function doc_types_us_apply(array $types, string $region): array
 function doc_region_grant_permissions(): int
 {
     $n = 0;
+    $all = document_types_all();
     foreach (document_types_us_only() as $key => $t) {
         $like = (string) ($t['like'] ?? '');
-        if ($like === '') {
-            continue;
+        if ($like === '' || (($all[$like]['role'] ?? null) !== ($t['role'] ?? ''))) {
+            continue; // nur Ränge, die eine Art derselben Rolle ausstellen dürfen
         }
+        $given = 0;
         foreach (all('SELECT rank_id FROM rank_permissions WHERE permission = ?', ['documents.issue.' . $like]) as $r) {
             if (!scalar('SELECT 1 FROM rank_permissions WHERE rank_id = ? AND permission = ?', [$r['rank_id'], 'documents.issue.' . $key])) {
                 insert('rank_permissions', ['rank_id' => $r['rank_id'], 'permission' => 'documents.issue.' . $key]);
-                $n++;
+                $given++;
             }
         }
+        if ($given) {
+            audit('settings.doc_region_grant', 'setting', null, $key . ': Recht an ' . $given . ' Rang/Ränge mit „' . $like . '“ vergeben');
+        }
+        $n += $given;
     }
     return $n;
 }
@@ -229,7 +236,7 @@ function document_types_us_only(): array
             $area('sentence', 'Vereinbarte Strafe (Haft, Geldstrafe, Bewährung, Auflagen)', ['required' => true, 'rows' => 4]),
             $t('verteidiger', 'Verteidigung (Rechtsanwalt/Rechtsanwältin)', ['width' => 'half']),
             $sign('sig_defendant', 'Unterschrift der angeklagten Person'), $sign('sig_counsel', 'Unterschrift der Verteidigung'),
-        ], 'doj_strafbefehl', "Die angeklagte Person verzichtet nach Beratung durch ihre Verteidigung wissentlich und freiwillig auf das Recht auf ein Geschworenenverfahren, auf die Befragung der Zeugen und auf das Recht, sich nicht selbst belasten zu müssen, und gibt im Gegenzug für die Bedingungen dieser Vereinbarung die unten genannte Erklärung ab."),
+        ], 'doj_anklage', "Die angeklagte Person verzichtet nach Beratung durch ihre Verteidigung wissentlich und freiwillig auf das Recht auf ein Geschworenenverfahren, auf die Befragung der Zeugen und auf das Recht, sich nicht selbst belasten zu müssen, und gibt im Gegenzug für die Bedingungen dieser Vereinbarung die unten genannte Erklärung ab."),
         'us_bail' => $def('Kautionsbeschluss', 'Kautionsbeschluss', 'BAIL', 'justice', 'judge', 'Beschlüsse und Anordnungen', 'letter', [
             $case, $num('amount', 'Kautionshöhe ($)', ['width' => 'third', 'required' => true]),
             $radio('art', 'Art', ['Barkaution', 'Kautionsbürgschaft (Bail Bond)', 'Freilassung ohne Kaution (Own Recognizance)', 'Kaution abgelehnt'], ['required' => true]),
@@ -260,7 +267,7 @@ function document_types_us_only(): array
             $area('notes', 'Weitere Anordnungen', ['rows' => 2]),
             $t('decision_maker', 'Besprochen mit (Patient/in / rechtliche Vertretung)', ['width' => 'half']),
             $sign('sig_patient', 'Unterschrift Patient/in oder rechtliche Vertretung'),
-        ], 'med_patientenverfuegung', '', 'required', 'rect'),
+        ], 'attest', '', 'required', 'rect'),
         'us_hipaa' => $def('Schweigepflichtentbindung (HIPAA)', 'HIPAA-Entbindung', 'HIPAA', 'medical', 'doctor', 'Einwilligungen und Verfügungen', 'letter', [
             $t('empfaenger', 'Weitergabe an (Name / Behörde)', ['required' => true]),
             ['name' => 'scope', 'label' => 'Freigegebene Informationen', 'type' => 'checkboxes', 'width' => 'full', 'options' => array_combine(
@@ -269,7 +276,7 @@ function document_types_us_only(): array
             $t('zweck', 'Zweck', ['width' => 'half', 'default' => 'Auf Wunsch des Patienten / der Patientin']),
             $date('gueltig_bis', 'Diese Entbindung gilt bis', ['required' => true]),
             $sign('sig_patient', 'Unterschrift des Patienten / der Patientin'),
-        ], 'med_schweigepflicht', "Ich willige in die Weitergabe meiner geschützten Gesundheitsdaten wie unten beschrieben ein. Mir ist bekannt, dass ich diese Einwilligung jederzeit schriftlich widerrufen kann und dass meine Behandlung nicht von meiner Unterschrift abhängt.", 'required', 'rect', 'gueltig_bis'),
+        ], 'attest', "Ich willige in die Weitergabe meiner geschützten Gesundheitsdaten wie unten beschrieben ein. Mir ist bekannt, dass ich diese Einwilligung jederzeit schriftlich widerrufen kann und dass meine Behandlung nicht von meiner Unterschrift abhängt.", 'required', 'rect', 'gueltig_bis'),
 
         // ================================================================ Feuerwehr
         'us_burn_permit' => $def('Feuererlaubnis (Burn Permit)', 'Feuererlaubnis', 'BP', 'fire', 'fire', 'Vorbeugender Brandschutz', 'letter', [
@@ -277,7 +284,7 @@ function document_types_us_only(): array
             $radio('art', 'Art des Feuers', ['Gartenabfälle (privat)', 'Landwirtschaftlich', 'Lagerfeuer / Freizeit', 'Kontrolliertes Abbrennen (Prescribed Burn)', 'Veranstaltung (Freudenfeuer, Pyrotechnik)'], ['required' => true]),
             $date('von', 'Gültig ab', ['required' => true, 'default' => 'today']), $date('gueltig_bis', 'Gültig bis', ['required' => true]),
             $area('conditions', 'Auflagen', ['rows' => 4, 'default' => "Nur an freigegebenen Brenntagen verbrennen.\nFeuer ständig beaufsichtigen; Wasser und Werkzeug vor Ort bereithalten.\nHaufen höchstens 4 ft × 4 ft; 25 ft Abstand zu Gebäuden."]),
-        ], 'fd_bescheinigung', "Diese Erlaubnis kann jederzeit widerrufen werden, wenn die Lage unsicher wird oder die unten genannten Auflagen nicht eingehalten werden.", 'required', 'round', 'gueltig_bis'),
+        ], 'fd_einsatz', "Diese Erlaubnis kann jederzeit widerrufen werden, wenn die Lage unsicher wird oder die unten genannten Auflagen nicht eingehalten werden.", 'required', 'round', 'gueltig_bis'),
 
         // ================================================================ Verwaltung
         'us_marriage' => $def('Heiratsurkunde', 'Eheurkunde', 'MC', 'government', 'gov', 'Personenstandswesen', 'letter', [
