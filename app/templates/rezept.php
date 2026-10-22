@@ -22,7 +22,7 @@ $titles = ['kassen' => '', 'privat' => 'Privatrezept', 'btm' => 'Betäubungsmitt
             <?php require __DIR__ . '/_formhead.php'; ?>
         </div>
         <div class="rx-side">
-            <?php if ($titles[$form]): ?><div class="rx-title"><?= e($titles[$form]) ?></div><?php endif; ?>
+            <?php if (!empty($titles[$form])): ?><div class="rx-title"><?= e($titles[$form]) ?></div><?php endif; ?>
             <div class="rx-box"><span class="fl">Zuzahlung</span><span class="fv"></span></div>
             <div class="rx-box"><span class="fl">Gesamt-Brutto</span><span class="fv"></span></div>
             <div class="rx-box"><span class="fl">Apotheken-Nummer / IK</span><span class="fv"></span></div>
