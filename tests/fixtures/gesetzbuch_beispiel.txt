@@ -1,0 +1,36 @@
+Gesetzbuch des Teststaats
+
+Gesetzbuch des Teststaats
+Beispielfassung für die automatischen Tests.
+
+Strafgesetzbuch (StGB)
+
+§1 Körperverletzung
+(1) Wer eine andere Person körperlich misshandelt oder an der
+Gesundheit schädigt, begeht eine Körperverletzung.
+(2) Der Versuch ist strafbar.
+Strafmaß: bis 20 HE und 10.000 $
+
+§2 Raub
+(1) Raub ist die Wegnahme fremden Eigentums unter Gewalt oder Drohung.
+Strafmaß: bis 35 HE oder 15.000 $
+
+                                                                Page 1 of 2
+Gesetzbuch des Teststaats
+
+§3 Strafzumessung
+(1) Strafmildernd wirken insbesondere:
+     Geständnis
+     Kooperation mit den Behörden
+(2) Die maximale Freiheitsstrafe beträgt 100 Hafteinheiten (HE), die maximale Geldstrafe beträgt 50.000 $.
+
+Straßenverkehrsordnung (StVO)
+
+§1 Geschwindigkeit
+Innerorts gilt höchstens 100 km/h.
+
+§2 Fahrerflucht
+Wer sich nach einem Unfall entfernt, begeht Fahrerflucht.
+Strafmaß: Freiheitsstrafe bis 15 HE oder Geldstrafe bis 10.000 $
+                                                                Page 2 of 2
+Gesetzbuch des Teststaats

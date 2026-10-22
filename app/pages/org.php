@@ -18,6 +18,9 @@ $errors = [];
 if (is_post()) {
     csrf_check();
     $id = (int) post('id');
+    if ($id && !fone($k['table'], $id)) {
+        not_found();
+    }
     if (post('action') === 'delete' && $id) {
         $used = (int) scalar("SELECT COUNT(*) FROM {$k['link']} WHERE {$k['col']} = ?", [$id]);
         if ($used) {
@@ -56,8 +59,8 @@ if (is_post()) {
 }
 
 $items = all("SELECT t.*, (SELECT COUNT(*) FROM {$k['link']} l JOIN users u ON u.id = l.user_id AND u.active = 1 WHERE l.{$k['col']} = t.id) AS members
-    FROM {$k['table']} t ORDER BY t.sort, t.name");
-$edit = $editId ? one("SELECT * FROM {$k['table']} WHERE id = ?", [$editId]) : null;
+    FROM {$k['table']} t WHERE " . fw('t') . " ORDER BY t.sort, t.name");
+$edit = $editId ? fone($k['table'], $editId) : null;
 $form = $edit ?? ['id' => 0, 'name' => '', 'short' => '', 'color' => $k['color'], 'description' => '', 'sort' => (count($items) + 1) * 10, 'active' => 1];
 if ($errors) {
     $form = array_merge($form, array_intersect_key($_POST, $form));

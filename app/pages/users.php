@@ -6,7 +6,7 @@ $rankFilter = (int) ($_GET['rank'] ?? 0);
 $depFilter = (int) ($_GET['dep'] ?? 0);
 $status = (string) ($_GET['status'] ?? 'active');
 
-$where = ['1=1'];
+$where = [fw('u')];
 $params = [];
 if ($q !== '') {
     $esc = db_driver() === 'mysql' ? '' : " ESCAPE '\\'";
@@ -40,7 +40,7 @@ $pages = max(1, (int) ceil($total / $per));
 // Abteilungen der angezeigten Konten in einer Abfrage laden
 $deps = [];
 $depById = [];
-foreach (all('SELECT * FROM departments ORDER BY sort, name') as $d) {
+foreach (all('SELECT * FROM departments WHERE ' . fw() . ' ORDER BY sort, name') as $d) {
     $depById[(int) $d['id']] = $d;
 }
 if ($users) {
@@ -51,8 +51,8 @@ if ($users) {
         }
     }
 }
-$ranks = all('SELECT * FROM ranks ORDER BY level DESC, name');
-$counts = ['active' => (int) scalar('SELECT COUNT(*) FROM users WHERE active = 1'), 'inactive' => (int) scalar('SELECT COUNT(*) FROM users WHERE active = 0')];
+$ranks = all('SELECT * FROM ranks WHERE ' . fw() . ' ORDER BY level DESC, name');
+$counts = ['active' => (int) scalar('SELECT COUNT(*) FROM users WHERE active = 1 AND ' . fw()), 'inactive' => (int) scalar('SELECT COUNT(*) FROM users WHERE active = 0 AND ' . fw())];
 
 ob_start(); ?>
 <div class="page-head">
@@ -78,7 +78,7 @@ ob_start(); ?>
 </form>
 <div class="card">
 <table class="list">
-    <thead><tr><th>Name</th><th>Dienstnr.</th><th>Rang</th><th>Abteilungen</th><th>Benutzer</th><th>Sicherheit</th><th>Letzte Anmeldung</th></tr></thead>
+    <thead><tr><th>Name</th><th>Dienstnr.</th><th>Rang</th><th>Abteilungen</th><th>Benutzer</th><th>Sicherheit</th><th>Letzte Anmeldung</th><th></th></tr></thead>
     <tbody>
     <?php foreach ($users as $u): ?>
         <tr onclick="location.href='<?= e(url('user_edit', ['id' => $u['id']])) ?>'" class="<?= $u['active'] ? '' : 'inactive' ?>">
@@ -93,9 +93,10 @@ ob_start(); ?>
                 <?= $u['must_change_password'] ? '<span class="badge orange" title="Hat das Startpasswort noch nicht geändert">Startpasswort</span>' : '' ?>
                 <?= $u['signature'] ? '' : '<span class="badge grey" title="Keine Unterschrift hinterlegt">ohne Unterschrift</span>' ?></td>
             <td class="small"><?= e(fmt_datetime($u['last_login']) ?: 'noch nie') ?></td>
+            <td class="right"><?php if (can('personnel.view')): ?><a href="<?= e(url('personnel', ['id' => $u['id']])) ?>" onclick="event.stopPropagation()" title="Personalakte"><?= icon('folder') ?></a><?php endif; ?></td>
         </tr>
     <?php endforeach; ?>
-    <?php if (!$users): ?><tr><td colspan="7" class="muted">Keine Konten gefunden.</td></tr><?php endif; ?>
+    <?php if (!$users): ?><tr><td colspan="8" class="muted">Keine Konten gefunden.</td></tr><?php endif; ?>
     </tbody>
 </table>
 <?php if ($pages > 1): ?><div class="pager">

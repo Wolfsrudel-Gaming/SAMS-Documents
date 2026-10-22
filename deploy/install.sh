@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# SAMS – Server-Einrichtung für Ubuntu/Debian
+# Wolfpack Documents – Server-Einrichtung für Ubuntu/Debian
 #
 # Richtet alles ein, was für den Betrieb mit Auto-Update nötig ist:
 #   Pakete, Systembenutzer, Deploy-Key, Code, .env, Datenbank, Webserver,
@@ -73,7 +73,7 @@ svc_up() { # Dienst aktivieren und starten bzw. neu laden
 [[ $EUID -eq 0 ]] || die "Bitte als root ausführen: sudo bash $0"
 command -v apt-get >/dev/null || die "Dieses Skript unterstützt Ubuntu/Debian (apt)."
 
-echo "${B}SAMS Dokumenten- & Aktensystem – Server-Einrichtung${N}"
+echo "${B}Wolfpack Documents – Server-Einrichtung${N}"
 echo "Ziel: $APP_DIR · Benutzer: $APP_USER · Repository: $REPO_URL"
 
 # ------------------------------------------------------------- Fragen ------
@@ -345,6 +345,11 @@ echo "  Adresse:        ${B}$SCHEME://$DOMAIN${N}"
 echo "  Auto-Update:    folgt Branch ${B}$BRANCH${N} – neue Commits sind nach spätestens ~2 Minuten live"
 echo "  Status:         $CMD status   ·   Admin-Bereich → System & Updates"
 echo "  Update-Log:     $APP_DIR/storage/logs/update.log"
+echo
+echo "  ${B}FiveM-Resource (sams_tablet) – in die server.cfg eintragen:${N}"
+echo "    set sams_url \"$SCHEME://$DOMAIN\""
+echo "    set sams_api_key \"$(env_get API_KEY)\""
+echo "    ensure sams_tablet"
 echo
 echo "  ${B}Optional – Sofort-Update per GitHub-Webhook:${N}"
 echo "  GitHub → Repository → Settings → Webhooks → Add webhook"

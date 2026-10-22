@@ -1,6 +1,6 @@
-# SAMS Dokumenten- & Aktensystem – Konzept Version 1
+# Wolfpack Documents – Konzept Version 1
 
-Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1 umgesetzt
+Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1–7 umgesetzt (Version 1 vollständig)
 
 Dieses Konzept fasst die Fragerunde (60 Fragen) und die anschließenden Festlegungen zusammen.
 Es beschreibt, was in Version 1 gebaut wird, in welcher Reihenfolge, und was bewusst später kommt.
@@ -23,7 +23,7 @@ Ein Akten-, Dokumenten- und Verwaltungssystem für den SAMS auf einem FiveM-Role
 |---|---|
 | Hosting | Eigener Linux-vServer, Betreuung durch den Admin selbst |
 | Datenbank | Eigene MySQL/MariaDB (getrennt von der FiveM-Datenbank) |
-| Framework | Standalone – keine Anbindung an QBCore/ESX nötig |
+| Framework | Standalone lauffähig; optional ESX (Rechnungen über esx_billing, Spielerdaten, `/akte`), einstellbar unter *Einstellungen → Spielserver* |
 | Login V1 | **Konten mit Benutzername/Passwort**, angelegt durch Admin bzw. Chiefs. Jeder ändert sein Passwort selbst. Dieselben Zugangsdaten gelten im Tablet. |
 | Login später | Discord-Login und automatische Anmeldung im Spiel als Zusatz |
 | Charaktere | Keine automatische Übernahme aus dem Spiel. Patientenakten werden manuell angelegt. |
@@ -99,56 +99,80 @@ Ziel: Der Admin kann sofort Chiefs anlegen, Chiefs legen ihre Leute an, jeder me
 
 **Umstellung des Bestands:** die bisherigen vier festen Rollen werden zu Rängen mit passenden Rechten migriert.
 
-### Etappe 2 – Akten und Fallakte
-- Patientenakten erweitert: Archivierung, Abteilungs-Sichtbarkeit (z. B. nur Psychologie), Verknüpfung mit dem Bürgerportal vorbereitet
-- **Fallakte:** ein Fall (z. B. ein Verkehrsunfall) bündelt Einträge und Dokumente und füllt neue Dokumente vor
-- Archiv mit Suche, Archivieren statt Löschen
-- KIS-Oberfläche: kompakt, mit Reitern und Tabellen
+### Etappe 2 – Akten und Fallakte ✅ *umgesetzt in v1.5.0*
+- Patientenakten erweitert: Archivierung (schreibgeschützt, reaktivierbar), Abteilungs-Sichtbarkeit einzelner Einträge (z. B. nur Psychologie)
+- **Fallakte:** ein Fall (z. B. ein Verkehrsunfall) mit Fallnummer `SAMS-F-JJJJ-NNNNN` bündelt Einträge und Dokumente; „Dokument aus Fall“ übernimmt Diagnose, Ort, Hergang und Datum
+- Fälle abschließen / wieder öffnen; in abgeschlossene Fälle keine neuen Einträge
+- Archiv mit Suche (Filter Aktiv/Archiv/Alle), **Archivieren statt Löschen**: endgültiges Löschen nur noch aus dem Archiv mit eigenem Recht
+- Neue Rechte: `patients.archive`, `cases.manage`, `entries.all_departments`
+- *Offen für später:* Verknüpfung mit dem Bürgerportal (Etappe 6)
 
-### Etappe 3 – Dokumente
-- Neue Dokumentarten: psychologisches Gutachten, Unterbringungsantrag, Impfnachweis, OP-Bericht,
+### Etappe 3 – Dokumente ✅ *umgesetzt in v1.6.0 – v1.10.0*
+- ✅ Neue Dokumentarten *(v1.9.0)*: psychologisches Gutachten, Unterbringungsantrag (5150), Impfnachweis, OP-Bericht,
   OP-Aufklärung/Einwilligung, Dienstausweis, Ausbildungsnachweis, Beförderungsurkunde, Abmahnung,
-  Kündigung, Arbeitsvertrag, weitere nach Bedarf
-- **Entwürfe:** speichern, später fertigstellen, an Kollegen übergeben
-- **Freigaben:** pro Dokumentart einstellbar (z. B. Azubi braucht Gegenzeichnung, Gutachten braucht einen Oberarzt)
-- **Nachträge** statt Änderungen, sichtbar auf dem Dokument und in der Echtheitsprüfung
-- **Unterschrift:** hinterlegt oder live, wählbar
-- **Schnell- und Vollmodus** pro Dokumentart
-- **Preisliste** (Gebührenordnung) im Admin-Panel, Abweichung nur mit Begründung. **Rechnungsstatus** offen/bezahlt/gemahnt.
-- **Freigabe für Behörden:** einzelne Dokumente für LSPD/Justiz per Link oder Konto freischalten
-- **Vorlagen-Editor:** Leitung legt neue Dokumentarten im Browser an (Felder, Layout-Grundtyp Brief/Formular/Protokoll, Text mit Platzhaltern)
-- Logo, Farben und Briefkopf im Admin-Panel
+  Kündigung, Arbeitsvertrag; Personaldokumente beziehen sich auf ein Personalkonto
+- ✅ **Entwürfe:** speichern (auch unvollständig), später fertigstellen, an Kollegen übergeben (mit Hinweis)
+- ✅ **Freigaben:** pro Dokumentart einstellbar unter *Verwaltung → Dokumentarten* („Freigabe nötig unterhalb Rang X, freigeben ab Rang Y“); Gegenzeichnung erscheint auf dem Dokument und in der Echtheitsprüfung, Zurückweisen mit Begründung
+- ✅ **Nachträge** statt Änderungen: eigenes Blatt am Dokument, in der Echtheitsprüfung mit Datum und Verfasser (ohne Inhalt)
+- ✅ **Unterschrift:** hinterlegt oder live, beim Ausstellen wählbar
+- ✅ **Schnell- und Vollmodus** pro Dokumentart (Standard einstellbar, im Formular umschaltbar)
+- ✅ **Preisliste** (Gebührenordnung) im Admin-Panel, Preis wird in Rechnungen automatisch übernommen, Abweichungen und freie Positionen nur mit Begründung (steht auf der Rechnung). **Rechnungsstatus** offen/bezahlt/gemahnt (bis 3. Mahnung, die Rechnung wird dann als Mahnschreiben gedruckt), Rechnungsübersicht mit Summen und Überfälligkeit *(v1.7.0)*
+- ✅ **Freigabe für Behörden:** einzelne Dokumente für LSPD/BCSO/Justiz per geheimem Link (24 h / 7 / 30 Tage / bis Widerruf) oder an ein Behördenkonto (eigener Rang mit nur „Freigegebene Dokumente ansehen“) freischalten; Abrufe werden gezählt und protokolliert, jederzeit widerrufbar *(v1.8.0)*
+- ✅ **Vorlagen-Editor** *(v1.10.0)*: Leitung legt neue Dokumentarten im Browser an (Felder per Klick, Layout Brief/Formular/Protokoll, Text mit Platzhaltern wie `{{patient.name}}` und `**fett**`, Stempel, Bezug Patient oder Personal, Ausstellrechte je Rang). Die Vorlage wird beim Ausstellen eingefroren – spätere Änderungen verändern keine bestehenden Dokumente.
+- ✅ Logo, Farben und Briefkopf im Admin-Panel
 
-### Etappe 4 – Tablet und FiveM-Resource
+### Etappe 4 – Tablet und FiveM-Resource ✅ *Tablet, Drucker und Dokument-Items v1.4.0, Dienstzeit v1.11.0*
 - Eigene Resource `sams_tablet`: Tablet-Item und Befehl, eigene NUI-Oberfläche mit Tablet-Rahmen und Animation
 - Anmeldung im Tablet mit denselben Zugangsdaten, die Sitzung bleibt pro Spieler gemerkt
 - Dokumente werden als **ox_inventory-Item mit Metadaten** an den Patienten übergeben
 - Dokument zeigen: Papier-Prop, Animation, Original-Ansicht beim Gegenüber
-- On-/Off-Duty-Meldung an das System, manuelles Stempeln im Browser als Ausweichlösung
+- ✅ On-/Off-Duty: `/dienst` im Spiel oder Schalter in der Kopfleiste des Websystems (dieselbe Schicht), automatisches Ausstempeln beim Abmelden/Verlassen, vergessene Schichten enden nach einstellbarer Höchstdauer; „Jetzt im Dienst“, Wochenstunden, Korrekturen und Nachträge durch die Leitung; `IsOnDuty`-Export und `sams:dutyChanged`-Event für andere Resourcen
 - Absicherung: Die Resource spricht serverseitig mit einem API-Schlüssel, nie aus dem Client
 
-### Etappe 5 – Personal, Ausbildung, Wiki, Kommunikation
-- **Personalakte:** Lebenslauf im Dienst, Beförderungen, Abmahnungen, Notizen, Qualifikationen, Dienstzeiten
-- **Ausbildung:** Ausbildungspläne, Module, Online-Prüfungen, automatische Zertifikate/Urkunden
-- **Wiki:** SOPs, Medikamentenliste, Behandlungsabläufe. Pflegt auch die Vorschlagslisten in den Formularen.
-- **Schwarzes Brett** mit Lesebestätigung, **interne Nachrichten**
+### Etappe 5 – Personal, Ausbildung, Wiki, Kommunikation ✅ *umgesetzt in v1.12.0 – v1.15.0*
+- ✅ **Personalakte** *(v1.12.0)*: Laufbahn (Eintritt, Rangwechsel, Qualifikationen und ausgestellte Personaldokumente werden automatisch eingetragen), Belobigungen/Notizen/Abmahnungen von Hand, vertrauliche Einträge nur für die Leitung, Personaldokumente, Dienstzeit der letzten 8 Wochen; jede/r sieht die eigene Akte (ohne vertrauliche Notizen)
+- ✅ **Ausbildung** *(v1.13.0)*: Lehrgänge mit Lernmodulen (formatierter Text), Online-Prüfung mit Fragenpool (zufällige Fragen und Antwortreihenfolge, Mehrfachauswahl, Zeitlimit, Versuche pro Tag, Bestehensgrenze, Bewertung nur auf dem Server), Online-Prüfung = Theorie; Qualifikation und Zertifikat (Ausbildungsnachweis) erst nach der von der Ausbildung bestätigten praktischen Prüfung (seit v1.23.0); Gültigkeit mit Rezertifizierung; Ergebnisübersicht für Ausbilder
+- ✅ **Wiki** *(v1.14.0)*: Seiten nach Kategorien, Suche, Versionsgeschichte, `[[Wiki-Links]]`, Formatierung; pflegt die Vorschlagslisten der Formulare (ICD-10, Medikamente, Fachrichtungen, Impfstoffe)
+- ✅ **Schwarzes Brett** *(v1.15.0)*: Aushänge mit Zielgruppe (Abteilung, ab Rang), wichtig/angeheftet/Ablaufdatum, Lesebestätigung mit Übersicht wer bestätigt hat, wichtige Aushänge oben auf der Übersicht
+- ✅ **Interne Nachrichten** *(v1.15.0)*: Unterhaltungen mit einer oder mehreren Personen oder ganzen Abteilungen, Ungelesen-Zähler, Archiv
 
-### Etappe 6 – Bürgerportal *(benötigt Discord-Login für Bürger)*
-- Discord-Login für Bürger, Verknüpfung mit der Patientenakte durch einen Medic
-- Eigene Dokumente ansehen und herunterladen
-- Termine anfragen (z. B. Waffenschein-Untersuchung), Bestätigung durch den SAMS
-- Anträge (Aktenkopie, Schweigepflichtentbindung, Beschwerde) und Bewerbungen
+### Etappe 6 – Bürgerportal ✅ *umgesetzt in v1.16.0*
+- `portal.php`: Discord-Login für Bürger (OAuth2, nur Name und ID), Verknüpfung mit der Patientenakte per 24-h-Code, den ein Medic in der Akte einträgt
+- Eigene Dokumente ansehen und drucken (vertrauliche Arten wie Gutachten sind einstellbar ausgeblendet)
+- Termine anfragen (Terminarten einstellbar), Bestätigung mit Datum/Ort/Hinweis durch den SAMS, Absagen
+- Anträge (Aktenkopie, Schweigepflichtentbindung, Beschwerde) mit Antwort, Bewerbungen mit Status
+- Bearbeitung im Websystem unter *Bürgerportal* (Zähler in der Navigation), Bürgerkonten sperren/lösen
+- Einrichtung: `DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET` in der `.env`, Redirect `APP_URL/portal.php?action=callback`
 
-### Etappe 7 – Statistik und Discord
-- Dashboards: Aktivität pro Mitarbeiter, Fallzahlen, Finanzen, Qualität
-- Wochen- und Monatsbericht automatisch nach Discord und als PDF
-- Discord-Webhooks: Freigaben, Personal-Log, Dokument-Log, DM an Patienten
-- Discord-Login für Mitarbeitende und **Rollen-Sync** (Discord-Rolle → Rang)
+### Etappe 7 – Statistik und Discord ✅ *umgesetzt in v1.17.0*
+- Statistik: Aktivität pro Mitarbeiter/in (Dienstzeit, Dokumente, Einträge, Fälle), Fallzahlen, Dokumente pro Tag/Art, Finanzen, Qualität (Stornoquote, Nachträge, Freigaben, Prüfungen); Zeitraum frei wählbar
+- Wochen- und Monatsbericht automatisch nach Discord (montags bzw. am 1. ab 8 Uhr) und jederzeit als druckbares A4/PDF
+- Discord-Webhooks je Kanal: Dokument-Log, Freigaben, Personal-Log (optional mit Dienstbeginn/-ende), Bürgerportal, Berichte; nur Initialen, nie medizinische Inhalte
+- Direktnachrichten an verknüpfte Bürger (neues Dokument, Termin bestätigt/abgelehnt, Antrag erledigt, Bewerbungsstatus) über den Bot
+- Discord-Login für Mitarbeitende (2FA bleibt Pflicht), Verknüpfung im Profil, **Rollen-Sync** (höchste zugeordnete Rolle → Rang) stündlich und bei jeder Anmeldung
+- Versand über eine Warteschlange (nach der Seitenauslieferung bzw. per `php bin/sams cron`, läuft mit dem Update-Timer mit) – Discord bremst das System nie aus
 
-### Später (nach Version 1)
-- Leitstelle: Notrufe aus dem Spiel, Live-Karte, Fahrzeugstatus, Disponent und Selbstdisposition
-- Mehrere Standorte mit eigenem Briefkopf
-- Rezept in der Apotheke gegen Medikamenten-Items einlösen
+### Ausbau nach Etappe 7 ✅ *v1.18.0 – v1.20.0*
+- Absicherung: Testsuite im Repo (`php tests/run.php`) und in GitHub Actions, Selbsttest und Erreichbarkeitsprüfung nach jedem Auto-Update mit Rollback, automatische Abmeldung (Opt-in), Ratenbremse für öffentliche Seiten
+- Anhänge an Akten und Fällen, doppelte Akten zusammenführen, Volltextsuche, persönliche Benachrichtigungen (Glocke, optional Discord-DM)
+- Dienstplan mit Mindest-/Höchstbesetzung, Tausch, Erinnerungen, Unterbesetzungs-Warnung und Abgleich mit der Dienstzeit
+- Medikamentenbestand mit BtM-Buch (Patient bzw. Zeuge Pflicht, Bestandsprüfung, Druckansicht)
+- Rezepte einlösen: in der Klinik oder in der Apotheke im Spiel gegen ox_inventory-Items
+
+- Mehrere **Standorte** mit eigenem Briefkopf (wird beim Ausstellen ins Dokument eingefroren), **Handbuch** im Wiki, **Mehrsprachigkeit** der Oberfläche (Deutsch/Englisch, erweiterbar über `lang/<sprache>.php`) *(v1.20.0)*
+
+### Mehrere Fraktionen ✅ *v1.21.0*
+- Eine Installation, mehrere Fraktionen (Rettungsdienst, Polizei, Justiz, Feuerwehr, Verwaltung). Der Hauptadministrator legt sie unter *Verwaltung → Fraktionen* an und wechselt oben die Ansicht.
+- Strikte Trennung: Konten, Ränge, Abteilungen, Akten, Fälle, Dokumente, Wiki, Dienstplan, Kataloge, Drucker, Einstellungen (Briefkopf, Logo, Farben, Discord-Webhooks, Rollen-Sync) gehören je einer Fraktion. Fremde Daten nur über Freigaben, Anfragen und Fahndung.
+- Module je Fraktion (Akten, Abrechnung, Medikamente, Fahndung, Bürgerportal, Behördenanfragen) – Rechte nicht aktiver Module greifen nicht.
+- Beim Anlegen: Ränge mit passenden Rechten, Abteilungen, Briefkopf, Logo, Startkatalog, Handbuch.
+- Polizei: Personenakten mit Aliasnamen, Gefährdungshinweisen, Führerschein-/Waffenscheinstatus, Fahrzeugen; Strafanzeige, Festnahme-, Durchsuchungs-, Sicherstellungs-, Vernehmungsprotokoll, Unfallbericht, Platzverweis, Ermittlungsbericht, Waffenschein; Bußgeldbescheid mit Straf-/Bußgeldkatalog und Haft-Einheiten; Fahndung.
+- Justiz: Verfahren, Anklageschrift, Strafbefehl, Urteil, Haftbefehl, Durchsuchungsbeschluss, Ladung, Beschluss, Vollmacht; Kostenrechnung.
+- Feuerwehr: Einsatzbericht, Brandschaubericht, Brandschutzbescheinigung, Gebührenbescheid. Verwaltung: Bescheid, Genehmigung/Lizenz, Gewerbeanmeldung, Bescheinigung.
+- Zusammenarbeit: Haftbefehle erscheinen automatisch in der Fahndung aller Polizeibehörden (und enden bei Aufhebung), Behördenanfragen mit Dokumentfreigabe, Freigabe an eine ganze Behörde, Kennzeichen-/Personenabfrage im Spiel, Bürgerportal zeigt Bescheide aller Behörden und nimmt Bewerbungen je Behörde an.
+
+### Später
+- Leitstelle: als eigenes Addon (Notrufe aus dem Spiel, Live-Karte, Fahrzeugstatus, Disponent und Selbstdisposition)
 - Weitere Fraktionen (LSPD, DOJ, Feuerwehr)
 - Verkaufsfähigkeit: Mehrsprachigkeit, Installer, Lizenzierung, neutrale Standardtexte
 

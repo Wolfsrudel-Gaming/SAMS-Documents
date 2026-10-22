@@ -1,6 +1,8 @@
-# SAMS – Dokumenten- & Aktensystem
+# Wolfpack Documents – Dokumenten- & Aktensystem
 
-Webbasiertes Dokumenten- und Aktensystem für den **San Andreas Medical Service (SAMS)** auf FiveM-Roleplay-Servern.
+Webbasiertes Dokumenten- und Aktensystem für FiveM-Roleplay-Server: Rettungsdienst (z. B. **San Andreas Medical Services – SAMS**), Polizei, Justiz, Feuerwehr, Behörden und Kanzleien in einem Portal.
+
+> Technische Namen bleiben aus Kompatibilitätsgründen gleich: Resource `sams_tablet`, Convars `sams_url`/`sams_api_key`, Items `sams_document`/`sams_tablet`, Kommandozeile `bin/sams`.
 Medics und Ärzt/innen führen Patientenakten und stellen Dokumente aus, die wie echte deutsche Praxis- und Klinikdokumente
 aussehen: Vordrucke in Originalfarben, Briefkopf nach DIN 5008 mit Falz- und Lochmarken, Arztstempel und Dienstsiegel
 mit Tinteneffekt, handschriftliche Unterschrift, Barcode und QR-Code zur Echtheitsprüfung.
@@ -27,12 +29,24 @@ mit Tinteneffekt, handschriftliche Unterschrift, Barcode und QR-Code zur Echthei
 | TB | Todesbescheinigung | A4-Formular, vertraulicher/nichtvertraulicher Teil | Arzt |
 | RE | Rechnung | A4-Brief mit Positionen, Summen, „BEZAHLT“-Stempel | Rettungsdienst |
 | SC | Allgemeines Schreiben | A4-Brief, optional mit Dienstsiegel | Rettungsdienst |
+| PG | Psychologisches Gutachten (Auftraggeber DOJ, Behörde …) | A4-Brief mit Fragestellung, Befund, Beurteilung, Ergebnis | Arzt |
+| UB | Antrag auf Unterbringung (5150-/5250-Hold) | A4-Formular mit Gründen, Tatsachen, Belehrung | Arzt |
+| IM | Impfbescheinigung | A5 gelb, zweisprachig, Charge als Etikett, Stempel je Impfung | Arzt |
+| OB | Operationsbericht | A4-Formular mit OP-Team, Zeiten, OPS, Verlauf | Arzt |
+| EW | Aufklärung und Einwilligung | A4 mit Risiken, Alternativen, Unterschrift Patient/in und Zeuge | Arzt |
+| DA | Dienstausweis | Scheckkarte (Vorder-/Rückseite) mit Foto/Initialen, Barcode, Hologramm | Personal |
+| BU | Beförderungs-/Ernennungs-/Ehrenurkunde | A4-Urkunde mit Goldrahmen und Siegel | Personal |
+| AN | Ausbildungs-/Qualifikationsnachweis | A4-Zertifikat | Personal |
+| AM | Abmahnung / Ermahnung | A4-Brief mit Empfangsbestätigung | Personal |
+| KD | Kündigung | A4-Brief mit Rückgabeliste und Empfangsbestätigung | Personal |
+| AV | Arbeitsvertrag | A4 mit Paragraphen, Unterschrift beider Seiten | Personal |
 
 \* Wer welches Dokument ausstellen darf, ist pro Rang frei einstellbar (*Verwaltung → Ränge & Rechte*). Die Spalte zeigt die Vorbelegung.
 
 Jedes Dokument erhält eine fortlaufende Nummer (z. B. `SAMS-AU-2026-00042`) und einen Prüfcode.
 Ausgestellte Dokumente sind **unveränderlich** (Patienten- und Ausstellerdaten werden eingefroren) und können nur
-**storniert** werden. Fehler korrigieren: stornieren → „Als Vorlage verwenden“ → neu ausstellen.
+**storniert** oder per **Nachtrag** ergänzt werden. Fehler korrigieren: Nachtrag schreiben oder stornieren → „Als Vorlage verwenden“ → neu ausstellen.
+Personaldokumente (Kürzel DA–AV) beziehen sich auf ein Personalkonto statt auf eine Patientenakte.
 
 **Ausgabe:** Drucken bzw. „Als PDF speichern“ im Browser (A4/A5/A6 werden in der richtigen Papiergröße erzeugt) oder
 **„Als Bild speichern“** (PNG, z. B. zum Weitergeben in Discord oder per In-Game-Handy).
@@ -41,8 +55,40 @@ Ausgestellte Dokumente sind **unveränderlich** (Patienten- und Ausstellerdaten 
 
 - **Patientenakten**: Personalien, Bürger-ID (z. B. `citizenid` aus ESX/QBCore), Versicherung, Blutgruppe, Allergien
   (Warnhinweis), Vorerkrankungen, Medikation, Notfallkontakt, Organspende, Patientenverfügung, Kennzeichnungen
+- **Statistik & Berichte**: Aktivität, Fallzahlen, Finanzen, Qualität; Wochen-/Monatsbericht nach Discord und als PDF
+- **Discord**: Webhooks (Dokument-Log, Freigaben, Personal-Log, Bürgerportal, Berichte), Direktnachrichten an Bürger, Discord-Login und Rollen-Sync (Rolle → Rang)
+- **Bürgerportal** (`/portal.php`): Discord-Login, eigene Dokumente, Terminanfragen, Anträge und Bewerbungen – bearbeitet im Websystem
+- **Schwarzes Brett & Nachrichten**: Aushänge mit Zielgruppe und Lesebestätigung, interne Nachrichten an Personen oder Abteilungen
+- **Wiki**: SOPs und Wissen mit Versionsgeschichte und Wiki-Links; pflegt auch die Vorschlagslisten der Formulare
+- **Ausbildung**: Lehrgänge mit Lernmodulen und Online-Prüfung (Theorie); Qualifikation und Zertifikat erst nach der praktischen Prüfung, die eine Ausbilderin / ein Ausbilder im System bestätigt
+- **Personalakte**: Laufbahn mit automatischen Einträgen (Rang, Qualifikationen, Beförderung, Abmahnung …), Notizen, Personaldokumente, Dienstzeiten; eigene Akte für alle einsehbar
+- **Dienstzeiten**: Ein-/Ausstempeln im Spiel (`/dienst`) oder im Browser, „Jetzt im Dienst“, Wochenstunden, Korrekturen durch die Leitung
+- **Dienstplan**: Schichten mit Mindest-/Höchstbesetzung, selbst eintragen oder einteilen lassen, Tausch („zur Übernahme anbieten“), Erinnerung 1 Stunde vorher, Warnung bei Unterbesetzung, Abgleich mit der gestempelten Dienstzeit, Vorwoche übernehmen
+- **Medikamentenbestand & BtM-Buch**: Artikel mit Mindestbestand, Zugang/Entnahme/Verwurf/Korrektur mit lückenlosem Protokoll; Betäubungsmittel nur mit Patient bzw. Zeuge, Karteikarte je BtM mit Monatsübertrag, Bestandsprüfung und Druckansicht
+- **Rezepte einlösen**: in der Klinik oder in der **Apotheke im Spiel** gegen ox_inventory-Items; BtM nur auf BtM-Rezept, Gültigkeit (28 bzw. 7 Tage), jede Position nur einmal
+- **Fachinhalte Rettungsdienst**: über 50 Dokumentarten (u. a. Aufnahmebogen, Sichtungskarte, Reanimations- und Narkoseprotokoll, Labor-, Röntgen- und EKG-Befund, Medikationsplan, Krankentransport, Haftfähigkeit, Fahreignung, Drogenscreening, Schweigepflichtentbindung, Patientenverfügung, Obduktion), über 100 Wiki-Seiten (SOPs, Krankheitsbilder, Medikamente, Organisation, Recht, Hygiene) und 12 Lehrgänge mit rund 60 Lernmodulen und über 110 Prüfungsfragen – alles frei anpassbar
+- **Mehrere Fraktionen** (*Verwaltung → Fraktionen*, nur Hauptadministrator): Rettungsdienst, Polizei, Justiz, Feuerwehr und Verwaltung in einer Installation – streng getrennt, jeweils mit eigenen Rängen, Briefkopf, Logo, Dokumentarten (z. B. Festnahmeprotokoll, Bußgeldbescheid mit Strafkatalog, Haftbefehl, Urteil, Einsatzbericht, Genehmigung) und Handbuch
+- **Polizei**: Asservaten mit lückenloser Beweismittelkette (einlagern, entnehmen, übergeben, herausgeben, vernichten), Fahrzeugregister mit Halter/in (Kennzeichenabfrage im Spiel zeigt Halter, abgelaufene Zulassung, gestohlen/beschlagnahmt), Haftbuch (Zelle, Haft-Einheiten, Effekten, Haftfähigkeit – Anfrage an den Rettungsdienst per Klick –, Rechtsbeistand, Telefonat, Entlassung; offene Haftbefehle werden bei der Aufnahme als vollstreckt geschlossen) und **Strafregister** in der Personenakte über Polizei und Justiz hinweg
+- **Justiz**: Gerichtskalender mit Sälen und Beteiligten (keine Doppelbelegung, Vertagen mit neuem Termin), Fristen mit Zuständigkeit, Erinnerungen 24 h vor Terminen und 2 Tage vor Fristablauf, **Anwaltszugang** (Rang „Rechtsanwalt“ sieht nur eigene Termine und Fristen), Geldstrafen aus Strafbefehl und Urteil per „Ins Spiel senden“ über esx_billing
+- **Feuerwehr (Ausbau)**: Geräte & Prüffristen mit Prüfprotokoll und Hinweis vor Ablauf (auch für den Rettungsdienst, z. B. Defibrillatoren), Atemschutz-Nachweise nach FwDV 7 (Eignung G26.3, Belastungsübung, Unterweisung, Einsätze/Minuten, „einsatzbereit/gesperrt“), neue Dokumentarten (Brandursachenermittlung, Atemschutzüberwachung, Brandsicherheitswache, Übungsbericht, Gefahrgutmeldung, Nachschau, Türöffnung, Schadensmeldung), Brandschau ↔ Objektplan (Prüftermine werden aus dem Bericht übernommen), Wiki mit über 50 Feuerwehr-Fachseiten und Lehrgänge mit Qualifikationen
+- **Spezialrettung (TAS: Gelände, Wasser, Luft)**: eigene Fraktionsart mit Rängen (u. a. Pilot/in, Luftretter/in, Rettungsschwimmer/in), Abteilungen (Gelände-, Wasser-, Luftrettung, Suche & Ortung), Kostenordnung, Dokumenten (Einsatzbericht Spezialrettung, Suchprotokoll Vermisstensuche, Tauchprotokoll, Flugbericht, Bergungsprotokoll, Wachbericht Strand), **Flugbuch** (Luftfahrzeuge mit Betriebszeit und Wartung, Flüge, Flugzeiten und Windeneinsätze je Pilot/in – Flugberichte werden automatisch eingetragen), eigenem Siegel, Geräteprüfungen und gemeinsamen Einsatzberichten mit SAMS, Feuerwehr und Polizei
+- **Einsatztauglichkeit der Mitarbeitenden (TAS, Feuerwehr)**: Untersuchungsarten Atemschutz (G 26.3), Tauchen (G 31), Absturzgefahr (G 41), Luftrettung Besatzung und Pilot/in, Wasserrettung, allgemeine Einsatztauglichkeit. Die Dienststelle fordert die Untersuchung als Behördenanfrage beim SAMS an; dort stellt eine Ärztin oder ein Arzt die *Bescheinigung über die Einsatztauglichkeit* aus. Die Befunde bleiben als vertraulicher Eintrag in der Patientenakte, die Dienststelle erhält nur Ergebnis, Einschränkungen und Gültigkeit (Zuordnung über die **Bürger-ID am Konto**, sonst über den Namen). Übersicht je Person und Art, Hinweis 30 Tage vor Ablauf, G 26.3 übernimmt die Atemschutz-Eignung, Storno zieht den Nachweis zurück
+- **Untersuchungsbogen Sonderverwendungsfähigkeit** (Spezialkräfte-Standard, angelehnt an militärische Musterung): Anamnese, körperliche Untersuchung, Augen, Tonaudiogramm, EKG/Ergometrie, Spirometrie, Röntgen, Labor, Drogenscreening, Leistungstests (3000 m, Liegestütze, Sit-ups, Klimmzüge, Gepäckmarsch, 500 m Schwimmen, Streckentauchen, Wassertreten, Druckkammer, Atemschutzstrecke, Steigtest, HUET), psychologische Eignung, PULHES-Profil und Beurteilung je Verwendung. Der Bogen gleicht die Messwerte automatisch mit den Mindestanforderungen ab und bleibt vertraulich beim SAMS; beim Ausstellen entsteht automatisch die *Bescheinigung über die Sonderverwendungsfähigkeit* an die Leitung der Dienststelle (Profil, Beurteilung je Verwendung, Gesamturteil, Einschränkungen, Gültigkeit – keine Befunde). Die Dienststelle legt den Namen ihres Standards unter *Tauglichkeit* fest
+- **Leitstelle (optional, z. B. tetrascript)**: Einsätze aus der Leitstelle erscheinen unter *Leitstelle* je Organisation (fire/ems/police) mit Einheiten, Verlauf, Gefahren und passendem Objektplan; nach Abschluss Hinweis „Bericht schreiben“ und Einsatzbericht/Einsatzprotokoll per Knopf vorbelegt; FMS-Status der Mitarbeitenden in Dienstzeiten und Leitstelle, auf Wunsch Dienst automatisch mit Status 1–4 bzw. 6. Beide Systeme laufen auch getrennt
+- **Feuerwehr & Verwaltung/DMV**: Objektpläne (Gefahren, Gefahrstoffe, Zufahrt, Hydranten, Schlüsseldepot, Brandschau-Termine, Grundrisse und Fotos), Lizenzregister für Führerscheine und andere Lizenzen mit Ablauf, Sperre und Entzug (Hinweis 14 Tage vor Ablauf, Abfrage durch die Polizei im Spiel), **gemeinsame Einsatzberichte**, in denen jede beteiligte Behörde ihren eigenen Teil schreibt
+- Alle Werkzeuge sind Module: jede Fraktion schaltet unter *Einstellungen → Umfang* ein, was sie nutzt; Lagerorte, Zellen, Säle und Lizenzarten stehen unter *Einstellungen → Behörden-Werkzeuge*
+- **Zusammenarbeit der Behörden**: Fahndung (Haftbefehle der Justiz landen automatisch bei der Polizei), Behördenanfragen mit Dokumentfreigabe, Freigabe an eine ganze Behörde, Kennzeichenabfrage im Spiel (`/kennzeichen`)
+- **Standorte**: mehrere Häuser (z. B. Sandy Shores, Paleto Bay) mit eigenem Briefkopf; beim Ausstellen wählbar, im Dokument eingefroren
+- **Handbuch** für Mitarbeitende im Wiki (Kategorie „Handbuch“, frei anpassbar) und **Oberfläche auf Deutsch oder Englisch** (*Einstellungen → Sprache*; weitere Sprachen über `lang/<sprache>.php`)
+- **Anhänge, Benachrichtigungen, Suche**: Fotos/Scans/PDF an Akten und Fällen, Glocke mit persönlichen Benachrichtigungen (optional per Discord-DM), Volltextsuche über alle Bereiche, doppelte Akten zusammenführen
+- **Vorlagen-Editor**: eigene Dokumentarten ohne Programmierung (Felder, Layout Brief/Formular/Protokoll, Text mit Platzhaltern, Stempel, Ausstellrechte)
+- **Dokument-Workflow**: Entwürfe speichern und an Kolleg/innen übergeben, Freigabe/Gegenzeichnung je Dokumentart (z. B. Azubis), Nachträge statt Änderungen, Unterschrift hinterlegt oder live, Schnell- und Vollmodus
+- **Abrechnung**: Gebührenordnung mit festen Preisen (Abweichung nur mit Begründung), Rechnungsstatus offen/bezahlt/gemahnt mit bis zu drei Mahnstufen, Rechnungsübersicht
+- **Freigabe für Behörden**: einzelne Dokumente per geheimem Link mit Ablaufzeit oder an ein LSPD-/Justiz-Konto freigeben, jeder Abruf wird protokolliert, jederzeit widerrufbar
+- **Fallakten**: ein Fall (z. B. Verkehrsunfall, stationärer Aufenthalt) bündelt Einträge und Dokumente; „Dokument aus Fall“ übernimmt Diagnose, Ort und Hergang
+- **Archiv**: Akten werden archiviert statt gelöscht (schreibgeschützt, reaktivierbar, eigene Suche)
 - **Akteneinträge** (Behandlung, Einsatz, Psychologisches Gespräch …) mit SOAP-/ABCDE-Vorlagen, optional **vertraulich**
-  (nur ärztlicher Dienst); chronologischer Verlauf aus Einträgen und Dokumenten; Akte als PDF drucken
+  (nur ärztlicher Dienst) oder **nur für eine Abteilung** sichtbar; chronologischer Verlauf aus Einträgen und Dokumenten; Akte als PDF drucken
 - **Öffentliche Echtheitsprüfung** `verify.php` – QR-Code scannen oder Prüfcode eingeben. Zeigt gültig / abgelaufen /
   storniert / nicht gefunden, aber keine medizinischen Inhalte (nur Initialen + Geburtsjahr)
 - **Personalverwaltung**: Konten werden von Admin/Chiefs angelegt, das System erzeugt ein Startpasswort, das beim ersten Login geändert werden muss. Passwort zurücksetzen, Konto sperren (mit Grund), alle Sitzungen beenden, 2FA zurücksetzen, Verlauf aller Änderungen
@@ -54,7 +100,13 @@ Ausgestellte Dokumente sind **unveränderlich** (Patienten- und Ausstellerdaten 
 - **Zugriffsprotokoll**: wer hat wann welche Akte geöffnet, welches Dokument ausgestellt oder storniert
 - **Einstellungen**: Name, Adresse, Logo, IK-Nummer, BSNR, Bankverbindung, Siegel-Umschrift, Währung, Nummernpräfix
 - Vorschlagslisten für ICD-10-Diagnosen, Medikamente, Fachrichtungen und Leistungen
-- **JSON-API** für FiveM-Resourcen (siehe unten)
+- **Sky Ambulance** (optional, *Einstellungen → Spielserver*): Vitalwerte des Patienten (RR, HF, SpO₂, BZ, Herzstillstand) per `/akte` → „Vitalwerte übernehmen“ in den Vitalverlauf der Akte, Einsatzprotokoll wird damit vorbelegt; „Behandeln“ öffnet die Sky-Behandlung; Zusammenbruch und Wiederbelebung landen automatisch als Akteneintrag; Medikamentengabe aus Sky bucht Bestand/BtM-Buch mit Patient; Rechnungen wahlweise über **Sky Billing** statt esx_billing
+- **Unterschriften im Spiel (IC)**: Unterschriftsfelder (z. B. betroffene Person, Patient/in, Mandant/in) beim Ausstellen leer lassen, das Dokument drucken – auf dem Klemmbrett „✍ Unterschreiben“ mit der Maus. Auch wem das Blatt gezeigt wird, kann unterschreiben. Jede Unterschrift wird sofort mit Name (aus ESX), Zeitpunkt und Spieler protokolliert und ist endgültig; sind alle Felder unterschrieben, wird das Dokument automatisch **abgeschlossen** (Prüfsumme, keine Änderung mehr möglich, Echtheitsprüfung zeigt „unverändert“). Manuell abschließen (z. B. „Unterschrift verweigert“) kann, wer das Blatt besitzt, bzw. im System die ausstellende Person oder die Leitung. Alternativ im Tablet unterschreiben lassen. Dokumente ohne Unterschriftsfeld bekommen eine Empfangsbestätigung als Zusatzblatt
+- **Im Spiel**: eigenes Tablet, Drucker in der Spielwelt, gedruckte Dokumente als Item (ansehen, zeigen, weitergeben) – siehe unten
+- **ESX-Anbindung** (*Einstellungen → Spielserver*): Rechnungen und Bußgelder per Knopf „Ins Spiel senden“ an esx_billing (Zahlung geht auf das Society-Konto der Fraktion und wird im System automatisch verbucht), `/akte` am nächsten Spieler mit Kurzfassung (Allergien, Blutgruppe, Hinweise, offene Fälle) und Akte direkt im Tablet – neue Akten übernehmen Bürger-ID, Name, Geburtsdatum und Geschlecht aus ESX. Society-Konten, Jobs, Befehlsnamen, Schalter und der Umfang (Module) jeder Fraktion werden im Websystem eingestellt
+- **Dokument-Gestaltung und -Sprache** (*Einstellungen → Portal*, nur Hauptadministrator, zwei getrennte Schalter): Gestaltung „Deutschland“ (DIN-Vordrucke) oder „USA“ (US Letter, eigene US-Formulare je Dokumentart mit Formularnummer, Revisionsstand, nummerierten Feldern, Gerichts-Rubrum auf Schriftsatzpapier, Patientenetikett, Verteilerzeile, Miranda-/Eid-/Hinweisblöcken; MM/DD/YYYY und $1,234.56) und Sprache „Deutsch“ oder „Englisch“ (Übersetzungen in `lang/doc_en/`). Zusätzliche US-Dokumente (Citation, Miranda Waiver, Use of Force, DUI, Subpoena, Plea Agreement, DNR/POLST, HIPAA …). Ausgestellte Dokumente behalten Gestaltung und Sprache. Gestaltung je Art: `app/us_layouts/`, Bausteine: `app/render_us.php`
+- **JSON-API** für FiveM-Resourcen
+- **Andock-Schnittstelle** für eigene Skripte (*Administration → Schnittstellen*): Schlüssel mit Rechten und Fraktionen, Abfragen (Person, Fahndung, Dokumente, Dienst, Gesetze), Schreiben (Akteneintrag, Meldung, Anfrage, Fahndung), Ereignisse per Abfrage oder signiertem Webhook; im Spiel als Exports von `sams_tablet` – siehe [`docs/API.md`](docs/API.md)
 
 ## Installation
 
@@ -184,34 +236,76 @@ Mit Docker jeweils `docker compose exec -T app php bin/sams …` voranstellen.
 
 Täglich um 04:30 (`sams-backup.timer`) und vor jedem Update. Aufbewahrung: `BACKUP_KEEP_DAYS` (Standard 14 Tage), Ablage in `storage/backups/`. Für echte Ausfallsicherheit den Ordner zusätzlich auf einen anderen Server kopieren.
 
-### Einbindung im Spiel (FiveM NUI / Tablet-Resource)
+### Im Spiel: Tablet, Drucker und Dokument-Items
 
-Das System kann direkt per URL in einer NUI-Seite oder einem iframe geladen werden. Läuft die Einbindung über eine
-andere Domain, in der `.env` `SESSION_SAMESITE=None` setzen (erfordert HTTPS), damit die Anmeldung im iframe
-funktioniert.
+Die FiveM-Resource [`fivem/sams_tablet`](fivem/sams_tablet) bringt das System ins Spiel: Anmeldung im Tablet mit den normalen Zugangsdaten, Drucker in der Spielwelt (Verwaltung im Tablet per „Aktuelle Position übernehmen“), Druckaufträge, die am Drucker als ox_inventory-Item abgeholt werden, und Dokument-Items zum Ansehen (Klemmbrett-Animation), Zeigen und Weitergeben. Installation und Einstellungen: [`fivem/sams_tablet/README.md`](fivem/sams_tablet/README.md).
+
+Voraussetzung ist HTTPS für das Websystem (das Einrichtungsskript richtet es ein), da das Tablet die Seite einbettet.
 
 ### API für FiveM-Resourcen
 
-In der `.env` steht `API_KEY` (leer = API deaktiviert).
-Den Schlüssel nur serverseitig verwenden (server.lua), nie im Client.
+In der `.env` steht `API_KEY` (leer = API deaktiviert). Den Schlüssel nur serverseitig verwenden (server.lua bzw. `set sams_api_key` in der server.cfg), nie im Client.
+
+### Fälschungen (optional)
+
+Unter *Administration → Fälschungen* (nur Hauptadministrator, Vorgabe aus) lassen sich geheime **Fälscherwerkstätten** für das Spiel anlegen. Mit Material, einem echten Original als Vorlage, Geschicklichkeitsprüfungen, Arbeitszeit, Abklingzeit und Alarm-Risiko können Kriminelle dort Dokumente nachmachen. Fälschungen stehen nicht in der Dokumentenliste: Ihr Prüfcode existiert nicht, die **Echtheitsprüfung schlägt fehl**. Schlechte Fälschungen haben zusätzlich sichtbare Mängel; echte Dokumente tragen dafür als Sicherheitsmerkmal eine Mikroschrift am unteren Rand. Die Administration sieht alle Fälschungen (Werkstatt, Spieler, Qualität, wie oft der Code geprüft wurde). Details zur Spielseite: `fivem/sams_tablet/README.md`.
+
+### Gesetzbücher
+
+Unter *Gesetze* lesen und durchsuchen alle Fraktionen die Gesetzbücher (Bücher, Paragraphen, Strafmaße; Treffer werden markiert). Importieren und bearbeiten dürfen der Hauptadministrator und die Leitung von Justiz und Verwaltung (Recht `laws.manage`).
+
+- **Import** (*Gesetze → Gesetzbuch importieren*): PDF hochladen – der Text wird direkt im Browser gelesen (pdf.js, liegt im Projekt), es sind keine Programme auf dem Webspace nötig. Alternativ Text- oder Markdown-Datei oder Text einfügen.
+- Erkannt werden Buchüberschriften (z. B. „Strafgesetzbuch (StGB)“, Kürzel aus der Klammer), Paragraphen („§1 Titel“, „§ 1“, „Art. 1“), Absätze, Aufzählungen und Strafmaße („Strafmaß: bis 20 HE und 10.000 $“, auch „oder“). Seitenzahlen und wiederkehrende Kopfzeilen fallen weg.
+- **Vorschau** vor dem Speichern: Bücher an- und abwählen, Titel und Kürzel ändern, Hinweise auf doppelte Paragraphen oder nicht lesbare Strafmaße.
+- Ein Gesetzbuch gilt für einen **Staat** (Spielserver) oder für alle. Erneuter Import mit gleichem Namen im selben Staat ersetzt die alte Fassung.
+- **Strafmaße in den Katalog übernehmen**: Polizei und Justiz übernehmen alle Paragraphen mit Strafmaß als Positionen (z. B. „§2 StGB – Raub“, Geldstrafe und Hafteinheiten) in ihren Bußgeld- und Strafkatalog – damit stehen sie in Strafanzeige, Strafbefehl und Bußgeldbescheid zur Auswahl. Erneute Übernahme aktualisiert statt zu verdoppeln.
+- Einzelne Paragraphen lassen sich nachträglich bearbeiten; das Strafmaß wird dabei neu ausgewertet.
+
+### Anwaltskanzleien
+
+Fraktionsart **Anwaltskanzlei** (*Fraktionen → anlegen*, beliebig viele – jede Kanzlei ist eine eigene Fraktion mit getrennten Daten):
+
+- Ränge Kanzleiinhaber/in, Partner/in, Rechtsanwalt/-anwältin, Junior-Anwalt, Rechtsanwaltsfachangestellte/r, Referendar/in; Abteilungen Straf-, Zivil-, Verkehrs-, Verwaltungsrecht, Sekretariat; **Honorarordnung** und **Honorarrechnungen**; eigenes Logo und Kanzleistempel.
+- **Mandantenakten** und **Mandate** – nur die eigene Kanzlei sieht sie.
+- Dokumente: Vollmacht, Mandatsvereinbarung, Schriftsatz, Einspruch, Antrag auf Akteneinsicht, Antrag auf Haftprüfung, Beweisantrag. Mit **„Einreichen bei“** gehen sie beim Ausstellen direkt an Gericht/Staatsanwaltschaft, Polizei oder Verwaltung (als Freigabe, mit Benachrichtigung). Ein Antrag auf Akteneinsicht legt dort zusätzlich eine **Behördenanfrage** an; die Antwort kommt mit freigegebenen Akten zurück.
+- **Gerichtskalender**: Das Gericht wählt Anwältinnen und Anwälte aller Kanzleien als Verteidigung; die Kanzlei sieht diese Termine (mit Erinnerung) und führt eigene Fristen.
+- **Anwaltsverzeichnis** für alle Fraktionen und im Bürgerportal.
+
+### Gesetze überall
+
+- **Vorschläge in Formularen**: Tatvorwurf/Delikte (Strafanzeige, Festnahme, Ermittlungsbericht, Anklage, Strafbefehl, Urteil, Haftbefehl), Schriftsätze der Kanzleien und Vorwürfe in Vorgängen/Mandaten schlagen beim Tippen Paragraphen vor („§2 StGB – Raub (bis 35 HE oder 15.000 $)“).
+- **Zitierte Gesetze**: Unter jedem Dokument erscheinen die darin genannten Paragraphen („§ 2 StGB“, „§§ 1, 5 StVO“) mit Gesetzestext und Strafmaß.
+- **Strafrechner** (*Gesetze → Strafrechner*): Tatvorwürfe mit Anzahl wählen, Strafrahmen wird summiert und auf die Höchstgrenzen der Gesamtstrafe begrenzt (aus dem Gesetzbuch erkannt, änderbar); fertiger Text zum Kopieren.
+- **Suche** findet Paragraphen; das **Bürgerportal** zeigt das Gesetzbuch.
+- Es gilt jeweils das Gesetzbuch des eigenen Staats (Spielserver), sonst das für alle Staaten.
+
+### Mehrere FiveM-Server (Staaten) an einem Portal
+
+Unter *Administration → Spielserver* (nur Hauptadministrator) verbindest du beliebig viele FiveM-Server, z. B. je Staat. Jeder Server bekommt einen **eigenen API-Schlüssel**; Portal-Adresse (`sams_url`) und Schlüssel (`sams_api_key`) lassen sich dort anzeigen und kopieren. Der erste Server (Hauptserver) nutzt `API_KEY` aus der `.env`, bis im Portal ein eigener Schlüssel erzeugt wird.
+
+- **Drucker** werden einem Staat zugeordnet: Sie erscheinen nur auf diesem Server, und nur dort können Aufträge abgeholt werden. In der Druckerauswahl steht der Staat dabei, die Drucker des eigenen Staats zuerst.
+- **Tablet-Anmeldungen** gelten nur auf dem Server, auf dem sie entstanden sind.
+- **Spiel-Rechnungen** gehen an den Server, auf dem die ausstellende Person zuletzt mit dem Tablet angemeldet war.
+- **Leitstelle**: Einsätze verschiedener Server werden getrennt gespeichert.
+- **Spieleinstellungen** (Framework, Rechnungssystem, Befehle, Sky, tetrascript) gelten global und lassen sich je Server überschreiben.
+- Akten, Dokumente, Fraktionen und Benutzer sind gemeinsam.
+- Schlüssel erneuern macht den alten sofort ungültig; deaktivierte Server werden abgewiesen.
 
 ```
-GET api.php?action=verify&code=K7F3QX9M          → Dokument prüfen (z. B. für LSPD-/checkdoc-Befehl)
-GET api.php?action=patient&citizen_id=ABC12345   → Notfalldaten (Blutgruppe, Allergien, Vorerkrankungen …)
-GET api.php?action=documents&citizen_id=ABC12345 → Dokumente eines Bürgers
+GET  api.php?action=verify&code=K7F3QX9M          → Dokument prüfen (z. B. für LSPD-/checkdoc-Befehl)
+GET  api.php?action=patient&citizen_id=ABC12345   → Notfalldaten (Blutgruppe, Allergien, Vorerkrankungen …)
+GET  api.php?action=documents&citizen_id=ABC12345 → Dokumente eines Bürgers
+GET  api.php?action=printers                      → Drucker in der Spielwelt
+POST api.php?action=tablet_login | tablet_session | tablet_launch | tablet_logout
+POST api.php?action=printer_jobs | job_pickup | jobs_since | document_item
+POST api.php?action=duty_set | duty_status | rx_check | rx_redeem | wanted_check | person_check
+POST api.php?action=game_config | bills_sync | bill_result | record_lookup | record_open
 Header: X-API-Key: <api_key>
 ```
 
-Beispiel (server.lua):
+Details zu allen Aktionen stehen im Kopf von [`public/api.php`](public/api.php). **Eigene Skripte** (weitere Resourcen, Discord-Bots, Webseiten) nutzen die Andock-Schnittstelle: [`docs/API.md`](docs/API.md).
 
-```lua
-PerformHttpRequest('https://deine-community.de/sams/api.php?action=verify&code=' .. code, function(status, body)
-    local data = json.decode(body)
-    if data and data.found then
-        print(('%s %s – Status: %s'):format(data.type, data.number, data.status))
-    end
-end, 'GET', '', { ['X-API-Key'] = 'DEIN_API_KEY' })
-```
+**Antwortcodes:** Die API antwortet auf fachliche Fehler (z. B. falsches Passwort, 2FA-Code nötig, Auftrag bereits abgeholt) immer mit HTTP 200 und `ok: false` + `error` bzw. `status` im JSON. Grund: FXServer liefert bei Nicht-2xx-Antworten keinen Antworttext an die Resource – das Tablet würde sonst „nicht erreichbar“ melden. Nur 401 (ungültiger Schlüssel/abgelaufene Anmeldung) und 503 (Wartung) sind Fehlercodes. Neue Aktionen bitte genauso bauen; `tests/cases/22_api_fivem_vertrag.php` schlägt sonst fehl.
 
 ## Eigene Dokumentarten
 
@@ -249,3 +343,22 @@ die Dokumente sind nicht für reale Verwendung bestimmt.
 
 Verwendete Bibliotheken: [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) (MIT),
 [html2canvas](https://html2canvas.hertzen.com/) (MIT), Schrift „Herr Von Muellerhoff“ (SIL OFL 1.1).
+
+## Discord einrichten (optional)
+
+1. Auf https://discord.com/developers/applications eine Anwendung anlegen.
+2. Unter *OAuth2* die Redirect-URIs eintragen: `APP_URL/index.php?p=discord_login` (Mitarbeitende) und `APP_URL/portal.php?action=callback` (Bürgerportal).
+3. `DISCORD_CLIENT_ID` und `DISCORD_CLIENT_SECRET` in die `.env` eintragen.
+4. Für Direktnachrichten und Rollen-Sync zusätzlich einen Bot anlegen, auf den Server einladen und `DISCORD_BOT_TOKEN` sowie `DISCORD_GUILD_ID` setzen.
+5. Im Websystem unter *Verwaltung → Discord* die Webhook-Adressen der Kanäle, Berichte und die Zuordnung Discord-Rolle → Rang einstellen.
+
+Nachrichten werden über eine Warteschlange verschickt; `php bin/sams cron` läuft automatisch mit dem Update-Timer mit.
+
+
+## Tests und Absicherung der Auto-Updates
+
+- `php tests/run.php` startet das System mit einer frischen Testdatenbank auf einem eigenen Port und spielt alle wichtigen Abläufe durch (Anmeldung, Akten, Dokumente, Freigaben, Abrechnung, Dienstzeit, Tablet-API, Personal, Ausbildung, Wiki, Portal, Vorlagen, Discord-Warteschlange). Die echte `.env` und Datenbank bleiben unberührt. `php tests/run.php documents` testet nur einen Bereich.
+- Auf GitHub laufen die Tests bei jedem Push automatisch (`.github/workflows/tests.yml`), dazu die Migrationen auf MariaDB und die Lua-Syntax der FiveM-Resource. Erst zusammenführen, wenn alles grün ist.
+- Nach jedem Auto-Update läuft `php bin/sams selftest` (Syntax aller Dateien, Datenbank, jede Dokumentvorlage) und die Seite wird aufgerufen. Schlägt etwas fehl, werden Code und Datenbank automatisch zurückgesetzt. Optional `UPDATE_HEALTH_URL`, falls der Server sich nicht über `APP_URL` erreicht.
+- Optional unter *Einstellungen → Sicherheit*: automatische Abmeldung nach X Minuten ohne Aktivität (Standard: aus).
+- Öffentliche Seiten (Echtheitsprüfung, Freigabe-Links, Bürgerportal) bremsen automatisierte Massenabfragen; normale Nutzung ist davon nicht betroffen.

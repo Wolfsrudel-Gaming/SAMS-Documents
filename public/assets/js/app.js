@@ -1,4 +1,4 @@
-/* SAMS Dokumentensystem – Oberfläche */
+/* Wolfpack Documents – Oberfläche */
 (function () {
     'use strict';
 
@@ -159,6 +159,55 @@
         return out.toDataURL('image/png');
     }
 
+    // Bildfeld (z. B. Ausweisfoto): im Browser auf max. 480 px verkleinern und als data-URI speichern
+    document.querySelectorAll('[data-image-input]').forEach(function (file) {
+        var wrap = file.closest('.image-field'), input = document.getElementById(file.dataset.imageInput);
+        var preview = wrap.querySelector('.image-preview'), clear = wrap.querySelector('.image-clear');
+        file.addEventListener('change', function () {
+            var f = file.files && file.files[0];
+            if (!f) { return; }
+            var img = new Image(), url = URL.createObjectURL(f);
+            img.onload = function () {
+                var s = Math.min(1, 480 / Math.max(img.width, img.height));
+                var c = document.createElement('canvas');
+                c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                input.value = c.toDataURL('image/jpeg', 0.85);
+                preview.src = input.value; preview.hidden = false; clear.hidden = false;
+                URL.revokeObjectURL(url);
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            };
+            img.onerror = function () { alert('Das Bild konnte nicht gelesen werden.'); };
+            img.src = url;
+        });
+        clear.addEventListener('click', function () { input.value = ''; file.value = ''; preview.hidden = true; clear.hidden = true; input.dispatchEvent(new Event('change', { bubbles: true })); });
+    });
+
+    // Foto-URL: Bild gleich im Browser laden und ins Bildfeld übernehmen (klappt, wenn die Bildseite es erlaubt);
+    // sonst lädt der Server es beim Ausstellen herunter und speichert es im Dokument
+    document.querySelectorAll('input[name="d[photo]"]').forEach(function (urlInput) {
+        var fileInput = document.querySelector('[data-image-input]');
+        if (!fileInput) { return; }
+        var wrap = fileInput.closest('.image-field'), hidden = document.getElementById(fileInput.dataset.imageInput);
+        urlInput.addEventListener('change', function () {
+            var url = urlInput.value.trim();
+            if (!/^https?:\/\//i.test(url) || hidden.value) { return; }
+            fetch(url, { mode: 'cors' }).then(function (r) { if (!r.ok) { throw new Error(r.status); } return r.blob(); }).then(function (blob) {
+                var img = new Image(), obj = URL.createObjectURL(blob);
+                img.onload = function () {
+                    var s = Math.min(1, 480 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+                    c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                    hidden.value = c.toDataURL('image/jpeg', 0.85);
+                    var pv = wrap.querySelector('.image-preview'); pv.src = hidden.value; pv.hidden = false; wrap.querySelector('.image-clear').hidden = false;
+                    URL.revokeObjectURL(obj);
+                    hidden.dispatchEvent(new Event('change', { bubbles: true }));
+                };
+                img.src = obj;
+            }).catch(function () { /* Bildseite erlaubt es nicht – der Server übernimmt beim Ausstellen */ });
+        });
+    });
+
     // Körperschema: Klick setzt nummerierte Markierung
     document.querySelectorAll('.bodymap-editor').forEach(function (wrap) {
         var svg = wrap.querySelector('svg');
@@ -261,4 +310,114 @@
         g.addEventListener('change', function (e) { if (e.target.name === 'perms[]') { sync(); } });
     });
     sync();
+})();
+
+// Dokumentformular: Schnell-/Vollmodus und Wahl der Unterschrift
+(function () {
+    'use strict';
+    document.querySelectorAll('[data-mode-for]').forEach(function (tabs) {
+        var form = document.querySelector(tabs.dataset.modeFor);
+        if (!form) { return; }
+        var set = function (mode) {
+            form.classList.toggle('quick', mode === 'quick');
+            tabs.querySelectorAll('button').forEach(function (b) { b.classList.toggle('active', b.dataset.mode === mode); });
+            try { localStorage.setItem('sams.docmode.' + location.search.replace(/.*type=([^&]+).*/, '$1'), mode); } catch (e) { /* ohne Speicher */ }
+        };
+        tabs.querySelectorAll('button').forEach(function (b) {
+            b.addEventListener('click', function () { set(b.dataset.mode); });
+        });
+        try {
+            var saved = localStorage.getItem('sams.docmode.' + location.search.replace(/.*type=([^&]+).*/, '$1'));
+            if (saved) { set(saved); }
+        } catch (e) { /* ohne Speicher */ }
+    });
+    document.querySelectorAll('input[name="sig_mode"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+            var live = document.querySelector('.live-sig');
+            if (live) { live.hidden = r.value !== 'live' || !r.checked; }
+        });
+    });
+})();
+
+// Rechnung: Preis aus der Gebührenordnung übernehmen, sobald eine Leistung gewählt wird
+(function () {
+    'use strict';
+    document.addEventListener('change', function (e) {
+        var input = e.target;
+        if (!window.SAMS_PRICES || !input.name || !/\[text\]$/.test(input.name)) { return; }
+        var price = window.SAMS_PRICES[input.value.trim()];
+        var row = input.closest('tr');
+        var priceInput = row && row.querySelector('input[name$="[price]"]');
+        var jailInput = row && row.querySelector('input[name$="[jail]"]');
+        if (jailInput && window.SAMS_JAIL && window.SAMS_JAIL[input.value.trim()] !== undefined && jailInput.value === '') {
+            jailInput.value = window.SAMS_JAIL[input.value.trim()];
+        }
+        if (price === undefined || !priceInput) { return; }
+        // Nur überschreiben, wenn leer oder zuvor automatisch gesetzt
+        if (priceInput.value === '' || priceInput.dataset.auto === priceInput.value) {
+            priceInput.value = price.toFixed(2);
+            priceInput.dataset.auto = priceInput.value;
+        }
+    });
+})();
+
+// Laufende Dienstzeit in der Kopfleiste (vom Server gemessene Dauer, unabhängig von der Uhr des Geräts)
+(function () {
+    'use strict';
+    var el = document.querySelector('.duty-toggle small[data-elapsed]');
+    if (!el) { return; }
+    var start = Date.now() - parseInt(el.dataset.elapsed, 10) * 1000;
+    function tick() {
+        var s = Math.max(0, Math.floor((Date.now() - start) / 1000));
+        el.textContent = Math.floor(s / 3600) + ':' + ('0' + Math.floor(s % 3600 / 60)).slice(-2) + ' h';
+    }
+    tick();
+    setInterval(tick, 30000);
+})();
+
+// Optionale Abmeldung bei Inaktivität: Aktivität hält die Sitzung per Lebenszeichen offen,
+// nach Ablauf lädt die Seite neu (der Server meldet dann ab), damit keine Akte offen stehen bleibt.
+(function () {
+    'use strict';
+    var minutes = parseInt(document.body.dataset.idle || '0', 10);
+    if (!minutes) { return; }
+    var last = Date.now(), pinged = Date.now();
+    ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(function (ev) {
+        document.addEventListener(ev, function () { last = Date.now(); }, { passive: true });
+    });
+    setInterval(function () {
+        var now = Date.now();
+        if (now - last > minutes * 60000 + 5000) {
+            location.reload();
+        } else if (last > pinged && now - pinged > 120000) {
+            pinged = now;
+            fetch('index.php?p=ping', { credentials: 'same-origin' }).catch(function () {});
+        }
+    }, 15000);
+})();
+
+// Benachrichtigungen: Zähler regelmäßig aktualisieren (Titel und Glocke)
+(function () {
+    'use strict';
+    var badge = document.querySelector('.bell-count');
+    if (!badge) { return; }
+    var baseTitle = document.title.replace(/^\(\d+\) /, '');
+    function show(n) {
+        badge.textContent = n;
+        badge.hidden = !n;
+        document.title = (n ? '(' + n + ') ' : '') + baseTitle;
+    }
+    show(parseInt(badge.textContent, 10) || 0);
+    setInterval(function () {
+        if (document.hidden) { return; }
+        fetch('index.php?p=notifications&count=1', { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (d) { if (d) { show(d.unread); } })
+            .catch(function () {});
+    }, 60000);
+    // Menü schließen beim Klick daneben
+    document.addEventListener('click', function (e) {
+        var bell = document.querySelector('.bell');
+        if (bell && bell.open && !bell.contains(e.target)) { bell.open = false; }
+    });
 })();

@@ -1,0 +1,41 @@
+<?php
+// Anhänge: Bilder (neu kodiert, Vorschau), PDF, Typprüfung, Rechte, Vertraulichkeit
+$tmp = sys_get_temp_dir() . '/sams-att-' . getmypid();
+@mkdir($tmp);
+$img = imagecreatetruecolor(800, 600);
+imagefill($img, 0, 0, imagecolorallocate($img, 200, 30, 30));
+imagejpeg($img, "$tmp/roentgen.jpg");
+file_put_contents("$tmp/befund.pdf", "%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF");
+file_put_contents("$tmp/boese.jpg", '<?php echo "x"; ?>');
+
+$arzt = (new Client(TEST_BASE))->login('arzt');
+$nfs = (new Client(TEST_BASE))->login('nfs');
+$arzt->get('/index.php?p=patient&id=1');
+$arzt->upload('/index.php?p=patient&id=1', ['action' => 'attach', 'title' => 'Röntgen Unterarm'], ['file' => "$tmp/roentgen.jpg"]);
+$att = trow("SELECT * FROM attachments WHERE title = 'Röntgen Unterarm'");
+check($att && $att['mime'] === 'image/jpeg' && $att['has_thumb'] == 1, 'Bild hochgeladen, Vorschaubild erzeugt');
+check($arzt->has('Röntgen Unterarm'), 'Anhang in der Akte sichtbar');
+$arzt->get('/index.php?p=attachment&id=' . $att['id']);
+check($arzt->status === 200 && str_starts_with($arzt->body, "\xFF\xD8"), 'Bild wird ausgeliefert');
+check((new Client(TEST_BASE))->get('/index.php?p=attachment&id=' . $att['id'])->has('Anmelden') , 'Ohne Anmeldung kein Zugriff');
+$arzt->get('/index.php?p=patient&id=1');
+$arzt->upload('/index.php?p=patient&id=1', ['action' => 'attach', 'title' => 'Befund'], ['file' => "$tmp/befund.pdf"]);
+check((bool) tval("SELECT id FROM attachments WHERE mime = 'application/pdf'"), 'PDF hochgeladen');
+$arzt->get('/index.php?p=patient&id=1');
+$arzt->upload('/index.php?p=patient&id=1', ['action' => 'attach', 'title' => 'Böse'], ['file' => "$tmp/boese.jpg"]);
+check($arzt->has('Erlaubt sind Bilder') && !tval("SELECT id FROM attachments WHERE title = 'Böse'"), 'Getarnte PHP-Datei abgelehnt');
+check(!glob(TEST_ROOT_STORAGE . '/attachments/*.php'), 'Keine ausführbaren Dateien im Speicher');
+$arzt->get('/index.php?p=patient&id=1');
+$arzt->upload('/index.php?p=patient&id=1', ['action' => 'attach', 'title' => 'Vertraulich-Bild', 'confidential' => '1'], ['file' => "$tmp/roentgen.jpg"]);
+$conf = (int) tval("SELECT id FROM attachments WHERE title = 'Vertraulich-Bild'");
+check(!$nfs->get('/index.php?p=patient&id=1')->has('Vertraulich-Bild'), 'Vertraulicher Anhang für NFS unsichtbar');
+check($nfs->get("/index.php?p=attachment&id=$conf")->status === 404, '… auch nicht per Direktaufruf');
+check($nfs->get('/index.php?p=attachment&id=' . $att['id'])->status === 200, 'Normaler Anhang für NFS sichtbar');
+$nfs->get('/index.php?p=patient&id=1');
+$nfs->post('/index.php?p=patient&id=1', ['action' => 'attach_delete', 'attachment_id' => $att['id']]);
+check((bool) tval('SELECT id FROM attachments WHERE id = ?', [$att['id']]), 'Fremden Anhang nicht löschbar');
+$arzt->get('/index.php?p=patient&id=1');
+$arzt->post('/index.php?p=patient&id=1', ['action' => 'attach_delete', 'attachment_id' => $att['id']]);
+check(!tval('SELECT id FROM attachments WHERE id = ?', [$att['id']]) && !is_file(TEST_ROOT_STORAGE . '/attachments/' . $att['stored_name']), 'Eigener Anhang samt Datei gelöscht');
+array_map('unlink', glob("$tmp/*"));
+@rmdir($tmp);

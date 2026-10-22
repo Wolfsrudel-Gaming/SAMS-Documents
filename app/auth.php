@@ -25,13 +25,64 @@ function current_user(bool $refresh = false): ?array
     if ($uid) {
         $row = one('SELECT * FROM users WHERE id = ? AND active = 1', [$uid]);
         // "Alle Sitzungen beenden" und Passwortwechsel erhöhen session_version
-        if ($row && (int) $row['session_version'] === (int) ($_SESSION['sv'] ?? 0)) {
+        $factionOff = $row && empty($row['is_superadmin']) && empty(faction_by_id((int) ($row['faction_id'] ?? 1))['active']);
+        if ($factionOff) {
+            flash('error', 'Deine Fraktion ist derzeit deaktiviert.');
+            unset($_SESSION['uid'], $_SESSION['sv']);
+        } elseif ($row && (int) $row['session_version'] === (int) ($_SESSION['sv'] ?? 0)) {
             $user = $row;
         } else {
             unset($_SESSION['uid'], $_SESSION['sv']);
         }
     }
+    // Optionale Abmeldung bei Inaktivität (Einstellung session_idle_minutes, 0 = aus)
+    if ($user && PHP_SAPI !== 'cli') {
+        $idle = idle_minutes();
+        if ($idle > 0 && isset($_SESSION['last_activity']) && time() - (int) $_SESSION['last_activity'] > $idle * 60) {
+            unset($_SESSION['uid'], $_SESSION['sv'], $_SESSION['last_activity']);
+            flash('warn', "Du wurdest nach $idle Minuten ohne Aktivität automatisch abgemeldet.");
+            $user = null;
+        } else {
+            $_SESSION['last_activity'] = time();
+        }
+    }
+    faction_context_for_user($user);
     return $user;
+}
+
+/**
+ * Einfache Ratenbegrenzung pro IP für öffentliche Seiten. Gibt false zurück,
+ * wenn das Limit erreicht ist (dann 429 senden). Großzügig gewählt, damit
+ * normale Nutzung im Browser nie betroffen ist.
+ */
+function rate_limit(string $name, int $max, int $seconds = 60): bool
+{
+    try {
+        $bucket = $name . ':' . client_ip();
+        $since = date('Y-m-d H:i:s', time() - $seconds);
+        if ((int) scalar('SELECT COUNT(*) FROM rate_hits WHERE bucket = ? AND created_at >= ?', [$bucket, $since]) >= $max) {
+            return false;
+        }
+        insert('rate_hits', ['bucket' => $bucket, 'created_at' => now()]);
+        if (random_int(1, 50) === 1) {
+            q('DELETE FROM rate_hits WHERE created_at < ?', [date('Y-m-d H:i:s', time() - 3600)]);
+        }
+    } catch (PDOException $e) {
+        // vor der Migration: nicht begrenzen
+    }
+    return true;
+}
+
+function rate_limited_exit(): void
+{
+    http_response_code(429);
+    header('Retry-After: 60');
+    exit('<!doctype html><meta charset="utf-8"><body style="font-family:system-ui;padding:2rem">Zu viele Anfragen in kurzer Zeit. Bitte eine Minute warten.</body>');
+}
+
+function idle_minutes(): int
+{
+    return max(0, min(1440, (int) setting('session_idle_minutes', '0')));
 }
 
 /** Seiten, die trotz offener Pflichtschritte erreichbar sind. */
@@ -79,19 +130,20 @@ function client_ip(): string
 }
 
 /** Wartezeit in Minuten, falls zu viele Fehlversuche – sonst 0. */
-function login_blocked(string $username): int
+function login_blocked(string $username, ?string $ip = null): int
 {
+    $ip ??= client_ip();
     $since = date('Y-m-d H:i:s', time() - LOGIN_WINDOW_MIN * 60);
     $lastOk = scalar('SELECT MAX(created_at) FROM login_attempts WHERE username = ? AND success = 1', [$username]);
     $from = $lastOk && $lastOk > $since ? $lastOk : $since;
     $byUser = (int) scalar('SELECT COUNT(*) FROM login_attempts WHERE username = ? AND success = 0 AND created_at > ?', [$username, $from]);
-    $byIp = (int) scalar('SELECT COUNT(*) FROM login_attempts WHERE ip = ? AND success = 0 AND created_at > ?', [client_ip(), $since]);
+    $byIp = (int) scalar('SELECT COUNT(*) FROM login_attempts WHERE ip = ? AND success = 0 AND created_at > ?', [$ip, $since]);
     return ($byUser >= LOGIN_MAX_PER_USER || $byIp >= LOGIN_MAX_PER_IP) ? LOGIN_WINDOW_MIN : 0;
 }
 
-function record_login_attempt(string $username, bool $success): void
+function record_login_attempt(string $username, bool $success, ?string $ip = null): void
 {
-    insert('login_attempts', ['username' => mb_substr($username, 0, 190), 'ip' => client_ip(), 'success' => $success ? 1 : 0, 'created_at' => now()]);
+    insert('login_attempts', ['username' => mb_substr($username, 0, 190), 'ip' => substr($ip ?? client_ip(), 0, 64), 'success' => $success ? 1 : 0, 'created_at' => now()]);
     // Alte Einträge gelegentlich aufräumen
     if (random_int(1, 50) === 1) {
         q('DELETE FROM login_attempts WHERE created_at < ?', [date('Y-m-d H:i:s', time() - 30 * 86400)]);
@@ -116,6 +168,9 @@ function attempt_login(string $username, string $password): string
     if (!(int) $u['active']) {
         record_login_attempt($username, false);
         return 'inactive';
+    }
+    if (empty($u['is_superadmin']) && empty(faction_by_id((int) ($u['faction_id'] ?? 1))['active'])) {
+        return 'faction_inactive';
     }
     if (password_needs_rehash($u['password_hash'], PASSWORD_DEFAULT)) {
         update('users', (int) $u['id'], ['password_hash' => password_hash($password, PASSWORD_DEFAULT)]);
@@ -165,6 +220,7 @@ function complete_login(array $u): void
     session_regenerate_id(true);
     $_SESSION['uid'] = (int) $u['id'];
     $_SESSION['sv'] = (int) $u['session_version'];
+    $_SESSION['last_activity'] = time();
     update('users', (int) $u['id'], ['last_login' => now()]);
     current_user(true);
 }

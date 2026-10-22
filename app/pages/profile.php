@@ -21,6 +21,10 @@ if (is_post()) {
             redirect(url('profile'));
         }
         $data = $row + $me;
+    } elseif ($action === 'revoke_tablet') {
+        q('UPDATE tablet_tokens SET revoked = 1 WHERE id = ? AND user_id = ?', [(int) post('token_id'), $me['id']]);
+        flash('success', 'Tablet-Anmeldung beendet.');
+        redirect(url('profile'));
     } elseif ($action === 'signature') {
         $sig = post('remove') ? '' : (string) ($_POST['signature'] ?? '');
         if ($sig === '' && !post('remove')) {
@@ -38,6 +42,7 @@ if (is_post()) {
 $rank = rank_by_id((int) $me['rank_id']);
 $deps = all('SELECT d.* FROM departments d JOIN user_departments ud ON ud.department_id = d.id WHERE ud.user_id = ? ORDER BY d.sort, d.name', [$me['id']]);
 $quals = all('SELECT q.* FROM qualifications q JOIN user_qualifications uq ON uq.qualification_id = q.id WHERE uq.user_id = ? ORDER BY q.sort, q.name', [$me['id']]);
+$tablets = all('SELECT * FROM tablet_tokens WHERE user_id = ? AND revoked = 0 AND expires_at > ? AND session_version = ? ORDER BY last_used_at DESC', [$me['id'], now(), $me['session_version']]);
 $twofaRequired = in_array('security.2fa_required', user_permissions($me), true);
 $sampleDoc = ['issuer_snapshot' => issuer_snapshot($me), 'verify_code' => 'PROFIL' . $me['id']];
 ob_start(); ?>
@@ -55,6 +60,7 @@ ob_start(); ?>
             <dt>Qualifikationen</dt><dd><?php foreach ($quals as $qq): ?><?= tag_badge($qq) ?> <?= e($qq['name']) ?><br><?php endforeach; ?><?= $quals ? '' : '–' ?></dd>
         </dl>
         <p class="hint">Rang, Dienstnummer, Abteilungen und Qualifikationen werden von deiner Leitung gepflegt.</p>
+        <p><a class="btn small" href="<?= e(url('personnel')) ?>"><?= icon('folder') ?>Meine Personalakte</a></p>
     </section>
     <form method="post" class="card form-grid">
         <h2>Angaben auf Dokumenten</h2>
@@ -66,9 +72,17 @@ ob_start(); ?>
         <h2>Sicherheit</h2>
         <dl class="kv">
             <dt>Passwort</dt><dd>zuletzt geändert <?= e(fmt_datetime($me['password_changed_at']) ?: 'nie') ?> · <a href="<?= e(url('password_change')) ?>">Passwort ändern</a></dd>
+            <?php if (discord_configured()): ?><dt>Discord</dt><dd><?= $me['discord_id'] ? '<span class="badge green">verknüpft</span> <span class="mono small">' . e($me['discord_id']) . '</span>' : '<span class="badge grey">nicht verknüpft</span>' ?> · <a href="<?= e(url('discord_login', ['link' => 1])) ?>"><?= $me['discord_id'] ? 'Neu verknüpfen' : 'Verknüpfen' ?></a></dd><?php endif; ?>
             <dt>2FA</dt><dd><?= $me['totp_enabled'] ? '<span class="badge green">aktiv</span>' : '<span class="badge grey">nicht aktiv</span>' ?><?= $twofaRequired ? ' <span class="badge orange">Pflicht für deinen Rang</span>' : '' ?> · <a href="<?= e(url('twofa')) ?>"><?= $me['totp_enabled'] ? 'Verwalten' : 'Einrichten' ?></a></dd>
             <dt>Letzte Anmeldung</dt><dd><?= e(fmt_datetime($me['last_login'])) ?></dd>
         </dl>
+        <h3 class="form-heading" style="margin-top:.8rem">Angemeldete Tablets im Spiel</h3>
+        <?php if (!$tablets): ?><p class="muted small">Keine.</p><?php endif; ?>
+        <?php foreach ($tablets as $t): ?>
+            <form method="post" class="inline-form tablet-row"><?= csrf_field() ?><input type="hidden" name="action" value="revoke_tablet"><input type="hidden" name="token_id" value="<?= (int) $t['id'] ?>">
+                <span><strong><?= e($t['player_name'] ?: 'Unbekannt') ?></strong><br><small class="muted">angemeldet <?= e(fmt_datetime($t['created_at'])) ?> · zuletzt aktiv <?= e(fmt_datetime($t['last_used_at'])) ?></small></span>
+                <button class="btn small">Abmelden</button></form>
+        <?php endforeach; ?>
     </section>
 </div>
 

@@ -2,7 +2,7 @@
 defined('SAMS_ROOT') || exit;
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
-$rank = $id ? one('SELECT * FROM ranks WHERE id = ?', [$id]) : null;
+$rank = $id ? fone('ranks', $id) : null;
 if ($id && !$rank) {
     not_found('Rang nicht gefunden.');
 }

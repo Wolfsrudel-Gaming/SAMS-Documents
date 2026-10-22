@@ -290,3 +290,676 @@
     .paper.a5 { page: a5; min-height: 209.5mm; }
     .paper.a6l { page: a6l; min-height: 104.5mm; }
 }
+
+/* Gegenzeichnung und Nachträge */
+.sigblock .sig-sign.cosign { min-width: 50mm; }
+.sigblock .sig-sign.cosign .sig-img { margin-left: 6mm; }
+.sigblock .sig-sign.cosign .sig-font { margin-left: 6mm; font-size: 21pt; }
+.paper.addendum .addendum-text { border: .25mm solid #999; padding: 3mm 4mm; min-height: 60mm; margin: 2mm 0 3mm; font-size: 10pt; line-height: 1.45; }
+.sigblock:has(.cosign) { gap: 6mm; }
+.sigblock:has(.cosign) .sig-place { flex-basis: 36mm; }
+.sigblock:has(.cosign) .sig-sign { min-width: 0; }
+.op-report { white-space: normal; line-height: 1.45 !important; }
+
+/* Impfbescheinigung (gelb, zweisprachig) */
+.paper.vax { background: #fbf3c2; --vax: #6b5a00; padding: 8mm 8mm 6mm 10mm; }
+.vax-head { display: grid; grid-template-columns: 14mm 1fr auto; gap: 3mm; align-items: center; border-bottom: .5mm solid var(--vax); padding-bottom: 2mm; }
+.vax-logo { width: 14mm; height: 14mm; }
+.vax-title { font-size: 15pt; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #3d3300; }
+.vax-sub { font-size: 7.5pt; font-style: italic; color: var(--vax); }
+.vax-num { text-align: right; font-size: 7pt; color: var(--vax); }
+.vax-num b { display: block; font-size: 8.5pt; color: #111; }
+.vax-person, .vax-tbl { width: 100%; border-collapse: collapse; margin-top: 2.5mm; }
+.vax-person th, .vax-tbl th { text-align: left; font-size: 7pt; font-weight: 700; color: #3d3300; vertical-align: top; padding: .8mm 1.2mm; }
+.vax-person th small, .vax-tbl th small { display: block; font-weight: 400; font-style: italic; font-size: 6pt; color: var(--vax); }
+.vax-person td { border-bottom: .25mm solid var(--vax); padding: .8mm 1.2mm; font-size: 9pt; }
+.vax-tbl th { border: .25mm solid var(--vax); background: #f3e7a1; }
+.vax-tbl td { border: .25mm solid var(--vax); height: 11.5mm; padding: .6mm 1.2mm; font-size: 8pt; vertical-align: middle; position: relative; }
+.vax-tbl td small { font-size: 6.5pt; }
+.vax-label { display: inline-block; background: #fff; border: .2mm solid #999; padding: .3mm 1mm; font-size: 7pt; transform: rotate(-2deg); box-shadow: 0 .3mm .6mm rgba(0,0,0,.15); }
+.vax-sig { overflow: hidden; }
+.vax-stamp { position: absolute; left: 1mm; top: .8mm; border: .3mm solid #2b3f97; color: #2b3f97; font-size: 5.2pt; line-height: 1.15; padding: .4mm .8mm; border-radius: .8mm; transform: rotate(-4deg); opacity: .85; }
+.vax-sig .sig-img { max-height: 9mm; max-width: 26mm; margin: 0 0 0 7mm; }
+.vax-sig .sig-font { font-size: 13pt; margin: 2mm 0 0 8mm; }
+.vax-foot { margin-top: auto; font-size: 7.5pt; display: grid; gap: 1mm; padding-top: 2mm; }
+.vax-verify { display: flex; gap: 2mm; align-items: center; color: var(--vax); font-size: 6.5pt; border-top: .25mm solid var(--vax); padding-top: 1.5mm; }
+.vax-qr { width: 12mm; height: 12mm; flex: none; }
+
+/* Dienstausweis (ID-1) */
+.paper.idcard { width: 85.6mm; height: 54mm; border-radius: 3.2mm; padding: 0; display: flex; flex-direction: column; font-size: 6.5pt; line-height: 1.25; background: linear-gradient(135deg, #ffffff 0%, #eef3fa 55%, #dfe8f5 100%); }
+.paper.idcard .watermark { font-size: 20pt; }
+.id-band { display: flex; align-items: center; gap: 2mm; background: var(--id, #0b4f9c); color: #fff; padding: 1.6mm 3mm; }
+.id-band b { display: block; font-size: 7pt; letter-spacing: .02em; }
+.id-band span { font-size: 5.5pt; opacity: .85; text-transform: uppercase; letter-spacing: .08em; }
+.id-logo { width: 7mm; height: 7mm; background: #fff; border-radius: 50%; padding: .5mm; }
+.id-body { display: flex; gap: 3mm; padding: 2.2mm 3mm 0; flex: 1; }
+.id-photo { width: 21mm; height: 27mm; border: .3mm solid #9aa9bd; background: #cfd9e6; display: flex; align-items: center; justify-content: center; overflow: hidden; flex: none; border-radius: .8mm; }
+.id-photo img { width: 100%; height: 100%; object-fit: cover; }
+.id-photo span { font-size: 18pt; font-weight: 700; color: #5d6f88; }
+.id-data { flex: 1; min-width: 0; }
+.id-name { font-size: 9.5pt; font-weight: 800; color: #10233f; line-height: 1.1; }
+.id-func { font-size: 7pt; font-weight: 700; color: #c8102e; text-transform: uppercase; letter-spacing: .03em; margin-top: .6mm; }
+.id-dep { font-size: 6pt; color: #3a4a60; margin-top: .4mm; }
+.id-data dl { display: grid; grid-template-columns: auto 1fr; gap: .3mm 2mm; margin: 1.6mm 0 0; }
+.id-data dt { color: #5d6f88; font-size: 5.5pt; text-transform: uppercase; }
+.id-data dd { margin: 0; font-weight: 700; font-size: 7pt; }
+.id-bar { padding: 0 3mm 1.4mm 27mm; }
+.id-bar .barcode { width: 100%; height: 5mm; }
+.id-holo { position: absolute; right: 3mm; bottom: 7.5mm; width: 9mm; height: 9mm; border-radius: 50%; background: conic-gradient(from 30deg, #f5d0fe, #bfdbfe, #bbf7d0, #fde68a, #fecaca, #f5d0fe); opacity: .55; mix-blend-mode: multiply; }
+.id-strip { height: 8mm; background: #1d1d1d; margin-top: 3.5mm; }
+.id-back { padding: 2mm 3mm 1.5mm; display: flex; flex-direction: column; flex: 1; }
+.id-back-grid { display: grid; grid-template-columns: 1fr auto; gap: .8mm 3mm; }
+.id-back-grid .wide { grid-column: span 2; }
+.id-back-grid .fl { display: block; font-size: 5pt; color: #5d6f88; text-transform: uppercase; }
+.id-back-grid b { font-size: 6.5pt; }
+.id-note { font-size: 4.8pt; color: #3a4a60; margin: 1mm 0 0; line-height: 1.25; }
+.id-back-foot { display: flex; align-items: flex-end; gap: 2mm; margin-top: auto; }
+.id-qr { width: 10mm; height: 10mm; flex: none; }
+.id-issuer { flex: 1; display: flex; flex-direction: column; border-bottom: 0; }
+.id-issuer .sig-img { max-height: 7mm; max-width: 30mm; margin: 0; }
+.id-issuer .sig-font { font-size: 12pt; margin: 0; }
+.id-issuer span { font-size: 4.8pt; color: #5d6f88; border-top: .2mm solid #777; padding-top: .3mm; }
+.id-seal { width: 12mm; opacity: .8; }
+.id-code { font-size: 4.8pt; color: #777; text-align: right; margin-top: .5mm; }
+@media print { .paper.idcard { break-after: auto; page-break-after: auto; margin: 0 0 4mm; } }
+
+/* Urkunden und Zertifikate */
+.paper.certificate { padding: 12mm; background: #fffdf6; font-family: Georgia, "Times New Roman", serif; }
+.cert-frame { position: relative; flex: 1; border: 2.2mm double #9a7b1c; padding: 4mm; display: flex; }
+.cert-frame::before { content: ""; position: absolute; inset: 2.5mm; border: .4mm solid #c9a94a; pointer-events: none; }
+.cert-corner { position: absolute; width: 14mm; height: 14mm; border: .8mm solid #9a7b1c; }
+.cert-corner.tl { top: -1mm; left: -1mm; border-right: 0; border-bottom: 0; } .cert-corner.tr { top: -1mm; right: -1mm; border-left: 0; border-bottom: 0; }
+.cert-corner.bl { bottom: -1mm; left: -1mm; border-right: 0; border-top: 0; } .cert-corner.br { bottom: -1mm; right: -1mm; border-left: 0; border-top: 0; }
+.cert-inner { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 10mm 12mm 6mm; }
+.cert-logo { width: 26mm; height: 26mm; }
+.cert-logo.small { width: 16mm; height: 16mm; }
+.cert-org { font-size: 13pt; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #1c2b4a; margin-top: 3mm; }
+.cert-orgsub { font-size: 9pt; color: #555; font-style: italic; }
+.cert-title { font-size: 25pt; font-weight: 400; letter-spacing: .1em; max-width: 100%; overflow-wrap: anywhere; text-transform: uppercase; color: #8a6b10; margin: 10mm 0 6mm; }
+.cert-text { font-size: 12pt; margin: 2mm 0; }
+.cert-name { font-size: 24pt; font-style: italic; color: #10233f; margin: 3mm 0 1mm; border-bottom: .3mm solid #c9a94a; padding: 0 8mm 1mm; }
+.cert-small { font-size: 9pt; color: #555; margin: 0 0 3mm; }
+.cert-rank { font-size: 18pt; font-weight: 700; color: #1c2b4a; margin: 2mm 0 3mm; }
+.cert-laud { font-size: 11pt; font-style: italic; max-width: 140mm; margin: 4mm 0; color: #333; }
+.cert-wish { font-size: 11pt; margin: 6mm 0 0; }
+.cert-place { margin-top: auto; font-size: 11pt; }
+.cert-signs { display: grid; grid-template-columns: 1fr 34mm; gap: 8mm; align-items: end; width: 100%; margin-top: 6mm; }
+.cert-signs.two { grid-template-columns: 1fr 34mm 1fr; }
+.cert-sign { display: flex; flex-direction: column; align-items: center; font-family: Arial, sans-serif; min-width: 0; text-align: center; }
+.cert-sign .sig-area { height: 16mm; width: 100%; border-bottom: .3mm solid #333; display: flex; align-items: flex-end; justify-content: center; }
+.cert-sign .sig-img { margin: 0 0 -1mm; max-height: 16mm; }
+.cert-sign .sig-font { margin: 0 0 -1mm; font-size: 24pt; }
+.cert-sign span { font-size: 9pt; font-weight: 600; margin-top: 1mm; }
+.cert-sign small { font-size: 8pt; color: #555; }
+.cert-seal { width: 34mm; opacity: .9; }
+.cert-verify { display: flex; align-items: center; gap: 2mm; margin-top: 5mm; font-size: 6.5pt; color: #777; font-family: Arial, sans-serif; }
+.cert-qr { width: 12mm; height: 12mm; }
+.paper.certificate.training { padding: 0; background: #fff; }
+.cert-band { height: 9mm; background: linear-gradient(90deg, #0b4f9c, #0b4f9c 70%, #c8102e 70%); }
+.cert-inner.left { align-items: flex-start; text-align: left; padding: 10mm 22mm 4mm 24mm; }
+.cert-head { display: flex; gap: 4mm; align-items: center; }
+.cert-head .cert-org { margin-top: 0; }
+.training .cert-title { color: #0b4f9c; font-size: 30pt; margin: 12mm 0 6mm; }
+.training .cert-name { padding-left: 0; }
+.cert-list { margin: 0 0 3mm; padding-left: 6mm; font-size: 10.5pt; columns: 2; column-gap: 10mm; }
+.training .df { padding: 0 22mm 4mm 24mm; }
+
+/* Personalschreiben und Arbeitsvertrag */
+.ack-box { margin-top: 6mm; border: .3mm dashed #555; padding: 2.5mm 3.5mm; font-size: 8.8pt; break-inside: avoid; }
+.ack-box p { margin: 1mm 0 6mm; }
+.ack-sign { display: flex; flex-direction: column; width: 80mm; margin-left: auto; }
+.ack-sign span { border-bottom: .25mm solid #222; height: 8mm; }
+.ack-sign small { font-size: 7pt; color: #555; margin-top: .6mm; }
+.contract { font-size: 9.2pt; }
+.contract .prose { margin-bottom: 1.6mm; }
+.contract-h { font-size: 9.4pt; font-weight: 700; margin: 2.2mm 0 .6mm; }
+.doc-title.center { text-align: center; letter-spacing: .12em; text-transform: uppercase; }
+.contract-place { margin: 4mm 0 0; }
+.contract-signs { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; break-inside: avoid; }
+.contract-signs .sigblock { margin-top: 0; }
+.contract-signs .sig-sign { min-width: 0; }
+.contract-signs .sig-stamp.round { width: 28mm; right: 0; }
+.contract-place .hand-filled { display: inline-flex; min-width: 60mm; }
+.paper.custom-form .psec { background: #4a5563; }
+
+/* Untersuchungsbogen Sonderverwendungsfähigkeit */
+.sv .tbl { font-size: 7.6pt; margin: 0; }
+.sv .tbl th, .sv .tbl td { border: .25mm solid #444; padding: .4mm 1.2mm; text-align: left; }
+.sv .sv-audio td, .sv .sv-audio th:not(:first-child) { text-align: center; }
+.sv-ok { color: #1e6b3a; font-weight: 700; } .sv-bad { color: #a00; font-weight: 700; } .sv-na { color: #888; }
+.sv-row-bad td { background: #fde7e9; }
+.sv-note { margin: 1.5mm 0 0; color: #444; }
+.sv-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 1mm 0 3mm; }
+.sv-table th, .sv-table td { border: .3mm solid #333; padding: 1.2mm 2mm; text-align: left; }
+.sv-table td.r-geeignet { color: #1e6b3a; font-weight: 700; } .sv-table td.r-bedingt { color: #8a5a00; font-weight: 700; }
+.sv-table td.r-befristet, .sv-table td.r-nicht { color: #a00; font-weight: 700; }
+.sv-profile { font-family: "Courier New", monospace; font-size: 12pt; font-weight: 700; letter-spacing: .12em; }
+
+/* Sicherheitsmerkmal: Mikroschrift am Fuß jedes echten Dokuments (mit bloßem Auge nur als feine Linie erkennbar) */
+.df-micro { font-family: Arial, sans-serif; font-size: 2.6pt; line-height: 1; letter-spacing: .02em; color: #6a7f99; white-space: nowrap; overflow: hidden;
+    border-top: .15mm solid #c7d2df; padding-top: .4mm; margin-top: 1mm; opacity: .85; }
+
+/* Fälschungen: je nach Qualität sichtbare Mängel (gute Fälschungen sehen echt aus – nur die Echtheitsprüfung schlägt fehl) */
+.forged.q-hi .sig-stamp, .forged.q-mid .sig-stamp, .forged.q-low .sig-stamp { filter: blur(.5px); }
+.forged.q-mid .sig-stamp { transform: translate(2.5mm, -1.5mm) rotate(-3deg); opacity: .75; }
+.forged.q-mid .doc-logo, .forged.q-mid .lh-name, .forged.q-mid .seal, .forged.q-mid .psec, .forged.q-mid .ph-title { filter: hue-rotate(14deg) saturate(.75); }
+.forged.q-mid .doc-title { letter-spacing: .04em; }
+.forged.q-low .paper { background: #fbf6e6; font-family: "Times New Roman", Times, serif; }
+.forged.q-low .paper * { font-family: "Times New Roman", Times, serif !important; }
+.forged.q-low .sig-stamp { filter: blur(1.1px) grayscale(.3); transform: translate(4mm, -2mm) rotate(-6deg); opacity: .6; }
+.forged.q-low .doc-logo, .forged.q-low .lh-name, .forged.q-low .seal, .forged.q-low .psec { filter: hue-rotate(28deg) saturate(.6) contrast(.9); }
+.forged.q-low .qr, .forged.q-low .df-barcode { filter: blur(1.2px); }
+
+/* ---------------------------------------------------- US-Vorlagenset: Prescription */
+.paper.us-rx { background: #f4f8fb; border-top: 3mm solid #1f4e79; font-family: Arial, Helvetica, sans-serif; }
+.paper.us-rx.us-rx-cii { border-top-color: #8a1c1c; background: #fdf6f2; }
+.us-rx-head { display: flex; gap: 3mm; align-items: center; border-bottom: .3mm solid #1f4e79; padding-bottom: 1.5mm; }
+.us-rx-logo { width: 11mm; height: 11mm; object-fit: contain; }
+.us-rx-head > div:nth-child(2) { flex: 1; }
+.us-rx-org { font-weight: 700; font-size: 10pt; }
+.us-rx-addr, .us-rx-dr { font-size: 7pt; color: #333; }
+.us-rx-badge { border: .5mm solid #8a1c1c; color: #8a1c1c; font-weight: 800; font-size: 13pt; padding: 1mm 2.5mm; text-align: center; line-height: 1; }
+.us-rx-badge small { display: block; font-size: 5.5pt; font-weight: 600; }
+.us-rx-badge.light { border-color: #1f4e79; color: #1f4e79; font-size: 8pt; }
+.us-rx-pt { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1mm 3mm; font-size: 8pt; }
+.us-rx-pt .wide { grid-column: span 3; }
+.us-rx-pt .fl { display: block; font-size: 5.8pt; color: #555; }
+.us-rx-pt .fv { display: block; border-bottom: .2mm solid #999; min-height: 4mm; font-family: "Courier New", monospace; }
+.us-rx-body { display: flex; gap: 3mm; flex: 1; }
+.us-rx-sym { font-size: 26pt; font-weight: 700; color: #1f4e79; line-height: 1; }
+.us-rx-items { flex: 1; font-size: 8.5pt; }
+.us-rx-line { border-bottom: .2mm dashed #aaa; padding: 1mm 0; font-family: "Courier New", monospace; }
+.us-rx-daw { font-family: Arial, sans-serif; font-size: 6.5pt; color: #444; margin-top: .5mm; }
+.us-rx-note { font-size: 7.5pt; margin-top: 1mm; }
+.us-rx-flags { display: flex; flex-wrap: wrap; gap: 1mm 3mm; font-size: 6.5pt; color: #444; margin-top: 1.5mm; }
+.us-rx-sign { align-self: flex-end; width: 55mm; text-align: center; }
+.us-rx-sign .sig-area { border-bottom: .25mm solid #333; min-height: 10mm; position: relative; }
+
+/* =============================================== US-Gestaltung (US Letter, US-Formulare) */
+.paper.letter { width: 215.9mm; min-height: 279.4mm; padding: 11mm 15mm 0 17mm; display: flex; flex-direction: column; --us-accent: #1d2f5e; font-size: 9.2pt; }
+.paper.us .us-body { flex: 1; display: flex; flex-direction: column; gap: 2mm; }
+.paper.us h1 { margin: 0; }
+.paper.us .fl { display: block; font-size: 6pt; color: #444; text-transform: uppercase; letter-spacing: .03em; line-height: 1.15; }
+.paper.us .xbox { width: 3mm; height: 3mm; font-size: 7pt; }
+/* Behördenkopf (Polizei, Feuerwehr, Behörde) */
+.us-ahead { display: grid; grid-template-columns: 20mm 1fr 46mm; align-items: center; gap: 3mm; padding-bottom: 2mm; border-bottom: .8mm solid var(--us-accent); }
+.us-alogo { width: 19mm; height: 19mm; object-fit: contain; }
+.us-ahead-c { text-align: center; }
+.us-ahead-state { font-size: 7.5pt; letter-spacing: .25em; color: #444; }
+.us-ahead-org { font-size: 13pt; font-weight: 800; letter-spacing: .04em; color: var(--us-accent); line-height: 1.15; }
+.us-ahead-sub { font-size: 8pt; color: #333; }
+.us-ahead-case { border: .35mm solid #222; padding: 1.2mm 2mm; text-align: center; }
+.us-ahead-case b { display: block; font-size: 10pt; }
+.us-ahead-case svg { width: 100%; height: 6mm; }
+.us-band { background: var(--us-accent); color: #fff; padding: 1.6mm 3mm; display: flex; justify-content: space-between; align-items: baseline; gap: 4mm; }
+.us-band h1 { font-size: 12pt; letter-spacing: .06em; }
+.us-band small { font-size: 8pt; opacity: .9; }
+.us-banner { border: .5mm solid #8a1c1c; color: #8a1c1c; font-weight: 800; text-align: center; letter-spacing: .12em; padding: 1mm; font-size: 9pt; }
+.us-conf { text-align: center; font-size: 7.5pt; font-weight: 700; letter-spacing: .2em; color: #8a1c1c; }
+/* Formularraster */
+.us-sec { background: #e9ecf1; border: .3mm solid #222; border-bottom: 0; padding: .6mm 2mm; font-size: 7.5pt; font-weight: 800; letter-spacing: .06em; margin-top: 1mm; }
+.paper.us-fire .us-sec, .paper.us-rescue .us-sec { background: var(--us-accent); color: #fff; }
+.us-grid { display: grid; grid-template-columns: repeat(12, 1fr); border-left: .3mm solid #222; border-top: .3mm solid #222; }
+.us-cell { border-right: .3mm solid #222; border-bottom: .3mm solid #222; padding: .6mm 1.5mm; min-height: 8mm; }
+.us-cell .fv { display: block; font-family: "Courier New", monospace; font-size: 8.8pt; line-height: 1.3; margin-top: .3mm; }
+.us-cell.tall { min-height: 16mm; }
+.us-cell.w2 { grid-column: span 2; } .us-cell.w3 { grid-column: span 3; } .us-cell.w4 { grid-column: span 4; } .us-cell.w6 { grid-column: span 6; } .us-cell.w12 { grid-column: span 12; }
+.us-opts { display: flex; flex-wrap: wrap; gap: .6mm 3mm; font-family: Arial, sans-serif; font-size: 7.8pt; }
+.us-opt { white-space: nowrap; }
+.us-items { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.us-items th, .us-items td { border: .2mm solid #777; padding: .5mm 1mm; text-align: left; }
+.us-items th { font-size: 6.5pt; background: #f2f2f2; }
+/* Blöcke */
+.us-box { border: .35mm solid #222; padding: 2mm 3mm; font-size: 8.5pt; }
+.us-miranda { background: #f6f6f0; }
+.us-miranda ol { margin: 1mm 0 0 4mm; padding: 0; }
+.us-oath { font-style: italic; }
+.us-notice { border-color: #8a1c1c; }
+.us-order { font-weight: 800; letter-spacing: .1em; margin-top: 2mm; }
+.us-idrow { display: flex; gap: 4mm; justify-content: flex-end; }
+.us-thumb { text-align: center; } .us-thumb-box { width: 24mm; height: 30mm; border: .35mm solid #222; }
+.us-photo { width: 30mm; height: 38mm; border: .35mm dashed #555; display: grid; place-items: end center; padding-bottom: 1mm; }
+.us-review, .us-sigs { display: flex; gap: 6mm; margin-top: 3mm; flex-wrap: wrap; }
+.us-review > div { flex: 1; }
+.us-line { display: block; border-bottom: .3mm solid #222; height: 7mm; }
+.us-sig { flex: 1 1 60mm; position: relative; }
+.us-sig-date { flex: 0 1 38mm; }
+.us-sig-area { height: 16mm; position: relative; display: flex; align-items: flex-end; }
+.us-sig-area .sig-img { margin: 0 0 -1mm 4mm; max-height: 15mm; max-width: 60mm; }
+.us-sig-area .sig-stamp { position: absolute; right: 0; bottom: -4mm; width: 30mm; opacity: .9; }
+.us-sig-area .sig-stamp.rect { width: 42mm; }
+.us-sig-line { display: block; border-bottom: .3mm solid #222; }
+.us-sig-name { display: block; font-size: 8pt; }
+/* Fußzeile */
+.us-foot { margin-top: auto; padding: 2mm 0 4mm; border-top: .3mm solid #222; font-size: 7pt; }
+.us-foot-row { display: flex; justify-content: space-between; align-items: center; gap: 4mm; }
+.us-verify { display: flex; align-items: center; gap: 2mm; }
+.us-verify .qr { width: 13mm; height: 13mm; }
+.us-copies { margin-bottom: 1mm; display: flex; gap: 2mm; flex-wrap: wrap; align-items: center; }
+.us-copy { padding: 0 1.5mm; border: .2mm solid #999; }
+.us-copy.c0 { background: #fff; } .us-copy.c1 { background: #fff7c2; } .us-copy.c2 { background: #fbd9e3; } .us-copy.c3 { background: #d8e8fb; } .us-copy.c4 { background: #e2f3d9; }
+/* Klinik-, Rettungsdienst- und Personalformular */
+.us-mhead { display: flex; justify-content: space-between; gap: 4mm; border-bottom: 1mm solid var(--us-accent); padding-bottom: 2mm; }
+.paper.us-medical, .paper.us-ems { --us-accent: #0b4f9c; } .paper.us-hr { --us-accent: #3a3a3a; }
+.us-mhead-org { display: flex; gap: 3mm; align-items: center; font-size: 8pt; line-height: 1.3; }
+.us-mhead-org b { font-size: 11pt; color: var(--us-accent); }
+.us-mlogo { width: 15mm; height: 15mm; object-fit: contain; }
+.us-label { border: .35mm dashed #444; border-radius: 1.5mm; padding: 1.2mm 2.5mm; width: 72mm; font-size: 8.2pt; line-height: 1.35; position: relative; }
+.us-label-cap { position: absolute; top: -2mm; left: 2mm; background: #fff; padding: 0 1mm; font-size: 5.8pt; letter-spacing: .1em; text-transform: uppercase; color: #555; }
+.us-mtitle { display: flex; align-items: baseline; gap: 4mm; border-bottom: .3mm solid #222; padding: 1mm 0; }
+.us-mtitle h1 { font-size: 12.5pt; letter-spacing: .04em; color: var(--us-accent); flex: 1; }
+.us-mtitle small { font-size: 8pt; color: #444; }
+.paper.us-ems .us-sec { background: var(--us-accent); color: #fff; }
+/* Feuerwehr / Spezialrettung */
+.paper.us-fire { --us-accent: #a3161a; } .paper.us-rescue { --us-accent: #b34700; } .paper.us-gov { --us-accent: #2f5d50; } .paper.us-police { --us-accent: #1d2f5e; }
+/* Gericht / Schriftsatz */
+.paper.us-pleading-paper { padding-left: 27mm; }
+.us-lines { position: absolute; left: 12mm; top: 30mm; bottom: 30mm; width: 9mm; border-right: .6mm double #555; display: flex; flex-direction: column; justify-content: space-between; text-align: right; padding-right: 1.5mm; font-size: 7pt; color: #555; }
+.paper.us-pleading-paper::after { content: ""; position: absolute; right: 11mm; top: 0; bottom: 0; border-right: .3mm solid #999; }
+.paper.us-court { --us-accent: #6b1e1e; } .paper.us-pleading { --us-accent: #1f3d36; }
+.us-atty { font-size: 8.5pt; line-height: 1.35; margin-bottom: 4mm; }
+.us-court-name { text-align: center; font-weight: 800; font-size: 11.5pt; letter-spacing: .05em; margin: 2mm 0; }
+.us-court-name small { display: block; font-weight: 400; font-size: 8.5pt; letter-spacing: 0; }
+.us-caption { width: 100%; border-collapse: collapse; margin-bottom: 2mm; }
+.us-caption td { vertical-align: top; padding: 2mm 3mm; font-size: 9pt; }
+.us-caption-l { width: 56%; border-right: .35mm solid #222; border-bottom: .35mm solid #222; line-height: 1.45; }
+.us-caption-v { margin: 2mm 0 2mm 10mm; }
+.us-caption-r .fl { margin-bottom: .5mm; }
+.us-caption-title { margin-top: 3mm; font-weight: 800; font-size: 10.5pt; letter-spacing: .03em; }
+.us-title-plain { text-align: center; font-size: 12pt; letter-spacing: .06em; margin: 2mm 0 !important; }
+.us-para { margin: 0 0 1.8mm; line-height: 1.9; }
+.paper.us-pleading-paper .us-prose { line-height: 1.9; }
+/* Urkunde */
+.paper.us-cert { padding: 18mm 20mm 0; }
+.paper.us-cert::before { content: ""; position: absolute; inset: 7mm; border: 1.6mm double var(--us-accent); outline: .4mm solid var(--us-accent); outline-offset: -4mm; pointer-events: none; }
+.paper.us-certificate { --us-accent: #6b5a1e; }
+.us-cert-head { text-align: center; margin-bottom: 4mm; }
+.us-cert-logo { width: 22mm; height: 22mm; object-fit: contain; }
+.us-cert-state { letter-spacing: .3em; font-size: 8pt; margin-top: 2mm; }
+.us-cert-org { font-size: 11pt; font-weight: 700; color: var(--us-accent); }
+.us-cert-title { font-family: Georgia, "Times New Roman", serif; font-size: 24pt !important; font-weight: 400; margin: 4mm 0 1mm !important; letter-spacing: .02em; }
+.us-cert-sub { font-style: italic; font-size: 9.5pt; }
+.paper.us-cert .us-para { text-align: center; }
+/* US-Briefkopf für eingebaute Vorlagen */
+.us-lh { text-align: center; border-bottom: .6mm solid var(--us-accent); padding-bottom: 2mm; }
+.us-lh-logo { width: 16mm; height: 16mm; object-fit: contain; }
+.us-lh-state { font-size: 7.5pt; letter-spacing: .3em; color: #444; }
+.us-lh-org { font-size: 14pt; font-weight: 800; color: var(--us-accent); }
+.us-lh-sub { font-size: 8.5pt; }
+.us-lh-addr { font-size: 7pt; color: #444; margin-top: .5mm; }
+.us-lh-row { display: flex; justify-content: space-between; gap: 6mm; margin: 4mm 0 3mm; }
+.us-lh-to { font-size: 9.5pt; line-height: 1.4; }
+.us-lh-info { font-size: 8pt; border-collapse: collapse; }
+.us-lh-info th { text-align: left; font-weight: 400; color: #555; padding-right: 3mm; font-size: 6.8pt; text-transform: uppercase; }
+/* =============================================== US-Gestaltung: eingebaute Klinik- und Rettungsdienstvorlagen (us_attest … us_op_aufklaerung) */
+.us-cell.us-med-w1 { grid-column: span 1; } .us-cell.us-med-w5 { grid-column: span 5; } .us-cell.us-med-w7 { grid-column: span 7; } .us-cell.us-med-w8 { grid-column: span 8; }
+.us-cell.us-med-xl { min-height: 26mm; }
+.us-cell .fv b.us-med-big, .us-med-big { font-size: 12pt; font-weight: 700; }
+.us-med-warn { display: block; font-family: Arial, sans-serif; font-size: 7pt; font-weight: 700; color: #a00; margin-top: .6mm; }
+.us-cell.us-med-pos { background: #fde7e9; } .us-cell.us-med-pos .fv { color: #a00; font-weight: 700; }
+/* Ankreuzlisten */
+.us-med-checks { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5mm 3mm; font-family: Arial, sans-serif; font-size: 7.8pt; line-height: 1.35; padding: .5mm 0; }
+.us-med-checks.c1 { grid-template-columns: 1fr; } .us-med-checks.c4 { grid-template-columns: repeat(4, auto); justify-content: start; }
+.us-med-checks .on { font-weight: 700; }
+.us-med-yn { margin-top: 1mm; font-size: 9pt; }
+/* Berichtsabschnitte (Freitext) */
+.us-med-narr { border: .3mm solid #222; padding: 1.2mm 2mm; min-height: 11mm; font-size: 9pt; line-height: 1.45; text-align: justify; hyphens: auto; }
+.us-med-narr.strong { font-weight: 700; } .us-med-narr.tall { min-height: 22mm; } .us-med-narr.xl { min-height: 62mm; }
+.us-med-statement { font-size: 8.6pt; line-height: 1.45; margin: 1mm 0 0; text-align: justify; hyphens: auto; }
+.us-med-statement p { margin: 0 0 1.4mm; }
+.us-med-ol { padding-left: 5mm; margin: 1mm 0; } .us-med-ol li { margin-bottom: .8mm; }
+.us-med-fill { font-family: "Courier New", monospace; font-weight: 700; border-bottom: .25mm solid #222; padding: 0 1mm; }
+.us-med-hand { font-family: "Courier New", monospace; font-size: 10pt; padding: 0 0 1mm 2mm; }
+.us-med-refused { font: 700 10pt "Courier New", monospace; color: #a00; padding: 0 0 1mm 2mm; letter-spacing: .04em; text-transform: uppercase; }
+.us-med-box { border: .5mm solid var(--us-accent); background: #f7f9fc; padding: 2mm 3mm; font-size: 8.5pt; line-height: 1.45; }
+.us-med-box p { margin: 0 0 1.4mm; }
+.us-med-box .us-opts { font-size: 8.2pt; margin-top: 1mm; }
+/* Rettungsdienst: Zeiten und Vitalzeichen */
+.us-med-times, .us-med-vitals, .us-med-tbl { width: 100%; border-collapse: collapse; }
+.us-med-times, .us-med-vitals { table-layout: fixed; }
+.us-med-times th, .us-med-vitals th, .us-med-tbl th { border: .3mm solid #222; background: #eef1f5; font-size: 6pt; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; padding: .6mm 1mm; text-align: left; vertical-align: top; }
+.us-med-times td { border: .3mm solid #222; height: 8.5mm; font: 700 12pt "Courier New", monospace; text-align: center; }
+.us-med-ints { display: flex; gap: 6mm; font-size: 7.5pt; padding: .6mm 1mm 0; color: #333; }
+.us-med-vitals td { border: .3mm solid #222; height: 6.2mm; font: 9pt "Courier New", monospace; text-align: center; }
+.us-med-vitals td:first-child { font: 7.5pt Arial, sans-serif; text-align: left; padding-left: 1mm; }
+.us-cell.us-med-bm { display: flex; flex-direction: column; align-items: center; }
+.us-cell.us-med-bm .fl { align-self: flex-start; }
+.us-med-bm .bodymap { width: 100%; max-height: 38mm; }
+/* Tabellen (Verletzungen, klinischer Befund, Beweismittelkette) */
+.us-med-tbl td { border: .3mm solid #222; padding: .7mm 1.4mm; font: 8.6pt "Courier New", monospace; vertical-align: top; }
+.us-med-tbl .num { width: 7mm; text-align: center; }
+.us-med-tbl tr.blank td { height: 6mm; }
+.us-med-obs th { width: 52mm; font-size: 6.6pt; text-transform: none; font-weight: 600; background: #f4f6f9; }
+.us-med-obs td { font-family: Arial, sans-serif; font-size: 8pt; }
+.us-med-coc td { height: 9mm; font-size: 8pt; }
+.us-med-coc td.sig { width: 36mm; padding: 0 1mm; }
+.us-med-coc td.sig .sig-img { max-height: 8.5mm; max-width: 34mm; }
+.us-med-inj { display: grid; grid-template-columns: 1fr 50mm; gap: 2mm; align-items: stretch; }
+.us-med-inj .us-med-bm { border: .3mm solid #222; padding: .6mm 1.5mm; display: flex; flex-direction: column; }
+.us-med-inj .us-med-bm .bodymap { margin: auto 0; max-height: 44mm; }
+/* Ergebnis zum Ankreuzen */
+.us-med-result { border: .3mm solid #222; }
+.us-med-result > div { display: grid; grid-template-columns: 5mm 1fr; align-items: start; gap: 2mm; padding: 1mm 2mm; border-bottom: .2mm solid #c4c9d0; font-size: 8.6pt; }
+.us-med-result > div:last-child { border-bottom: 0; }
+.us-med-result small { display: block; font-size: 7.6pt; color: #444; }
+.us-med-result > div.on { background: #eef3fb; }
+.us-med-result > div.r-geeignet b { color: #1e6b3a; } .us-med-result > div.r-bedingt b { color: #8a5a00; } .us-med-result > div.r-nicht b, .us-med-result > div.r-befristet b { color: #a00; }
+.us-med-decision .on { background: #eef3fb; }
+/* Brief (Attest) */
+.us-med-ltitle { text-align: center; font-size: 13pt; letter-spacing: .06em; color: var(--us-accent); margin: 1mm 0 0 !important; }
+.us-med-ltitle small { display: block; font-size: 8.5pt; letter-spacing: .02em; color: #444; font-weight: 400; margin-top: .5mm; }
+.us-med-re { border-collapse: collapse; font-size: 9.2pt; border-top: .3mm solid #222; border-bottom: .3mm solid #222; width: 100%; }
+.us-med-re th { text-align: left; white-space: nowrap; padding: .8mm 4mm .8mm 0; width: 1%; vertical-align: top; }
+.us-med-re td { padding: .8mm 0; }
+.us-med-text { font-size: 10pt; line-height: 1.55; margin: 0; text-align: justify; hyphens: auto; }
+.paper.us-med-letter .us-body { gap: 3mm; }
+/* Unterschrift mit Kurzbescheinigung (Wallet Card) */
+.us-med-sigrow { display: flex; gap: 6mm; align-items: flex-end; }
+.us-med-sigcol { flex: 1; min-width: 0; }
+.us-med-card { width: 86mm; height: 54mm; flex: none; border: .35mm dashed #555; border-radius: 3mm; padding: 2mm 3mm; font-size: 7.6pt; position: relative; display: flex; flex-direction: column; gap: 1mm; overflow: hidden; }
+.us-med-card::before { content: "✂"; position: absolute; top: -.2mm; left: 5mm; font-size: 9pt; line-height: 1; color: #555; }
+.us-med-card .fl { font-size: 5.6pt; }
+.us-med-card-h { display: flex; gap: 2mm; align-items: center; border-bottom: .6mm solid var(--us-accent); padding-bottom: 1mm; font-size: 7pt; line-height: 1.2; }
+.us-med-card-h b { color: var(--us-accent); }
+.us-med-card-logo { width: 8mm; height: 8mm; object-fit: contain; }
+.us-med-card-r b { font-size: 9.5pt; letter-spacing: .04em; }
+.us-med-card-r.geeignet b { color: #1e6b3a; } .us-med-card-r.bedingt b { color: #8a5a00; } .us-med-card-r.nicht b, .us-med-card-r.befristet b { color: #a00; }
+.us-med-card-f { margin-top: auto; display: flex; justify-content: space-between; gap: 2mm; }
+
+/* US-Gestaltung: Nachbesserungen */
+.us-mtitle small { flex: 0 1 38%; text-align: right; line-height: 1.2; }
+.us-sub-plain { text-align: center; font-size: 9pt; margin-bottom: 2mm; color: #333; }
+.us-valid { align-self: flex-end; border: .6mm solid var(--us-accent); padding: 1.2mm 5mm; text-align: center; }
+.us-valid b { display: block; font-size: 15pt; letter-spacing: .04em; color: var(--us-accent); }
+.us-times { display: flex; border: .3mm solid #222; }
+.us-times > div { flex: 1; padding: .8mm 1.5mm; border-right: .3mm solid #222; min-height: 9mm; }
+.us-times > div:last-child { border-right: 0; }
+.us-times b { display: block; font-size: 9.5pt; }
+.us-tear { margin-top: 5mm; border-top: .35mm dashed #222; position: relative; padding-top: 2mm; }
+.us-tear > span { position: absolute; top: -3.2mm; left: 6mm; background: #fff; padding: 0 2mm; font-size: 7pt; color: #444; }
+.us-tear-body { display: flex; gap: 5mm; font-size: 8pt; align-items: flex-end; }
+.us-tear-body > div { flex: 1; }
+.us-sig-area .sig-stamp.round { z-index: 0; opacity: .8; }
+.us-box + .us-sigs, .us-oath + .us-sigs { margin-top: 8mm; }
+.paper.us-cert .us-footer, .paper.us-cert .us-foot { margin-left: 6mm; margin-right: 6mm; padding-bottom: 8mm; }
+/* US-Klinikvorlagen: Körperschema im Druck (ohne app.css) und Unterschrift neben der Kurzbescheinigung */
+.paper.us .us-med-bm .bodymap .figure circle, .paper.us .us-med-bm .bodymap .figure path { fill: #f4f6f9; stroke: #6b7785; stroke-width: .8; }
+.paper.us .us-med-bm .bodymap .mark circle { fill: #c0392b; stroke: #fff; stroke-width: .6; }
+.paper.us .us-med-bm .bodymap .mark text { fill: #fff; font-size: 6px; font-weight: 700; font-family: Arial, sans-serif; }
+.paper.us .us-med-bm .bodymap .bm-label { font-size: 6px; fill: #6b7785; font-family: Arial, sans-serif; }
+.paper.us .us-med-bm .bodymap .bm-sep { stroke: #dde3ea; stroke-width: .5; stroke-dasharray: 2 2; }
+.us-med-sigcol .us-sig { flex-basis: 48mm; } .us-med-sigcol .us-sig-date { flex-basis: 30mm; }
+/* =============================================== US-Gestaltung der eingebauten Vorlagen (us_rechnung, us_schreiben, us_dienstausweis, us_befoerderung, us_ausbildungsnachweis, us_personalbrief, us_arbeitsvertrag, us_sv_untersuchung, us_einsatztauglichkeit) */
+.paper.us[class*="us-gen-"] { --form: #222; }
+.us-gen-small { font-size: 7.8pt; }
+.us-gen-muted { color: #555; }
+.paper.us .us-gen-lead { margin: .5mm 0; }
+.paper.us .us-gen-h { font-size: 9.4pt; margin: 2.6mm 0 1mm; letter-spacing: .02em; color: var(--us-accent); }
+.us-gen-prose p { margin: 0 0 2.2mm; }
+.us-gen-kv { border-collapse: collapse; font-size: 8.4pt; }
+.us-gen-kv th { text-align: left; font-weight: 400; font-size: 6.6pt; text-transform: uppercase; letter-spacing: .04em; color: #444; padding: .7mm 3mm .7mm 0; white-space: nowrap; }
+.us-gen-kv td { padding: .7mm 0; text-align: right; }
+/* Rechnung / Zahlungsaufforderung */
+.us-gen-inv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 6mm; padding-bottom: 3mm; border-bottom: .8mm solid var(--us-accent); }
+.us-gen-inv-org { display: flex; gap: 3mm; align-items: center; font-size: 8.2pt; line-height: 1.4; }
+.us-gen-inv-org b { font-size: 13pt; color: var(--us-accent); }
+.us-gen-inv-logo { width: 19mm; height: 19mm; object-fit: contain; }
+.us-gen-inv-box { min-width: 66mm; }
+.paper.us .us-gen-inv-box h1 { font-size: 24pt; letter-spacing: .1em; color: var(--us-accent); text-align: right; line-height: 1; margin: 0 0 2mm; }
+.us-gen-inv-box .us-gen-kv { width: 100%; border-top: .3mm solid #222; }
+.us-gen-parties { display: flex; gap: 4mm; margin-top: 2mm; }
+.us-gen-party { flex: 1; border: .3mm solid #222; padding: 1.5mm 2.5mm; min-height: 24mm; }
+.us-gen-party-v { font-size: 9.2pt; line-height: 1.4; margin-top: .8mm; }
+.us-gen-party.us-gen-amount { flex: 0 0 48mm; background: #eef1f5; text-align: right; display: flex; flex-direction: column; }
+.us-gen-amount b { font-size: 18pt; margin-top: 2mm; }
+.us-gen-amount small { font-size: 7.6pt; color: #333; margin-top: auto; font-weight: 700; }
+.us-gen-items { width: 100%; border-collapse: collapse; font-size: 8.8pt; }
+.us-gen-items th { background: var(--us-accent); color: #fff; font-size: 6.8pt; text-transform: uppercase; letter-spacing: .05em; padding: 1.2mm 2mm; text-align: left; }
+.us-gen-items td { border-bottom: .2mm solid #b9bec7; padding: 1.3mm 2mm; vertical-align: top; }
+.us-gen-items tbody tr:nth-child(even) td { background: #f5f6f8; }
+.us-gen-items .r { text-align: right; white-space: nowrap; }
+.us-gen-items .c { text-align: center; width: 11mm; }
+.us-gen-items .us-gen-empty td { height: 6mm; }
+.us-gen-sumrow { display: flex; gap: 6mm; align-items: flex-start; margin-top: 1mm; }
+.us-gen-terms { flex: 1; font-size: 8.4pt; border-left: .8mm solid var(--us-accent); padding: .3mm 0 .3mm 3mm; }
+.us-gen-terms > b { display: block; font-size: 6.8pt; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1mm; }
+.paper.us .us-gen-terms p { margin: 0 0 1.4mm; }
+.us-gen-totals { border-collapse: collapse; min-width: 72mm; font-size: 9pt; }
+.us-gen-totals th { text-align: left; font-weight: 400; padding: .9mm 4mm .9mm 2mm; }
+.us-gen-totals td { text-align: right; padding: .9mm 2mm .9mm 0; white-space: nowrap; }
+.us-gen-totals .us-gen-total th, .us-gen-totals .us-gen-total td { border-top: .4mm solid #222; font-weight: 700; }
+.us-gen-totals .us-gen-balance th, .us-gen-totals .us-gen-balance td { background: var(--us-accent); color: #fff; font-weight: 800; padding-top: 1.4mm; padding-bottom: 1.4mm; font-size: 10pt; }
+.us-gen-paid { display: inline-block; transform: rotate(-8deg); border: .8mm solid #b0102a; color: #b0102a; border-radius: 2mm; padding: .8mm 4mm; font: 900 16pt/1 Arial, sans-serif; letter-spacing: .15em; opacity: .8; text-align: center; margin: 1mm 0 2.5mm 6mm; mix-blend-mode: multiply; }
+.us-gen-paid small { display: block; font-size: 7pt; letter-spacing: .05em; margin-top: .5mm; }
+.paper.us .us-gen-thanks { text-align: center; font-style: italic; margin: 1mm 0 0; }
+.paper.us-gen-inv .us-sigs { margin-top: 1mm; }
+.us-gen-stub { margin-top: auto; padding-top: 3mm; }
+.us-gen-cut { border-top: .4mm dashed #444; font-size: 7pt; color: #444; text-align: center; padding-top: .8mm; position: relative; }
+.us-gen-cut span { position: absolute; left: 2mm; top: -2.9mm; font-size: 12pt; line-height: 1; background: #fff; padding: 0 1mm; }
+.us-gen-stub-row { display: flex; gap: 5mm; align-items: stretch; margin-top: 2mm; padding-bottom: 1mm; }
+.us-gen-stub-to { flex: 1; font-size: 8.4pt; line-height: 1.4; }
+.us-gen-stub-to .fl { margin-bottom: .6mm; }
+.us-gen-stub-kv { border: .3mm solid #222; flex: 0 0 80mm; align-self: flex-start; }
+.us-gen-stub-kv th, .us-gen-stub-kv td { border-bottom: .2mm solid #b9bec7; padding: .8mm 2mm; }
+.us-gen-stub-kv td.us-gen-fill { min-width: 30mm; text-align: left; }
+.us-gen-stub-bc { flex: 0 0 42mm; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: .5mm; font-size: 7pt; }
+.us-gen-stub-bc .barcode { width: 100%; height: 11mm; }
+.paper.us-gen-notice .us-gen-items th { background: #222; }
+.paper.us-gen-notice .us-gen-totals .us-gen-balance th, .paper.us-gen-notice .us-gen-totals .us-gen-balance td { background: #222; }
+/* Geschäftsbrief (block format) */
+.us-gen-lh { display: grid; grid-template-columns: 20mm 1fr auto; gap: 4mm; align-items: center; padding-bottom: 2.5mm; border-bottom: .6mm solid var(--us-accent); position: relative; }
+.us-gen-lh::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1.3mm; border-bottom: .2mm solid var(--us-accent); }
+.us-gen-lh-logo { width: 19mm; height: 19mm; object-fit: contain; }
+.us-gen-lh-state { font-size: 7pt; letter-spacing: .32em; color: #555; }
+.us-gen-lh-org { font-family: Georgia, "Times New Roman", serif; font-size: 18pt; color: var(--us-accent); line-height: 1.1; }
+.us-gen-lh-sub { font-size: 8.5pt; color: #333; }
+.us-gen-lh-addr { font-size: 7.4pt; line-height: 1.45; text-align: right; color: #444; border-left: .3mm solid var(--us-accent); padding-left: 3mm; }
+.us-gen-letter-body { padding: 0 8mm; font-family: Georgia, "Times New Roman", serif; font-size: 10.6pt; line-height: 1.45; }
+.us-gen-date { margin: 10mm 0 6mm; }
+.us-gen-refs { display: flex; gap: 8mm; font-size: 8pt; color: #444; margin: -3mm 0 5mm; font-family: Arial, Helvetica, sans-serif; }
+.us-gen-inside { min-height: 24mm; margin-bottom: 6mm; }
+.us-gen-subject { margin-bottom: .6mm; }
+.paper.us .us-gen-salute { margin: 5mm 0 3mm; }
+.paper.us .us-gen-letter-body .us-gen-prose p { margin: 0 0 3.6mm; }
+.paper.us .us-gen-close { margin: 4mm 0 0; }
+.us-gen-sigblock { position: relative; }
+.us-gen-sigarea { height: 19mm; position: relative; display: flex; align-items: flex-end; }
+.us-gen-sigarea .sig-img { margin: 0 0 -1mm 0; max-height: 18mm; max-width: 64mm; }
+.us-gen-sigarea .sig-font { margin: 0 0 -1mm 0; font-size: 24pt; }
+.us-gen-sigarea .sig-stamp.us-gen-seal { left: 46mm; right: auto; bottom: -7mm; width: 29mm; }
+.us-gen-signame { line-height: 1.35; margin-top: 1mm; }
+.us-gen-cosign { margin-top: 6mm; }
+/* Dienstausweis (US-Behördenausweis, CR80) */
+.paper.idcard.us-gen-id { background: linear-gradient(160deg, #ffffff 0%, #f2f5fa 58%, #e2e9f3 100%); font-family: Arial, Helvetica, sans-serif; color: #10233f; }
+.paper.idcard.us-gen-id::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(19, 41, 75, .035) 0 .4mm, transparent .4mm 1.6mm); pointer-events: none; }
+.paper.idcard.us-gen-id .fl { display: block; font-size: 4.5pt; color: #5d6f88; text-transform: uppercase; letter-spacing: .05em; line-height: 1.15; }
+.us-gen-id-top { display: flex; align-items: center; gap: 2mm; background: #13294b; color: #fff; padding: 1.2mm 3mm; border-bottom: .8mm solid #c9a227; position: relative; flex: none; }
+.us-gen-id-logo { width: 8.4mm; height: 8.4mm; background: #fff; border-radius: 50%; padding: .5mm; object-fit: contain; flex: none; }
+.us-gen-id-agency { min-width: 0; }
+.us-gen-id-agency small { display: block; font-size: 4.8pt; letter-spacing: .3em; color: #e9d48a; }
+.us-gen-id-agency b { display: block; font-size: 7.2pt; letter-spacing: .04em; line-height: 1.1; }
+.us-gen-id-main { display: flex; gap: 2.6mm; padding: 1.8mm 3mm 0; flex: 1; min-height: 0; position: relative; }
+.us-gen-id-photo { width: 21mm; height: 27mm; flex: none; border: .4mm solid #13294b; background: #cfd9e6; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.us-gen-id-photo img { width: 100%; height: 100%; object-fit: cover; }
+.us-gen-id-photo span { font-size: 17pt; font-weight: 700; color: #5d6f88; }
+.us-gen-id-data { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.us-gen-id-name { font-size: 8.4pt; font-weight: 800; line-height: 1.1; letter-spacing: .02em; }
+.us-gen-id-title { align-self: flex-start; margin-top: .7mm; background: #8a1c1c; color: #fff; font-size: 5.6pt; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: .3mm 1.4mm; max-width: 100%; }
+.us-gen-id-dep { font-size: 5.2pt; color: #3a4a60; margin-top: .4mm; }
+.us-gen-id-data dl { display: grid; grid-template-columns: auto 1fr; gap: 0 2mm; margin: .9mm 0 0; }
+.us-gen-id-data dt { color: #5d6f88; font-size: 4.6pt; text-transform: uppercase; letter-spacing: .05em; align-self: center; }
+.us-gen-id-data dd { margin: 0; font-weight: 700; font-size: 6.2pt; }
+.us-gen-id-data dd.us-gen-id-exp { color: #8a1c1c; }
+.us-gen-id-sig { margin-top: auto; display: flex; flex-direction: column; width: 31mm; padding-bottom: .4mm; }
+.us-gen-id-sig .sig-img { align-self: flex-start; width: auto; max-height: 6mm; max-width: 29mm; margin: 0 0 -.6mm; }
+.us-gen-id-sig .sig-font { align-self: flex-start; font-size: 11pt; margin: 0 0 -.6mm; }
+.us-gen-id-sig span { font-size: 4.2pt; color: #5d6f88; border-top: .2mm solid #777; text-transform: uppercase; letter-spacing: .05em; padding-top: .2mm; }
+.us-gen-id-strip { background: #13294b; color: #e9d48a; text-align: center; font-size: 6pt; font-weight: 800; letter-spacing: .45em; padding: .7mm 0 .6mm; flex: none; margin-top: 1mm; }
+.us-gen-id-holo { position: absolute; right: 3.5mm; bottom: 6.5mm; width: 10mm; height: 10mm; border-radius: 50%; background: conic-gradient(from 30deg, #f5d0fe, #bfdbfe, #bbf7d0, #fde68a, #fecaca, #f5d0fe); opacity: .5; mix-blend-mode: multiply; }
+.us-gen-id-mag { height: 8mm; background: linear-gradient(#1b1b1b, #2e2e2e 60%, #1b1b1b); margin-top: 3mm; flex: none; }
+.us-gen-id-back { padding: 1.3mm 3mm 1mm; display: flex; flex-direction: column; flex: 1; min-height: 0; position: relative; }
+.us-gen-id-bgrid { display: grid; grid-template-columns: 1fr auto; gap: .3mm 3mm; }
+.us-gen-id-bgrid .wide { grid-column: span 2; }
+.us-gen-id-bgrid b { font-size: 5.8pt; }
+.paper.idcard.us-gen-id .us-gen-id-note { font-size: 4.4pt; color: #3a4a60; margin: .6mm 0 0; line-height: 1.2; }
+.us-gen-id-return { font-size: 4.9pt; border: .2mm dashed #8a96a8; padding: .4mm 1mm; margin-top: .6mm; line-height: 1.2; }
+.us-gen-id-bfoot { display: flex; align-items: flex-end; gap: 2mm; margin-top: auto; }
+.us-gen-id-qr { width: 9mm; height: 9mm; flex: none; }
+.us-gen-id-bc { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; font-size: 4.6pt; }
+.us-gen-id-bc .barcode { width: 100%; height: 5.5mm; }
+.us-gen-id-seal { width: 10mm; flex: none; opacity: .85; }
+.us-gen-id-issuer { font-size: 4.2pt; color: #5d6f88; margin-top: .4mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.us-gen-id-code { font-size: 4.2pt; color: #777; text-align: right; }
+/* Urkunde (Certificate of Promotion) */
+.paper.letter.us-gen-cert { padding: 7mm; background: #fffdf6; }
+.us-gen-cert-frame { flex: 1; display: flex; position: relative; padding: 3.6mm; background: repeating-linear-gradient(45deg, #9a7b1c 0 .5mm, #f4e6b8 .5mm 1.4mm); }
+.us-gen-corner { position: absolute; width: 17mm; height: 17mm; color: #9a7b1c; z-index: 2; background: #fffdf6; border-radius: 50%; border: .4mm solid #9a7b1c; padding: .6mm; }
+.us-gen-corner.tl { left: -3mm; top: -3mm; } .us-gen-corner.tr { right: -3mm; top: -3mm; } .us-gen-corner.bl { left: -3mm; bottom: -3mm; } .us-gen-corner.br { right: -3mm; bottom: -3mm; }
+.us-gen-rosette { width: 100%; height: 100%; display: block; }
+.us-gen-cert-inner { flex: 1; position: relative; background: #fffdf6; border: .5mm solid #9a7b1c; padding: 13mm 18mm 6mm; display: flex; flex-direction: column; align-items: center; text-align: center; font-family: Georgia, "Times New Roman", serif; }
+.us-gen-cert-inner::before { content: ""; position: absolute; inset: 2mm; border: .25mm solid #9a7b1c; pointer-events: none; }
+.us-gen-cert-logo { width: 24mm; height: 24mm; object-fit: contain; }
+.us-gen-cert-state { font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; letter-spacing: .42em; color: #555; margin-top: 2mm; }
+.us-gen-cert-org { font-size: 13pt; letter-spacing: .12em; color: #1d2f5e; font-weight: 700; margin-top: 1mm; }
+.us-gen-cert-orgsub { font-size: 9pt; font-style: italic; color: #444; }
+.paper.us .us-gen-cert-title { font-size: 31pt; font-weight: 400; color: #1d2f5e; margin: 7mm 0 1mm; letter-spacing: .03em; font-variant: small-caps; }
+.us-gen-cert-rule { width: 64%; border-top: .4mm solid #9a7b1c; position: relative; margin: 3mm 0 5mm; height: 0; }
+.us-gen-cert-rule span { position: absolute; left: 50%; top: -2.9mm; transform: translateX(-50%); background: #fffdf6; padding: 0 2mm; color: #9a7b1c; font-size: 11pt; line-height: 1; }
+.paper.us .us-gen-cert-greet { font-variant: small-caps; letter-spacing: .06em; font-size: 11.5pt; margin: 0 0 3mm; }
+.paper.us .us-gen-cert-text { font-size: 11pt; font-style: italic; margin: 1.5mm 0; }
+.us-gen-cert-name { display: inline-block; font-size: 24pt; color: #10233f; border-bottom: .3mm solid #9a7b1c; padding: 0 10mm 1mm; margin: 2mm 0 1mm; min-width: 60%; }
+.us-gen-cert-small { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: #555; letter-spacing: .05em; }
+.us-gen-cert-rank { font-size: 18pt; font-weight: 700; color: #8a1c1c; letter-spacing: .04em; margin: 2mm 0; text-transform: uppercase; }
+.paper.us .us-gen-cert-laud { font-size: 10pt; max-width: 82%; margin: 3mm auto 1mm; color: #333; }
+.paper.us .us-gen-cert-witness { font-size: 9.5pt; max-width: 86%; margin: 6mm auto 1mm; }
+.paper.us .us-gen-cert-given { font-size: 9.5pt; font-style: italic; margin: 0; }
+.us-gen-cert-signs { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-top: auto; gap: 6mm; padding: 4mm 2mm 0; }
+.us-gen-cert-signs:not(.two) { justify-content: center; gap: 22mm; }
+.us-gen-cert-sign { flex: 1; padding-top: 8mm; display: flex; flex-direction: column; align-items: center; font-family: Arial, Helvetica, sans-serif; font-size: 8.5pt; max-width: 62mm; }
+.us-gen-cert-sigarea { height: 16mm; display: flex; align-items: flex-end; justify-content: center; width: 100%; }
+.us-gen-cert-sigarea .sig-img { margin: 0 0 -1mm 0; max-height: 15mm; max-width: 56mm; }
+.us-gen-cert-sigarea .sig-font { margin: 0 0 -1mm 0; font-size: 22pt; }
+.us-gen-cert-sigarea .printed { font-size: 11pt; margin-bottom: 1mm; }
+.us-gen-cert-line { display: block; width: 100%; border-top: .3mm solid #222; margin-bottom: .8mm; }
+.us-gen-cert-sign small { color: #555; font-size: 7.5pt; }
+.us-gen-cert-seal { width: 36mm; position: relative; flex: none; margin-bottom: 2mm; }
+.us-gen-cert-seal::before { content: ""; position: absolute; inset: 6%; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #fbf0c4, #e2c262 55%, #b8932e); z-index: 1; }
+.us-gen-cert-seal .seal-svg { position: relative; z-index: 2; }
+.us-gen-ribbon { position: absolute; bottom: -7mm; width: 9mm; height: 17mm; background: #8a1c1c; z-index: 0; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); }
+.us-gen-ribbon.l { left: 8mm; transform: rotate(20deg); } .us-gen-ribbon.r { right: 8mm; transform: rotate(-20deg); }
+.us-gen-cert-verify { display: flex; align-items: center; gap: 2mm; font-family: Arial, Helvetica, sans-serif; font-size: 6.5pt; color: #666; margin-top: 5mm; align-self: flex-start; }
+.us-gen-cert-qr { width: 11mm; height: 11mm; }
+/* Abschlusszertifikat und Ausbildungsnachweis */
+.us-gen-train-cert { flex: 1; display: flex; flex-direction: column; align-items: center; border: .6mm solid var(--us-accent); outline: .25mm solid var(--us-accent); outline-offset: 1mm; padding: 6mm 10mm 5mm; text-align: center; font-family: Georgia, "Times New Roman", serif; background: linear-gradient(180deg, #fbf6e6, #fffdf8 45%); margin: 1.5mm 1.5mm 3mm; }
+.us-gen-train-head { align-self: stretch; display: flex; align-items: center; justify-content: center; gap: 4mm; text-align: left; }
+.us-gen-train-logo { width: 18mm; height: 18mm; object-fit: contain; }
+.us-gen-train-head .us-gen-cert-state { margin-top: 0; }
+.us-gen-train-org { font-size: 13pt; font-weight: 700; color: var(--us-accent); }
+.us-gen-train-sub { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: #444; }
+.paper.us .us-gen-train-title { font-size: 26pt; font-weight: 400; letter-spacing: .04em; margin: 4mm 0 2mm; color: #1d2f5e; font-variant: small-caps; }
+.us-gen-checklist { list-style: none; margin: .8mm 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 4mm; font-family: "Courier New", monospace; font-size: 8.6pt; }
+.us-gen-checklist li { margin: .3mm 0; }
+.us-gen-train-signs { display: flex; align-items: flex-end; gap: 8mm; margin-top: auto; padding-top: 6mm; align-self: stretch; text-align: center; }
+.us-gen-train-signs .us-gen-cert-sign { padding-top: 0; }
+.us-gen-train-signs .us-gen-cert-sign { max-width: none; }
+.us-gen-cert-seal.small { width: 28mm; margin-bottom: 0; }
+.us-gen-cert-seal.small::before { display: none; }
+/* Personalmemo */
+.us-gen-memo-head { display: grid; grid-template-columns: 16mm 1fr auto; gap: 3mm; align-items: center; font-size: 8pt; line-height: 1.35; }
+.us-gen-memo-logo { width: 15mm; height: 15mm; object-fit: contain; }
+.us-gen-memo-org b { font-size: 11pt; color: var(--us-accent); }
+.us-gen-memo-conf { border: .5mm solid #8a1c1c; color: #8a1c1c; font-weight: 800; font-size: 8pt; letter-spacing: .14em; padding: 1mm 3mm; transform: rotate(-3deg); }
+.paper.us .us-gen-memo-title { font-size: 28pt; letter-spacing: .32em; font-weight: 800; margin: 5mm 0 2mm; color: #111; }
+.us-gen-memo-to { border-collapse: collapse; font-size: 10pt; border-top: .7mm solid #111; border-bottom: .7mm solid #111; width: 100%; }
+.us-gen-memo-to th { text-align: left; width: 24mm; padding: 1.4mm 0; font-weight: 800; letter-spacing: .05em; vertical-align: top; }
+.us-gen-memo-to td { padding: 1.4mm 0; }
+.us-gen-memo-to tr + tr th, .us-gen-memo-to tr + tr td { border-top: .2mm solid #c8c8c8; }
+.us-gen-memo-kind { display: flex; gap: 4mm; align-items: center; padding: 1.4mm 2mm; background: #f1f1f1; border: .3mm solid #222; margin-top: 1mm; }
+.paper.us .us-gen-memo-kind .fl { white-space: nowrap; font-weight: 700; }
+.us-gen-memo-body { font-size: 9.8pt; line-height: 1.45; margin-top: 1mm; }
+.paper.us .us-gen-memo-body p { margin: 0 0 2.2mm; }
+.us-gen-memo-grid { margin: 1mm 0 2mm; }
+.us-gen-memo-items { margin: 0 0 2.5mm; }
+.us-gen-ack { border: .4mm solid #222; padding: 2mm 3mm 2.5mm; margin-top: 3mm; font-size: 8.6pt; }
+.us-gen-ack-h { font-weight: 800; letter-spacing: .08em; font-size: 8pt; background: #222; color: #fff; margin: -2mm -3mm 2mm; padding: .8mm 3mm; }
+.paper.us .us-gen-ack p { margin: 0 0 1.5mm; }
+.us-gen-ack-comment { margin-bottom: 1mm; }
+.us-gen-ack-comment .us-line { height: 6mm; }
+.us-gen-ack .us-review { margin-top: 1mm; }
+.us-gen-ack .us-review > .us-gen-ack-date { flex: 0 0 40mm; }
+.paper.us-gen-memo .us-sigs { margin-top: 7mm; }
+.us-gen-ack-refused { margin-top: 2mm; font-size: 7.8pt; display: flex; align-items: flex-end; gap: 1.5mm; }
+.us-gen-fillline { flex: 1; border-bottom: .3mm solid #222; height: 4mm; }
+/* Arbeitsvereinbarung */
+.paper.us .us-gen-contract-pre { font-size: 9.6pt; line-height: 1.45; margin: 1mm 0 0; }
+.us-gen-contract-body { columns: 2; column-gap: 7mm; column-rule: .2mm solid #ccc; font-size: 8.8pt; line-height: 1.42; margin-top: 2mm; }
+.us-gen-clause { break-inside: avoid; margin-bottom: 1.8mm; }
+.paper.us .us-gen-contract-body .us-gen-h { margin: 0 0 .6mm; font-size: 8.6pt; text-transform: uppercase; text-align: left; }
+.us-gen-contract-body .us-gen-prose { margin: 0; }
+.paper.us .us-gen-witness { font-style: italic; margin: 2mm 0 0; font-size: 9pt; }
+.us-gen-contract-signs { display: flex; gap: 10mm; margin-top: 2mm; }
+.us-gen-party-sig { flex: 1; display: flex; flex-direction: column; }
+.us-gen-party-sig .us-sig-area { height: 21mm; }
+.us-gen-party-sig .us-sig-area .sig-stamp.round { width: 25mm; bottom: -3mm; }
+.us-gen-contract-signs .fl { margin-top: 1mm; }
+.us-gen-cosign-line { font-size: 8pt; display: flex; align-items: center; gap: 2mm; margin-top: 2mm; }
+.us-gen-cosign-line .sig-img { max-height: 8mm; margin: 0; }
+.us-gen-cosign-line .sig-font { font-size: 14pt; margin: 0; }
+/* Untersuchungsbogen und Tauglichkeitsbescheinigung */
+.paper.us-gen-sv .us-sec, .paper.us-gen-fit .us-sec { background: #222; color: #fff; border-color: #222; }
+.us-gen-yn { display: flex; gap: 2mm; }
+.us-gen-yn .us-gen-table { flex: 1; }
+.us-gen-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.us-gen-table th, .us-gen-table td { border: .3mm solid #222; padding: .6mm 1.5mm; text-align: left; }
+.us-gen-table th { background: #e9ecf1; font-size: 6.6pt; text-transform: uppercase; letter-spacing: .03em; }
+.us-gen-table .c { text-align: center; width: 12mm; }
+.us-gen-table .xbox { margin: 0; }
+.us-gen-audio td { font-family: "Courier New", monospace; }
+.us-gen-audio .c { width: auto; }
+.us-gen-check td { font-size: 7.6pt; }
+.us-gen-row-bad td { background: #fbe9e9; }
+.us-gen-ok { color: #1e6b3a; font-weight: 700; }
+.us-gen-bad { color: #a00; font-weight: 700; }
+.us-gen-na { color: #777; }
+.us-gen-pulhes { border: .3mm solid #222; border-bottom: 0; padding: 1mm 2mm 2mm; }
+.us-gen-pulhes-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2mm; margin-top: 1mm; }
+.us-gen-pulhes-box { border: .4mm solid #222; text-align: center; display: flex; flex-direction: column; align-items: center; padding-bottom: 1mm; }
+.us-gen-pulhes-box b { font-size: 11pt; background: #222; color: #fff; width: 100%; }
+.us-gen-grade { font: 700 18pt/1.2 "Courier New", monospace; }
+.us-gen-pulhes-box small { font-size: 5.8pt; line-height: 1.2; color: #444; padding: 0 1mm; }
+.us-gen-pulhes-box.bad { border-color: #a00; }
+.us-gen-pulhes-box.bad .us-gen-grade { color: #a00; }
+.us-gen-overall .us-opt { font-weight: 700; }
+.us-gen-fit-to { display: flex; gap: 4mm; margin-top: 1mm; }
+.us-gen-fit-to > div { flex: 1; border: .3mm solid #222; padding: 1.2mm 2.5mm; min-height: 18mm; }
+.us-gen-fit-table th.c, .us-gen-fit-table td.c { width: 27mm; }
+.us-gen-fit-profile { display: flex; gap: 3mm; align-items: center; border: .3mm solid #222; border-top: 0; padding: 1mm 2mm; }
+.us-gen-fit-profile b { font-size: 11pt; letter-spacing: .1em; }
+.us-gen-fit-result { border: .7mm solid #222; padding: 2mm 3mm; }
+.us-gen-fit-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 1mm 4mm; }
+.us-gen-fit-opt { font-size: 9pt; color: #666; }
+.us-gen-fit-opt.on { color: #111; font-weight: 800; }
+.paper.us .us-gen-fit-result p { margin: 1.5mm 0 0; font-size: 9pt; }
+.us-gen-fit-result.r-geeignet { border-color: #1e6b3a; } .us-gen-fit-result.r-geeignet .on { color: #1e6b3a; }
+.us-gen-fit-result.r-bedingt { border-color: #8a5a00; } .us-gen-fit-result.r-bedingt .on { color: #8a5a00; }
+.us-gen-fit-result.r-befristet, .us-gen-fit-result.r-nicht { border-color: #a00; }
+.us-gen-fit-result.r-befristet .on, .us-gen-fit-result.r-nicht .on { color: #a00; }
+
+/* US-Gestaltung: Korrekturen aus der optischen Prüfung */
+.us-sig-area .sig-stamp { bottom: 2mm; mix-blend-mode: multiply; z-index: 0; pointer-events: none; }
+.us-sig-area .sig-stamp.rect { width: 34mm; bottom: 2mm; }
+.us-sig-area .sig-stamp.round { width: 24mm; bottom: 1mm; }
+.us-sigs:has(.sig-stamp.round) { margin-top: 16mm; }
+.us-sigs:has(.sig-stamp.rect) { margin-top: 6mm; }
+.us-box + .us-sigs, .us-oath + .us-sigs { margin-top: 16mm; }
+.us-idrow + .us-sigs { margin-top: 22mm; }
+.paper.us-gen-inv .us-sigs { margin-top: 18mm; }
+.paper.us .us-body { padding-bottom: 6mm; }
+.us-sig-name { overflow-wrap: anywhere; }
+.us-sigs { flex-wrap: wrap; }
+.us-mtitle .mono, .us-mtitle > span { white-space: nowrap; flex: none; }
+.us-mtitle small { flex-basis: 30%; }
+.us-foot { margin-top: auto; }
+.paper.us-cert .us-foot { margin-bottom: 8mm; }
+.us-sigs:has(.us-sig:nth-child(4)) { flex-wrap: nowrap; }
+.us-sigs:has(.us-sig:nth-child(4)) .us-sig { flex: 1 1 36mm; min-width: 0; }

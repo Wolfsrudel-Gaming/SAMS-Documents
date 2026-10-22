@@ -5,7 +5,7 @@ $typeFilter = (string) ($_GET['type'] ?? '');
 $status = (string) ($_GET['status'] ?? '');
 $mine = !empty($_GET['mine']);
 
-$where = ['1=1'];
+$where = [fw('d')];
 $params = [];
 if ($q !== '') {
     $esc = db_driver() === 'mysql' ? '' : " ESCAPE '\\'";
@@ -41,7 +41,7 @@ ob_start(); ?>
 </div>
 <form class="card filter" action="index.php">
     <input type="hidden" name="p" value="documents">
-    <input name="q" value="<?= e($q) ?>" placeholder="Dokument-Nr., Prüfcode oder Patient …">
+    <input name="q" value="<?= e($q) ?>" placeholder="Dokument-Nr., Prüfcode oder Name …">
     <select name="type"><option value="">Alle Arten</option>
         <?php foreach (document_types() as $k => $t): ?><option value="<?= e($k) ?>"<?= selected($k, $typeFilter) ?>><?= e($t['short']) ?></option><?php endforeach; ?></select>
     <select name="status"><option value="">Alle Status</option><option value="valid"<?= selected('valid', $status) ?>>Gültig</option><option value="revoked"<?= selected('revoked', $status) ?>>Storniert</option></select>
@@ -50,7 +50,7 @@ ob_start(); ?>
 </form>
 <div class="card">
 <table class="list">
-    <thead><tr><th>Nummer</th><th>Art</th><th>Patient/in</th><th>Ausgestellt</th><th>Von</th><th>Status</th></tr></thead>
+    <thead><tr><th>Nummer</th><th>Art</th><th><?= e(term('person')) ?></th><th>Ausgestellt</th><th>Von</th><th>Status</th></tr></thead>
     <tbody>
     <?php foreach ($docs as $d): $t = doc_type($d['type']); ?>
         <tr onclick="location.href='<?= e(url('document', ['id' => $d['id']])) ?>'">

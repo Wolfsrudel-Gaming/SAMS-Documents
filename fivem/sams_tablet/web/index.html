@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Wolfpack Documents</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Tablet -->
+    <div id="tablet" class="hidden">
+        <div class="bezel">
+            <div class="camera"></div>
+            <div class="screen">
+                <div class="topline">
+                    <span class="brand"><img src="logo.svg" alt="">Wolfpack Documents</span>
+                    <span id="who"></span>
+                    <span class="spacer"></span>
+                    <span id="clock"></span>
+                    <button id="btn-logout" class="tb-btn hidden" title="Abmelden">Abmelden</button>
+                    <button id="btn-close" class="tb-btn" title="Schließen (ESC)">✕</button>
+                </div>
+                <div id="login" class="login hidden">
+                    <form id="login-form" autocomplete="off">
+                        <img src="logo.svg" alt="" class="login-logo">
+                        <h1>San Andreas Medical Services</h1>
+                        <p class="sub">Klinisches Informationssystem · Dienstzugang</p>
+                        <div id="login-error" class="error hidden"></div>
+                        <label>Benutzername<input name="username" required></label>
+                        <label>Passwort<input name="password" type="password" required></label>
+                        <label id="code-row" class="hidden">Bestätigungscode (Authenticator)<input name="code" inputmode="numeric" maxlength="12"></label>
+                        <button type="submit" id="login-btn">Anmelden</button>
+                        <p class="hint">Gleiche Zugangsdaten wie im Browser. Passwort vergessen? Deine Leitung kann es zurücksetzen.</p>
+                    </form>
+                </div>
+                <div id="loading" class="loading hidden"><div class="spin"></div><span>Verbinde …</span></div>
+                <iframe id="frame" class="hidden" title="Wolfpack Documents" allow="clipboard-write"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fälscherrechner (Werkstatt) -->
+    <div id="forge" class="hidden">
+        <div class="monitor"><iframe id="forge-frame" title="Rechner"></iframe></div>
+    </div>
+
+    <!-- Dokument auf dem Klemmbrett -->
+    <div id="viewer" class="hidden">
+        <div class="clipboard">
+            <div class="clip"></div>
+            <div class="vbar">
+                <div><strong id="v-label"></strong><small id="v-from"></small></div>
+                <span id="v-revoked" class="revoked hidden">STORNIERT</span>
+                <span class="spacer"></span>
+                <button id="v-show" class="tb-btn hidden">Zeigen</button>
+                <button id="v-close" class="tb-btn">Schließen</button>
+            </div>
+            <div class="paper-wrap"><iframe id="v-frame" title="Dokument"></iframe></div>
+            <div id="v-sign" class="sbar hidden"></div>
+        </div>
+    </div>
+
+    <!-- Unterschrift mit Maus auf dem Klemmbrett -->
+    <div id="sigmodal" class="hidden">
+        <div class="sigbox">
+            <strong id="sig-title">Unterschrift</strong>
+            <canvas id="sig-canvas" width="600" height="180"></canvas>
+            <small>Mit gedrückter Maustaste unterschreiben. Die Unterschrift ist endgültig und wird im System gespeichert.</small>
+            <div class="sigrow"><button id="sig-clear" class="tb-btn">Löschen</button><span class="spacer"></span><button id="sig-cancel" class="tb-btn">Abbrechen</button><button id="sig-ok" class="tb-btn primary">Unterschreiben</button></div>
+            <div id="sig-error" class="error hidden"></div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

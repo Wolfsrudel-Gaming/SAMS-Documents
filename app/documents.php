@@ -14,11 +14,62 @@ defined('SAMS_ROOT') || exit;
  * checkbox, checkboxes, items (Tabellenzeilen), bodymap (Körperschema),
  * signature (Unterschrift auf dem Gerät, z.B. vom Patienten).
  */
-function document_types(): array
+/**
+ * Dokumentarten der aktuellen (oder angegebenen) Fraktion. Eingebaute Arten
+ * gelten für die Fraktionsarten unter 'kinds' (Standard: Rettungsdienst, '*' = alle),
+ * eigene Vorlagen gehören einer Fraktion.
+ */
+function document_types(?int $factionId = null): array
 {
-    static $types = null;
-    if ($types !== null) {
-        return $types;
+    $factionId ??= fid();
+    $kind = faction_kind($factionId);
+    $billing = module_enabled('billing', $factionId);
+    $types = array_filter(document_types_all(), function ($t, $key) use ($kind, $factionId, $billing) {
+        if (isset($t['faction_id'])) {
+            return (int) $t['faction_id'] === $factionId;
+        }
+        if ($key === 'rechnung' && !$billing) {
+            return false;
+        }
+        $kinds = $t['kinds'] ?? ['medical'];
+        return $kinds === '*' || in_array($kind, (array) $kinds, true);
+    }, ARRAY_FILTER_USE_BOTH);
+    // Abrechnung: Bezeichnungen der Fraktionsart (Bußgeldbescheid, Kostenrechnung, Gebührenbescheid)
+    if (isset($types['rechnung']) && $kind !== 'medical') {
+        $types['rechnung'] = billing_type_for($types['rechnung'], $factionId);
+    }
+    return $types;
+}
+
+/** Dokumentart „rechnung“ mit den Bezeichnungen der Fraktionsart. */
+function billing_type_for(array $t, ?int $factionId = null): array
+{
+    $l = billing_labels($factionId);
+    $t['title'] = $t['short'] = $l['title'];
+    foreach ($t['fields'] as &$f) {
+        if (($f['name'] ?? '') === 'recipient') {
+            $f['label'] = 'Empfänger (falls abweichend von der Person)';
+        } elseif (($f['name'] ?? '') === 'service_date') {
+            $f['label'] = $l['date'];
+        } elseif (($f['name'] ?? '') === 'items') {
+            $f['label'] = $l['items'];
+            $f['columns']['text']['label'] = $l['item'];
+            if (catalog_has_jail($factionId)) {
+                $f['columns'] = array_slice($f['columns'], 0, 3, true) + ['jail' => ['label' => dt('Haft (Einh.)'), 'type' => 'number']] + array_slice($f['columns'], 3, null, true);
+            }
+        }
+    }
+    return $t;
+}
+
+/** Alle Dokumentarten aller Fraktionen (zum Anzeigen bestehender Dokumente). */
+function document_types_all(): array
+{
+    static $cache = [];
+    $region = doc_region();
+    $ck = $region . ':' . doc_lang();
+    if (isset($cache[$ck])) {
+        return $cache[$ck];
     }
 
     $yesNo = ['unauffällig' => 'unauffällig', 'auffällig' => 'auffällig', 'n.d.' => 'nicht durchgeführt'];
@@ -351,6 +402,35 @@ function document_types(): array
         ],
 
         // ------------------------------------------------------------------
+        'sv_untersuchung' => sv_document_type(),
+
+        // ------------------------------------------------------------------
+        'einsatztauglichkeit' => [
+            'title'    => 'Bescheinigung über die Einsatztauglichkeit',
+            'short'    => 'Einsatztauglichkeit',
+            'code'     => 'ET',
+            'category' => 'Behörden & Gutachten',
+            'role'     => 'doctor',
+            'patient'  => 'required',
+            'template' => 'einsatztauglichkeit',
+            'valid'    => 'valid_until',
+            'fields'   => [
+                ['name' => 'art', 'label' => 'Untersuchung', 'type' => 'select', 'required' => true, 'options' => fitness_kind_options()],
+                ['name' => 'dienststelle', 'label' => 'Dienststelle / Arbeitgeber', 'type' => 'text', 'placeholder' => 'z. B. TAS – Technische Abteilung Spezialrettung'],
+                ['name' => 'exam_date', 'label' => 'Untersucht am', 'type' => 'date', 'default' => 'today', 'required' => true, 'width' => 'half'],
+                ['name' => 'valid_until', 'label' => 'Gültig bis (leer = Regelfrist der Untersuchung)', 'type' => 'date', 'width' => 'half'],
+                ['name' => 'umfang', 'label' => 'Untersuchungsumfang', 'type' => 'checkboxes', 'options' => array_combine($u = ['Anamnese', 'Körperliche Untersuchung',
+                    'Seh- und Hörtest', 'Ruhe-EKG', 'Belastungs-EKG (Ergometrie)', 'Lungenfunktion (Spirometrie)', 'Röntgen Thorax', 'Labor',
+                    'HNO / Druckausgleich', 'Gleichgewicht / Höhentauglichkeit', 'Schwimm- und Ausdauernachweis', 'Psychische Belastbarkeit'], $u)],
+                ['name' => 'befund', 'label' => 'Befunde (vertraulich – kommen als vertraulicher Eintrag in die Akte, werden weder gedruckt noch übermittelt)', 'type' => 'textarea', 'rows' => 3],
+                ['type' => 'heading', 'label' => 'Ergebnis (wird der Dienststelle mitgeteilt)'],
+                ['name' => 'result', 'label' => 'Ergebnis', 'type' => 'radio', 'required' => true, 'options' => [
+                    'geeignet' => 'Tauglich', 'bedingt' => 'Tauglich mit Einschränkungen', 'befristet' => 'Vorübergehend nicht tauglich', 'nicht' => 'Dauerhaft nicht tauglich']],
+                ['name' => 'conditions', 'label' => 'Einschränkungen / Auflagen', 'type' => 'textarea', 'rows' => 2, 'placeholder' => 'z. B. nur mit Korrekturbrille, Tauchtiefe max. 20 m, Nachuntersuchung in 6 Monaten'],
+            ],
+        ],
+
+        // ------------------------------------------------------------------
         'todesbescheinigung' => [
             'title'    => 'Todesbescheinigung',
             'short'    => 'Todesbescheinigung',
@@ -398,6 +478,7 @@ function document_types(): array
             'role'     => 'medic',
             'patient'  => 'optional',
             'template' => 'rechnung',
+            'kinds'    => '*',
             'fields'   => [
                 ['name' => 'recipient', 'label' => 'Rechnungsempfänger (falls abweichend vom Patienten)', 'type' => 'textarea', 'rows' => 3],
                 ['name' => 'service_date', 'label' => 'Leistungsdatum', 'type' => 'date', 'default' => 'today', 'required' => true, 'width' => 'half'],
@@ -406,6 +487,7 @@ function document_types(): array
                     'text'  => ['label' => 'Leistung', 'list' => 'services'],
                     'qty'   => ['label' => 'Anzahl', 'type' => 'number', 'default' => '1'],
                     'price' => ['label' => 'Einzelpreis', 'type' => 'number', 'step' => '0.01'],
+                    'reason' => ['label' => 'Begründung (bei Abweichung)', 'placeholder' => 'nur bei abweichendem Preis'],
                 ]],
                 ['name' => 'tax', 'label' => 'Steuersatz (%)', 'type' => 'number', 'default' => '0', 'width' => 'half'],
                 ['name' => 'paid', 'label' => 'Bereits bar bezahlt', 'type' => 'checkbox', 'width' => 'half'],
@@ -422,6 +504,7 @@ function document_types(): array
             'role'     => 'medic',
             'patient'  => 'optional',
             'template' => 'schreiben',
+            'kinds'    => '*',
             'fields'   => [
                 ['name' => 'recipient', 'label' => 'Empfänger', 'type' => 'textarea', 'rows' => 4, 'placeholder' => "Los Santos Police Department\nz. Hd. Captain …\nMission Row\nLos Santos"],
                 ['name' => 'your_ref', 'label' => 'Ihr Zeichen', 'type' => 'text', 'width' => 'half'],
@@ -435,17 +518,40 @@ function document_types(): array
         ],
     ];
 
-    return $types;
+    $types = array_merge($types, document_types_extra(), document_types_medical(), document_types_factions(), document_types_us_only());
+    // Vorlagenset: Arten nur für ein Set ausblenden, im US-Set Bezeichnungen, Felder und Vorlagen auf Englisch
+    $types = doc_types_us_apply($types, $region);
+    foreach (custom_doc_types() as $row) {
+        $types[$row['type_key']] = custom_type_definition($row);
+    }
+    return $cache[$ck] = $types;
 }
 
 function doc_type(string $key): ?array
 {
-    $types = document_types();
+    $types = document_types_all();
+    if ($key === 'rechnung' && faction_kind() !== 'medical') {
+        $types['rechnung'] = billing_type_for($types['rechnung']);
+    }
     return isset($types[$key]) ? ['key' => $key] + $types[$key] : null;
 }
 
 /** Vorschlagslisten für Eingabefelder. */
 function datalists(): array
+{
+    // Im Wiki gepflegte Listen ersetzen die eingebauten Vorschläge
+    $lists = datalists_builtin();
+    foreach (array_keys(SUGGESTION_LISTS) as $key) {
+        if (($custom = suggestion_list($key)) !== null) {
+            $lists[$key] = $custom;
+        }
+    }
+    // Artikel aus dem Medikamentenbestand immer vorschlagen (sichere Zuordnung beim Einlösen)
+    $lists['meds'] = array_values(array_unique(array_merge(db_column_list('SELECT name FROM medications WHERE active = 1 AND ' . fw() . ' ORDER BY name'), $lists['meds'] ?? [])));
+    return $lists;
+}
+
+function datalists_builtin(): array
 {
     return [
         'icd' => [
@@ -482,12 +588,31 @@ function datalists(): array
             'Anästhesie / Intensivmedizin', 'Notaufnahme', 'Radiologie', 'Psychiatrie / Psychotherapie', 'Psychologie', 'Gynäkologie',
             'Pädiatrie', 'HNO', 'Augenheilkunde', 'Dermatologie', 'Urologie', 'Rechtsmedizin', 'Physiotherapie', 'Zahnmedizin',
         ],
-        'services' => [
+        'vaccines' => [
+            'Boostrix (Tetanus, Diphtherie, Pertussis)', 'Td-pur (Tetanus, Diphtherie)', 'Tetanol pur (Tetanus)', 'Engerix-B (Hepatitis B)',
+            'Havrix (Hepatitis A)', 'Twinrix (Hepatitis A + B)', 'Influvac Tetra (Influenza)', 'Comirnaty (COVID-19)', 'Priorix (Masern, Mumps, Röteln)',
+            'Rabipur (Tollwut)', 'Typhim Vi (Typhus)', 'Stamaril (Gelbfieber)', 'Pneumovax 23 (Pneumokokken)',
+        ],
+        'ranks' => db_column_list('SELECT name FROM ranks WHERE ' . fw() . ' ORDER BY level DESC'),
+        'qualifications' => db_column_list('SELECT name FROM qualifications WHERE ' . fw() . ' ORDER BY name'),
+        'staff_departments' => db_column_list('SELECT name FROM departments WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name'),
+        'laws' => law_datalist(),
+        'services' => price_list() ? array_map('price_label', price_list()) : [
             'Notfalleinsatz Rettungswagen', 'Notarzteinsatz', 'Luftrettung (Helikopter)', 'Ambulante Erstversorgung', 'Ärztliche Untersuchung',
             'Wundversorgung / Naht', 'Gipsverband / Schienung', 'Röntgen', 'CT', 'Stationäre Behandlung (pro Tag)', 'Operation',
             'Ausstellung Attest', 'Tauglichkeitsuntersuchung', 'Blutentnahme auf behördliche Anordnung', 'Psychologisches Gutachten',
         ],
     ];
+}
+
+/** Einspaltige Liste aus der Datenbank (leer, falls die Tabelle noch fehlt). */
+function db_column_list(string $sql): array
+{
+    try {
+        return array_map(fn($row) => (string) reset($row), all($sql));
+    } catch (PDOException $e) {
+        return [];
+    }
 }
 
 function datalist_html(): string
@@ -505,6 +630,10 @@ function datalist_html(): string
 
 function field_default(array $f)
 {
+    // Listenfelder (Positionen, Mehrfachauswahl, Körperschema) sind immer Arrays
+    if (in_array($f['type'] ?? '', ['items', 'checkboxes', 'bodymap'], true) && !isset($f['default'])) {
+        return [];
+    }
     $d = $f['default'] ?? '';
     if ($d === 'today') {
         return date('Y-m-d');
@@ -598,6 +727,16 @@ function render_field(array $f, $value): string
             $html .= '</tbody></table><button type="button" class="btn small row-add">+ Zeile</button>';
             break;
 
+        case 'image':
+            // Bild hochladen: wird im Browser verkleinert und als data-URI im Dokument gespeichert (kein fremder Server nötig)
+            $html = '<span class="label">' . e($f['label']) . '</span>'
+                . '<div class="image-field"><img class="image-preview" src="' . e(is_string($value) ? $value : '') . '" alt=""' . ($value ? '' : ' hidden') . '>'
+                . '<input type="file" accept="image/png,image/jpeg,image/webp" data-image-input="' . e($id) . '">'
+                . '<button type="button" class="btn small image-clear"' . ($value ? '' : ' hidden') . '>Entfernen</button></div>'
+                . '<input type="hidden" id="' . e($id) . '" name="d[' . e($name) . ']" value="' . e(is_string($value) ? $value : '') . '">'
+                . (!empty($f['hint']) ? '<div class="hint">' . e($f['hint']) . '</div>' : '');
+            break;
+
         case 'bodymap':
             $html = '<span class="label">' . e($f['label']) . '</span>'
                 . '<div class="bodymap-editor" data-input="' . e($id) . '">' . bodymap_svg(is_array($value) ? $value : [], true) . '</div>'
@@ -610,7 +749,7 @@ function render_field(array $f, $value): string
                 . '<div class="sigpad" data-input="' . e($id) . '"><canvas width="600" height="180"></canvas>'
                 . '<button type="button" class="btn small sig-clear">Löschen</button></div>'
                 . '<input type="hidden" id="' . e($id) . '" name="d[' . e($name) . ']" value="' . e($value) . '">'
-                . '<div class="hint">Mit Maus, Stift oder Finger unterschreiben lassen.</div>';
+                . '<div class="hint">Mit Maus, Stift oder Finger unterschreiben lassen – oder leer lassen: Dann wird auf dem Ausdruck im Spiel bzw. später im Tablet unterschrieben.</div>';
             break;
 
         default:
@@ -619,7 +758,7 @@ function render_field(array $f, $value): string
             $html = $label . '<input type="' . $inputType . '" id="' . e($id) . '" name="d[' . e($name) . ']" value="' . e($value) . '"' . $step . $list . $ph . $reqAttr . '>';
     }
 
-    return '<div class="field w-' . e($width) . ' t-' . e($type) . '">' . $html . '</div>';
+    return '<div class="field w-' . e($width) . ' t-' . e($type) . ($req ? ' is-req' : '') . '">' . $html . '</div>';
 }
 
 /**
@@ -685,6 +824,9 @@ function collect_fields(array $fields, array $input): array
             case 'signature':
                 $v = is_string($raw) && preg_match('#^data:image/png;base64,[A-Za-z0-9+/=]+$#', $raw) && strlen($raw) < 400000 ? $raw : '';
                 break;
+            case 'image':
+                $v = is_string($raw) && preg_match('#^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$#', $raw) && strlen($raw) < 700000 ? $raw : '';
+                break;
             default:
                 $v = is_string($raw) ? trim($raw) : '';
                 $v = mb_substr($v, 0, $f['type'] === 'textarea' ? 10000 : 500);
@@ -734,10 +876,10 @@ function bodymap_svg(array $points, bool $editable = false): string
 /** Nächste fortlaufende Dokumentnummer, z.B. SAMS-AU-2026-00042 */
 function next_document_number(array $type): string
 {
-    $prefix = setting('doc_prefix', 'SAMS');
+    $prefix = doc_prefix();
     $year = date('Y');
     $base = $prefix . '-' . $type['code'] . '-' . $year . '-';
-    $last = scalar('SELECT number FROM documents WHERE number LIKE ? ORDER BY id DESC LIMIT 1', [$base . '%']);
+    $last = scalar('SELECT number FROM documents WHERE number LIKE ? AND ' . fw() . ' ORDER BY id DESC LIMIT 1', [$base . '%']);
     $n = $last ? ((int) substr((string) $last, strlen($base))) + 1 : 1;
     return $base . str_pad((string) $n, 5, '0', STR_PAD_LEFT);
 }
@@ -750,11 +892,15 @@ function issuer_snapshot(array $u): array
         'title'         => $u['title'],
         'role'          => $u['role'] ?? '',
         'rank_name'     => user_rank_name($u),
-        'department'    => $u['department'],
+        // Stempel: eigene Angabe, sonst die erste zugeordnete Abteilung
+        'department'    => trim((string) $u['department']) !== '' ? $u['department'] : (string) scalar('SELECT d.name FROM departments d JOIN user_departments ud ON ud.department_id = d.id WHERE ud.user_id = ? ORDER BY d.sort, d.name LIMIT 1', [(int) ($u['id'] ?? 0)]),
         'badge_number'  => $u['badge_number'],
         'doctor_number' => $u['doctor_number'],
         'signature'     => $u['signature'],
-    ];
+        'location'      => location_snapshot(user_location_id($u)),
+        // Hauptadministrator: Dokumente tragen Siegel/Stempel der übergeordneten Verwaltung (keiner Fraktion zugeordnet)
+        'superadmin'    => !empty($u['is_superadmin']),
+    ] + (!empty($u['is_superadmin']) ? ['admin_title' => admin_stamp_setting('admin_title')] : []);
 }
 
 function patient_snapshot(?array $p): ?array

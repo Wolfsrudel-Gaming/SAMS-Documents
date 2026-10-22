@@ -3,7 +3,7 @@ defined('SAMS_ROOT') || exit;
 /** Konto anlegen, bearbeiten und verwalten (Passwort, Sitzungen, 2FA, Sperre). */
 $me = current_user();
 $id = (int) ($_GET['id'] ?? 0);
-$user = $id ? one('SELECT * FROM users WHERE id = ?', [$id]) : null;
+$user = $id ? fone('users', $id) : null;
 if ($id && !$user) {
     not_found('Konto nicht gefunden.');
 }
@@ -20,11 +20,11 @@ $canEdit = !$user || can_manage_user($user, 'users.edit');
 $isSelf = $user && (int) $user['id'] === (int) $me['id'];
 $ranks = assignable_ranks();
 $rankIds = array_map(fn($r) => (int) $r['id'], $ranks);
-$departments = all('SELECT * FROM departments ORDER BY sort, name');
+$departments = all('SELECT * FROM departments WHERE ' . fw() . ' ORDER BY sort, name');
 $assignableDeps = array_map(fn($d) => (int) $d['id'], assignable_departments());
-$qualifications = all('SELECT * FROM qualifications WHERE active = 1 ORDER BY sort, name');
+$qualifications = all('SELECT * FROM qualifications WHERE active = 1 AND ' . fw() . ' ORDER BY sort, name');
 
-$fields = ['username', 'name', 'title', 'badge_number', 'department', 'doctor_number', 'phone', 'discord_id'];
+$fields = ['username', 'name', 'title', 'badge_number', 'department', 'doctor_number', 'phone', 'discord_id', 'citizen_id'];
 $data = $user ?? array_fill_keys($fields, '') + ['rank_id' => $ranks ? end($ranks)['id'] : null, 'active' => 1];
 $userDeps = $user ? user_department_ids($id) : [];
 $userQuals = $user ? user_qualification_ids($id) : [];
@@ -34,7 +34,7 @@ $errors = [];
 function user_change_summary(array $old, array $new, array $oldDeps, array $newDeps, array $oldQ, array $newQ): string
 {
     $labels = ['username' => 'Benutzer', 'name' => 'Name', 'title' => 'Titel', 'badge_number' => 'Dienstnr.', 'department' => 'Fachrichtung',
-        'doctor_number' => 'Arzt-Nr.', 'phone' => 'Telefon', 'discord_id' => 'Discord-ID'];
+        'doctor_number' => 'Arzt-Nr.', 'phone' => 'Telefon', 'discord_id' => 'Discord-ID', 'citizen_id' => 'Bürger-ID'];
     $out = [];
     foreach ($labels as $k => $l) {
         if ((string) ($old[$k] ?? '') !== (string) ($new[$k] ?? '')) {
@@ -113,6 +113,9 @@ if (is_post()) {
         $new[$f] = mb_substr(trim((string) post($f)), 0, 190);
     }
     $new['rank_id'] = (int) post('rank_id');
+    if (locations()) {
+        $new['location_id'] = location_snapshot((int) post('location_id')) ? (int) post('location_id') : null;
+    }
     $postedDeps = array_map('intval', (array) ($_POST['departments'] ?? []));
     // Nur zuweisbare Abteilungen ändern, andere bestehende Zuordnungen bleiben erhalten
     $newDeps = array_values(array_unique(array_merge(
@@ -130,7 +133,7 @@ if (is_post()) {
     if ($new['name'] === '') {
         $errors[] = 'Bitte einen Namen angeben.';
     }
-    if ($new['badge_number'] !== '' && scalar('SELECT id FROM users WHERE badge_number = ? AND id <> ?', [$new['badge_number'], $id])) {
+    if ($new['badge_number'] !== '' && scalar('SELECT id FROM users WHERE badge_number = ? AND id <> ? AND ' . fw(), [$new['badge_number'], $id])) {
         $errors[] = 'Diese Dienstnummer ist bereits vergeben.';
     }
     if ($new['discord_id'] !== '' && !preg_match('/^\d{15,21}$/', $new['discord_id'])) {
@@ -150,6 +153,15 @@ if (is_post()) {
         if ($user) {
             update('users', $id, $row);
             $summary = user_change_summary($user, $row, $userDeps, $newDeps, $userQuals, $newQuals);
+            // Laufbahn in der Personalakte fortschreiben
+            if ((int) $user['rank_id'] !== (int) $row['rank_id']) {
+                $oldLevel = (int) (rank_by_id((int) $user['rank_id'])['level'] ?? 0);
+                $newRank = rank_by_id((int) $row['rank_id']);
+                personnel_event($id, 'rank', ((int) ($newRank['level'] ?? 0) > $oldLevel ? 'Befördert zu ' : 'Rangänderung: ') . ($newRank['name'] ?? '–'));
+            }
+            if ($added = array_diff($newQuals, $userQuals)) {
+                personnel_event($id, 'qualification', 'Qualifikation erworben: ' . implode(', ', array_column(all('SELECT name FROM qualifications WHERE id IN (' . implode(',', array_map('intval', $added)) . ')'), 'name')));
+            }
             audit('user.update', 'user', $id, $user['username'] . ($summary !== '' ? ' – ' . $summary : ''));
             flash('success', 'Konto gespeichert.');
         } else {
@@ -159,6 +171,7 @@ if (is_post()) {
                 'role' => 'medic', 'active' => 1, 'created_by' => $me['id'], 'created_at' => now(),
             ];
             $id = insert('users', $row);
+            personnel_event($id, 'hire', 'Eintritt als ' . (rank_by_id($row['rank_id'])['name'] ?? '–'));
             audit('user.create', 'user', $id, $row['username'] . ' – Rang: ' . (rank_by_id($row['rank_id'])['name'] ?? '–'));
             $_SESSION['onetime'] = ['user_id' => $id, 'username' => $row['username'], 'password' => $pw, 'kind' => 'create'];
         }
@@ -204,7 +217,7 @@ ob_start(); ?>
     </div>
 </div>
 
-<?php if ($onetime): $loginText = "Zugang zum " . setting('org_short', 'SAMS') . "-System\nAdresse: " . base_url() . "\nBenutzername: " . $onetime['username'] . "\n" . ($onetime['kind'] === 'create' ? 'Startpasswort' : 'Neues Einmalpasswort') . ": " . $onetime['password'] . "\nBeim ersten Login legst du ein eigenes Passwort fest."; ?>
+<?php if ($onetime): $loginText = "Zugang zum " . org('org_short') . "-System\nAdresse: " . base_url() . "\nBenutzername: " . $onetime['username'] . "\n" . ($onetime['kind'] === 'create' ? 'Startpasswort' : 'Neues Einmalpasswort') . ": " . $onetime['password'] . "\nBeim ersten Login legst du ein eigenes Passwort fest."; ?>
 <section class="card onetime">
     <h2><?= $onetime['kind'] === 'create' ? 'Konto angelegt – Zugangsdaten' : 'Passwort zurückgesetzt – neues Einmalpasswort' ?></h2>
     <p>Gib diese Daten an <strong><?= e($user['name']) ?></strong> weiter (z. B. per Discord-Direktnachricht). Das Passwort wird <strong>nur jetzt</strong> angezeigt und muss beim ersten Login geändert werden.</p>
@@ -231,7 +244,7 @@ ob_start(); ?>
     <input type="hidden" name="action" value="save">
     <h3 class="form-heading">Zugang &amp; Dienst</h3>
     <div class="field w-third"><label>Benutzername <span class="req">*</span></label><input name="username" value="<?= e($data['username']) ?>" required autocomplete="off"<?= $ro ? ' disabled' : '' ?>></div>
-    <div class="field w-third"><label>Dienstnummer</label><input name="badge_number" value="<?= e($data['badge_number']) ?>" placeholder="z. B. SAMS-104"<?= $ro ? ' disabled' : '' ?>></div>
+    <div class="field w-third"><label>Dienstnummer</label><input name="badge_number" value="<?= e($data['badge_number']) ?>" placeholder="z. B. <?= e(org('org_short')) ?>-104"<?= $ro ? ' disabled' : '' ?>></div>
     <div class="field w-third"><label>Rang <span class="req">*</span></label>
         <select name="rank_id"<?= $ro ? ' disabled' : '' ?>>
             <?php if ($user && $currentRank && !in_array((int) $currentRank['id'], $rankIds, true)): ?>
@@ -240,6 +253,11 @@ ob_start(); ?>
             <?php foreach ($ranks as $r): ?><option value="<?= (int) $r['id'] ?>"<?= selected($r['id'], $data['rank_id']) ?>><?= e($r['name']) ?> (Stufe <?= (int) $r['level'] ?>)</option><?php endforeach; ?>
         </select></div>
 
+    <?php if (count(locations()) > 1): ?>
+    <div class="field w-third"><label>Standort</label>
+        <select name="location_id"<?= $ro ? ' disabled' : '' ?>><option value="">– Standard –</option><?php foreach (locations() as $l): ?><option value="<?= (int) $l['id'] ?>"<?= selected($l['id'], $data['location_id'] ?? '') ?>><?= e($l['name']) ?></option><?php endforeach; ?></select>
+        <small class="hint">Briefkopf, der beim Ausstellen vorausgewählt ist</small></div>
+    <?php endif; ?>
     <div class="field w-half"><span class="label">Abteilungen</span>
         <div class="choices vertical">
             <?php foreach ($departments as $d): $allowed = in_array((int) $d['id'], $assignableDeps, true); ?>
@@ -258,6 +276,7 @@ ob_start(); ?>
     <h3 class="form-heading">Angaben auf Dokumenten</h3>
     <?php require __DIR__ . '/_user_fields.php'; ?>
     <div class="field w-third"><label>Discord-ID (optional)</label><input name="discord_id" value="<?= e($data['discord_id']) ?>" placeholder="z. B. 284019347762003968" inputmode="numeric"<?= $ro ? ' disabled' : '' ?>></div>
+    <div class="field w-third"><label>Bürger-ID im Spiel (optional)</label><input name="citizen_id" value="<?= e($data['citizen_id'] ?? '') ?>" maxlength="64" class="mono" placeholder="z. B. char1:abc123" title="Ordnet ärztliche Tauglichkeitsnachweise dem Konto zu"<?= $ro ? ' disabled' : '' ?>></div>
     <?php if (!$ro): ?>
     <div class="form-actions"><button class="btn primary"><?= $user ? 'Speichern' : 'Konto anlegen' ?></button></div>
     <?php endif; ?>

@@ -1,0 +1,94 @@
+<?php
+// Mehrere Fraktionen: Anlegen, strikte Datentrennung, eigene Einstellungen und Ränge
+$admin = (new Client(TEST_BASE))->login('admin');
+$admin->get('/index.php?p=factions');
+$admin->post('/index.php?p=factions', ['action' => 'create', 'name' => 'Los Santos Police Department', 'short' => 'LSPD', 'kind' => 'police', 'color' => '#1d3a6e',
+    'lead_username' => 'chief.miller', 'lead_name' => 'John Miller']);
+$pd = (int) tval("SELECT id FROM factions WHERE short = 'LSPD'");
+check($pd > 1 && $admin->has('Startpasswort'), 'Polizei angelegt mit Leitungskonto');
+check((int) tval('SELECT COUNT(*) FROM ranks WHERE faction_id = ?', [$pd]) >= 8 && (int) tval('SELECT COUNT(*) FROM departments WHERE faction_id = ?', [$pd]) >= 4, 'Ränge und Abteilungen aus der Vorlage');
+check((int) tval("SELECT COUNT(*) FROM wiki_pages WHERE faction_id = ? AND slug = 'handbuch_erste_schritte'", [$pd]) === 1
+    && (int) tval("SELECT COUNT(*) FROM wiki_pages WHERE slug = 'handbuch_erste_schritte'") === 2, 'Eigenes Handbuch (gleiche Adresse je Fraktion möglich)');
+texec("UPDATE users SET password_hash = ?, must_change_password = 0 WHERE username = 'chief.miller'", [password_hash('TestPasswort123', PASSWORD_DEFAULT)]);
+texec("DELETE FROM rank_permissions WHERE permission = 'security.2fa_required' AND rank_id IN (SELECT id FROM ranks WHERE faction_id = ?)", [$pd]);
+check(!tval("SELECT COUNT(*) FROM rank_permissions WHERE permission LIKE 'stock.%' AND rank_id IN (SELECT id FROM ranks WHERE faction_id = ?)", [$pd]), 'Keine Medizinrechte in den Polizeirängen');
+$sgtRank = (int) tval("SELECT id FROM ranks WHERE faction_id = ? AND short = 'OFC'", [$pd]);
+texec("INSERT INTO users (username, name, password_hash, rank_id, faction_id, active, must_change_password, created_at) VALUES ('officer', 'Olli Officer', ?, ?, ?, 1, 0, ?)",
+    [password_hash('TestPasswort123', PASSWORD_DEFAULT), $sgtRank, $pd, date('Y-m-d H:i:s')]);
+$chief = (new Client(TEST_BASE))->login('chief.miller');
+$chief->get('/index.php?p=dashboard');
+$nav = preg_match('/<nav class="sidenav">(.*?)<\/nav>/s', $chief->body, $mm) ? $mm[1] : '';
+check(str_contains($nav, 'Personenakten') && str_contains($nav, 'Bußgelder') && !str_contains($nav, 'Medikamente') && !str_contains($nav, 'Patientenakten'), 'Menü passend zur Polizei');
+check($chief->has('Los Santos Police Department') && $chief->has('assets/img/kinds/police.svg'), 'Eigener Name und Logo');
+check($chief->get('/index.php?p=stock')->status === 403, 'Medikamentenbestand für die Polizei gesperrt');
+// Keine Daten anderer Fraktionen
+check(!$chief->get('/index.php?p=patients')->has('Tester'), 'Akten des Rettungsdienstes nicht in der Liste');
+check($chief->get('/index.php?p=patient&id=1')->status === 404, 'Akte des Rettungsdienstes per ID nicht abrufbar');
+$samsDoc = (int) tval('SELECT id FROM documents WHERE faction_id = 1 ORDER BY id LIMIT 1');
+check($samsDoc && $chief->get('/index.php?p=document&id=' . $samsDoc)->status === 404, 'Dokument des Rettungsdienstes per ID nicht abrufbar');
+$arztId = (int) tval("SELECT id FROM users WHERE username = 'arzt'");
+check(!$chief->get('/index.php?p=users')->has('Arne Arzt') && $chief->get('/index.php?p=user_edit&id=' . $arztId)->status === 404, 'Personal anderer Fraktionen unsichtbar');
+check(!$chief->get('/index.php?p=search&q=Tester')->has('TST001'), 'Suche findet nichts aus anderen Fraktionen');
+check(!$chief->get('/index.php?p=ranks')->has('Oberarzt') && $chief->has('Sergeant'), 'Nur eigene Ränge');
+check(!$chief->get('/index.php?p=wiki')->has('SOP Reanimation'), 'Nur eigenes Wiki');
+check(!$chief->get('/index.php?p=audit')->has('Arne Arzt'), 'Nur eigenes Zugriffsprotokoll');
+// Eigene Akte und Dokument anlegen
+$chief->get('/index.php?p=patient_edit');
+$chief->post('/index.php?p=patient_edit', ['first_name' => 'Vinnie', 'last_name' => 'Verdacht', 'dob' => '1985-05-05', 'gender' => 'm', 'citizen_id' => 'TST001']);
+$pp = (int) tval("SELECT id FROM patients WHERE last_name = 'Verdacht'");
+check($pp && (int) tval('SELECT faction_id FROM patients WHERE id = ?', [$pp]) === $pd, 'Neue Akte gehört der Polizei (gleiche Bürger-ID erlaubt)');
+$arzt = (new Client(TEST_BASE))->login('arzt');
+check($arzt->get('/index.php?p=patient&id=' . $pp)->status === 404 && !$arzt->get('/index.php?p=search&q=Verdacht')->has('Vinnie'), 'Rettungsdienst sieht Polizeiakten nicht');
+// Einstellungen je Fraktion
+$chief->get('/index.php?p=settings');
+check(!$chief->has('session_idle_minutes') && $chief->has('org_name'), 'Nur fraktionseigene Einstellungen');
+$chief->post('/index.php?p=settings', ['org_name' => 'LSPD Mission Row', 'org_short' => 'LSPD']);
+check($arzt->get('/index.php?p=dashboard')->has('San Andreas Medical Services') && $chief->get('/index.php?p=dashboard')->has('LSPD Mission Row'), 'Briefkopf getrennt gespeichert');
+$chief->get('/index.php?p=document_new&type=schreiben');
+$chief->post('/index.php?p=document_new&type=schreiben', ['type' => 'schreiben', 'patient_id' => (string) $pp, 'action' => 'issue', 'sig_mode' => 'live', 'live_signature' => TEST_SIGNATURE,
+    'd[recipient]' => 'DOJ', 'd[subject]' => 'Ermittlungsstand', 'd[salutation]' => 'Hallo', 'd[body]' => 'Text', 'd[closing]' => 'Gruß']);
+$pdDoc = (int) tval('SELECT id FROM documents WHERE faction_id = ? ORDER BY id DESC LIMIT 1', [$pd]);
+check($pdDoc && str_starts_with((string) tval('SELECT number FROM documents WHERE id = ?', [$pdDoc]), 'LSPD-'), 'Dokument mit eigenem Nummernkreis');
+check($chief->get('/index.php?p=document&id=' . $pdDoc)->has('LSPD Mission Row') && !$chief->has('Elgin Avenue'), 'Briefkopf der Polizei im Dokument');
+check($arzt->get('/index.php?p=document&id=' . $pdDoc)->status === 404, 'Rettungsdienst kann Polizeidokument nicht öffnen');
+$code = (string) tval('SELECT verify_code FROM documents WHERE id = ?', [$pdDoc]);
+texec('DELETE FROM rate_hits');
+check((new Client(TEST_BASE))->get('/verify.php?c=' . $code)->has('LSPD Mission Row'), 'Echtheitsprüfung zeigt die ausstellende Behörde');
+// Hauptadministrator wechselt die Ansicht
+$admin->post('/index.php?p=factions', ['action' => 'switch', 'faction_id' => (string) $pd, 'return' => 'patients']);
+check($admin->has('Verdacht') && !$admin->has('Tester'), 'Hauptadministrator sieht nach Wechsel die Polizei');
+$admin->post('/index.php?p=factions', ['action' => 'switch', 'faction_id' => '1', 'return' => 'patients']);
+check($admin->has('Tester'), 'Zurück zum Rettungsdienst');
+// Deaktivierte Fraktion
+$admin->get('/index.php?p=factions&edit=' . $pd);
+$admin->post('/index.php?p=factions', ['action' => 'save', 'id' => (string) $pd, 'name' => 'Los Santos Police Department', 'short' => 'LSPD', 'color' => '#1d3a6e', 'modules[]' => ['records', 'billing', 'wanted', 'requests']]);
+check($chief->get('/index.php?p=dashboard')->has('derzeit deaktiviert') && (new Client(TEST_BASE))->login('chief.miller')->has('derzeit deaktiviert'), 'Deaktivierte Fraktion kann sich nicht anmelden');
+texec('UPDATE factions SET active = 1 WHERE id = ?', [$pd]);
+$chief = (new Client(TEST_BASE))->login('chief.miller');
+// Inhalte der Polizei: Dokumentarten, Bußgeldbescheid mit Strafkatalog, Aktenfelder, Eintragsarten
+check((int) tval('SELECT COUNT(*) FROM price_list WHERE faction_id = ? AND jail > 0', [$pd]) > 5, 'Strafkatalog mit Haft-Einheiten angelegt');
+$chief->get('/index.php?p=document_new');
+check($chief->has('Festnahmeprotokoll') && $chief->has('Bußgeldbescheid') && !$chief->has('Arbeitsunfähigkeitsbescheinigung'), 'Dokumentarten der Polizei');
+$chief->get('/index.php?p=document_new&type=pd_festnahme&patient=' . $pp);
+$chief->post('/index.php?p=document_new&type=pd_festnahme', ['type' => 'pd_festnahme', 'patient_id' => (string) $pp, 'action' => 'issue', 'sig_mode' => 'live', 'live_signature' => TEST_SIGNATURE,
+    'd[datum]' => date('Y-m-d'), 'd[uhrzeit]' => '21:15', 'd[ort]' => 'Grove Street', 'd[delikte]' => 'S05 Raub', 'd[grund]' => 'Auf frischer Tat', 'd[belehrt]' => '1', 'd[haft]' => '30', 'd[verbleib]' => 'Gewahrsam / Zelle']);
+check(str_contains($chief->url, 'p=document&id=') && $chief->has('Festnahmeprotokoll') && $chief->has('Auf frischer Tat') && $chief->has('LSPD Mission Row'), 'Festnahmeprotokoll ausgestellt');
+$chief->get('/index.php?p=document_new&type=rechnung&patient=' . $pp);
+check($chief->has('Tatbestände') && $chief->has('Haft (Einh.)') && $chief->has('window.SAMS_JAIL'), 'Bußgeldformular mit Haft-Einheiten');
+$chief->post('/index.php?p=document_new&type=rechnung', ['type' => 'rechnung', 'patient_id' => (string) $pp, 'action' => 'issue', 'sig_mode' => 'live', 'live_signature' => TEST_SIGNATURE,
+    'd[service_date]' => date('Y-m-d'), 'd[due_days]' => '14', 'd[tax]' => '0', 'd[items][0][text]' => 'V05 Fahren ohne Fahrerlaubnis', 'd[items][0][qty]' => '1', 'd[items][0][jail]' => '5', 'd[items][0][price]' => '1500.00']);
+check($chief->has('Bußgeldbescheid') && $chief->has('Haft-Einheiten gesamt') && $chief->has('Bußgeldstelle'), 'Bußgeldbescheid statt Rechnung');
+check($chief->get('/index.php?p=invoices')->status === 200 && $chief->has('LSPD-RE-'), 'Bußgeldübersicht zeigt den Bescheid');
+$chief->get('/index.php?p=patient_edit&id=' . $pp);
+check($chief->has('Gefährdungshinweise') && !$chief->has('Blutgruppe'), 'Aktenfelder der Polizei statt medizinischer Felder');
+$chief->post('/index.php?p=patient_edit&id=' . $pp, ['first_name' => 'Vinnie', 'last_name' => 'Verdacht', 'dob' => '1985-05-05', 'gender' => 'm', 'citizen_id' => 'TST001',
+    'x[aliases]' => 'V-Man', 'x[danger][]' => ['bewaffnet', 'flucht'], 'x[license_driver]' => 'entzogen']);
+check($chief->has('V-Man') && $chief->has('Fluchtgefahr') && $chief->has('entzogen'), 'Gefährdungshinweise und Führerscheinstatus in der Akte');
+check($chief->get('/index.php?p=entry_edit&patient=' . $pp)->has('<option>Festnahme</option>') && $chief->has('Vernehmung'), 'Eintragsarten und Vorlagen der Polizei');
+// Justiz anlegen
+$admin->get('/index.php?p=factions');
+$admin->post('/index.php?p=factions', ['action' => 'create', 'name' => 'Department of Justice', 'short' => 'DOJ', 'kind' => 'justice', 'color' => '#5b3a1e']);
+$doj = (int) tval("SELECT id FROM factions WHERE short = 'DOJ'");
+$judgeRank = (int) tval("SELECT id FROM ranks WHERE faction_id = ? AND short = 'RI'", [$doj]);
+check($judgeRank && (bool) tval("SELECT 1 FROM rank_permissions WHERE rank_id = ? AND permission = 'documents.issue.doj_haftbefehl'", [$judgeRank])
+    && !tval("SELECT 1 FROM rank_permissions WHERE rank_id = (SELECT id FROM ranks WHERE faction_id = ? AND short = 'RA') AND permission = 'documents.issue.doj_haftbefehl'", [$doj]), 'Richter/in darf Haftbefehle erlassen, Anwalt nicht');

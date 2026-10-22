@@ -80,7 +80,7 @@ function git_version(): array
 function version_label(): string
 {
     $g = git_version();
-    return 'v' . SAMS_VERSION . ($g['commit'] !== '' ? ' (' . substr($g['commit'], 0, 7) . ')' : '');
+    return PRODUCT_NAME . ' v' . SAMS_VERSION . ($g['commit'] !== '' ? ' (' . substr($g['commit'], 0, 7) . ')' : '');
 }
 
 /** Ergebnis des letzten Auto-Updates (geschrieben von bin/update.sh). */

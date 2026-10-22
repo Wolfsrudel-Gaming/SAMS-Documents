@@ -7,11 +7,19 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/app/bootstrap.php';
 
 $code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) ($_GET['c'] ?? '')));
+if ($code !== '' && !rate_limit('verify', 60)) {
+    rate_limited_exit();
+}
 $doc = null;
 $type = null;
 if ($code !== '') {
     $doc = one('SELECT * FROM documents WHERE verify_code = ?', [$code]);
     $type = $doc ? doc_type($doc['type']) : null;
+    if ($doc) {
+        set_faction_context((int) $doc['faction_id']); // Logo und Name der ausstellenden Behörde
+    } else {
+        forgery_note_check($code); // still mitzählen, falls es eine bekannte Fälschung ist (nur für die Administration)
+    }
 }
 $issuer = $doc ? (json_decode((string) $doc['issuer_snapshot'], true) ?: []) : [];
 $patient = $doc ? (json_decode((string) $doc['patient_snapshot'], true) ?: []) : [];
@@ -23,7 +31,7 @@ $states = [
     'valid'   => ['ok', 'Dokument echt und gültig', 'Dieses Dokument wurde von ' . org('org_name') . ' ausgestellt und ist im System als gültig hinterlegt.'],
     'expired' => ['warn', 'Dokument echt, aber abgelaufen', 'Die Gültigkeitsdauer dieses Dokuments ist überschritten.'],
     'revoked' => ['bad', 'Dokument storniert', 'Dieses Dokument wurde vom Aussteller für ungültig erklärt und darf nicht mehr verwendet werden.'],
-    'unknown' => ['bad', 'Kein Dokument gefunden', 'Zu diesem Prüfcode existiert kein Dokument. Es könnte sich um eine Fälschung handeln.'],
+    'unknown' => ['bad', 'Kein Dokument gefunden', 'Zu diesem Prüfcode existiert kein Dokument. Es handelt sich sehr wahrscheinlich um eine Fälschung – Dokument einbehalten und die Polizei verständigen. Tippfehler im Code ausschließen: Prüfcode und Dokumentnummer stehen unten auf dem Blatt.'],
 ];
 ?><!doctype html>
 <html lang="de">
@@ -39,7 +47,7 @@ $states = [
 <main class="main">
     <div class="verify card">
         <div class="verify-head">
-            <img src="<?= e(setting('logo', 'assets/img/logo.svg')) ?>" alt="">
+            <img src="<?= e(faction_logo()) ?>" alt="">
             <div><h1>Echtheitsprüfung</h1><p class="muted"><?= e(org('org_name')) ?> · <?= e(org('org_sub')) ?></p></div>
         </div>
         <form method="get" class="verify-form">
@@ -59,7 +67,11 @@ $states = [
                 <?php if ($doc['valid_until']): ?><dt>Gültig bis</dt><dd><?= e(fmt_date($doc['valid_until'])) ?></dd><?php endif; ?>
                 <dt>Ausgestellt von</dt><dd><?= e(user_display($issuer)) ?><?= !empty($issuer['rank_name']) ? ', ' . e($issuer['rank_name']) : '' ?><?= !empty($issuer['badge_number']) ? ' (Dienstnr. ' . e($issuer['badge_number']) . ')' : '' ?></dd>
                 <?php if ($patient): ?><dt>Ausgestellt für</dt><dd><?= e(initials_name($patient)) ?><?= !empty($patient['dob']) ? ', geb. ' . e(fmt_date($patient['dob'], 'Y')) : '' ?></dd><?php endif; ?>
-                <?php if ($state === 'revoked'): ?><dt>Storniert am</dt><dd><?= e(fmt_datetime($doc['revoked_at'])) ?></dd><?php endif; ?>
+                <?php if (!empty($issuer['cosigner'])): ?><dt>Gegengezeichnet</dt><dd><?= e(user_display($issuer['cosigner'])) ?><?= !empty($issuer['cosigner']['rank_name']) ? ', ' . e($issuer['cosigner']['rank_name']) : '' ?></dd><?php endif; ?>
+                <?php foreach (document_addenda((int) $doc['id']) as $i => $a): ?><dt>Nachtrag Nr. <?= $i + 1 ?></dt><dd><?= e(fmt_datetime($a['created_at'])) ?> · <?= e(user_display($a['author'])) ?></dd><?php endforeach; ?>
+                <?php $signs = all('SELECT label, created_at FROM document_signatures WHERE document_id = ? ORDER BY id', [$doc['id']]); foreach ($signs as $sg): ?><dt>Unterschrieben</dt><dd><?= e($sg['label']) ?> · <?= e(fmt_datetime($sg['created_at'])) ?></dd><?php endforeach; ?>
+                <?php if (!empty($doc['finalized_at'])): ?><dt>Abgeschlossen</dt><dd><?= e(fmt_datetime($doc['finalized_at'])) ?><?= doc_hash_valid($doc) ? ' · unverändert' : ' · <strong>Inhalt weicht vom Abschluss ab</strong>' ?></dd><?php endif; ?>
+<?php if ($state === 'revoked'): ?><dt>Storniert am</dt><dd><?= e(fmt_datetime($doc['revoked_at'])) ?></dd><?php endif; ?>
             </dl>
             <p class="muted small">Vergleichen Sie Dokument-Nr. und Angaben mit dem vorliegenden Original. Aus Datenschutzgründen werden keine medizinischen Inhalte angezeigt.</p>
             <?php endif; ?>

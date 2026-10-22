@@ -1,4 +1,4 @@
-/* SAMS Dokumentensystem – QR-Codes und Bildexport der Dokumente */
+/* Wolfpack Documents – QR-Codes und Bildexport der Dokumente */
 (function () {
     'use strict';
 

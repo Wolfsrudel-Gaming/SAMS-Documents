@@ -72,7 +72,7 @@ function build_config(): array
             'password' => (string) env('DB_PASSWORD', ''),
             'charset'  => 'utf8mb4',
         ],
-        'cookie_samesite' => (string) env('SESSION_SAMESITE', 'Lax'),
+        'cookie_samesite' => (string) env('SESSION_SAMESITE', 'auto'),
         'api_key'  => (string) env('API_KEY', ''),
         'update' => [
             'branch'          => (string) env('UPDATE_BRANCH', 'main'),
@@ -80,6 +80,15 @@ function build_config(): array
             'webhook_secret'  => (string) env('UPDATE_WEBHOOK_SECRET', ''),
         ],
         'backup_keep_days' => (int) env('BACKUP_KEEP_DAYS', 14),
+        'discord' => [
+            'client_id'     => (string) env('DISCORD_CLIENT_ID', ''),
+            'client_secret' => (string) env('DISCORD_CLIENT_SECRET', ''),
+            'bot_token'     => (string) env('DISCORD_BOT_TOKEN', ''),
+            'guild_id'      => (string) env('DISCORD_GUILD_ID', ''),
+        ],
+        // Nur zum Testen ohne Discord-App: Anmeldung im Bürgerportal mit frei eingegebener ID
+        'portal_dev_login' => (bool) env('PORTAL_DEV_LOGIN', false),
+        'frame_ancestors' => (string) env('FRAME_ANCESTORS', ''),
     ];
 }
 
@@ -98,7 +107,9 @@ function cfg(string $key, $default = null)
 /** Pfad im Speicherordner. Der übergeordnete Ordner (bzw. mit $isDir der Ordner selbst) wird bei Bedarf angelegt. */
 function storage_path(string $sub = '', bool $isDir = false): string
 {
-    $path = SAMS_ROOT . '/storage' . ($sub !== '' ? '/' . ltrim($sub, '/') : '');
+    // STORAGE_PATH (optional, z. B. für die Tests) – sonst storage/ im Projektordner
+    $base = rtrim((string) (getenv('STORAGE_PATH') ?: SAMS_ROOT . '/storage'), '/');
+    $path = $base . ($sub !== '' ? '/' . ltrim($sub, '/') : '');
     $dir = $isDir || $sub === '' ? $path : dirname($path);
     if (!is_dir($dir)) {
         @mkdir($dir, 0775, true);

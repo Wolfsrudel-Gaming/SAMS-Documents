@@ -58,8 +58,17 @@ function scalar(string $sql, array $params = [])
     return $v === false ? null : $v;
 }
 
+/** Tabellen, deren Datensätze einer Fraktion gehören (faction_id wird beim Anlegen automatisch gesetzt). */
+const FACTION_TABLES = ['users', 'patients', 'entries', 'documents', 'cases', 'document_drafts', 'ranks', 'departments', 'qualifications',
+    'printers', 'price_list', 'custom_doc_types', 'duty_sessions', 'training_courses', 'wiki_pages', 'announcements', 'message_threads',
+    'roster_shifts', 'medications', 'locations', 'appointments', 'portal_requests', 'applications', 'audit_log', 'wanted', 'agency_requests', 'game_bills',
+    'evidence', 'vehicles', 'custody', 'hearings', 'deadlines', 'licenses', 'objects', 'joint_reports', 'patient_vitals', 'equipment', 'breathing_log', 'aircraft', 'flights', 'fitness_records'];
+
 function insert(string $table, array $data): int
 {
+    if (!array_key_exists('faction_id', $data) && in_array($table, FACTION_TABLES, true)) {
+        $data['faction_id'] = (int) ($GLOBALS['sams_fid'] ?? 1);
+    }
     $cols = array_keys($data);
     $sql = sprintf(
         'INSERT INTO %s (%s) VALUES (%s)',
@@ -101,11 +110,19 @@ function setting(string $key, $default = '')
         $cache = null;
         return null;
     }
+    // Fraktionseigene Einstellungen (Briefkopf, Logo, Discord …) liegen unter „f<ID>:<Schlüssel>“ und greifen nicht auf Fraktion 1 zurück
+    $f = (int) ($GLOBALS['sams_fid'] ?? 1);
+    if ($f !== 1 && function_exists('faction_setting_scoped') && faction_setting_scoped($key)) {
+        return ($cache["f$f:$key"] ?? '') !== '' ? $cache["f$f:$key"] : $default;
+    }
     return ($cache[$key] ?? '') !== '' ? $cache[$key] : $default;
 }
 
 function save_setting(string $key, string $value): void
 {
+    if (function_exists('faction_setting_key') && !str_contains($key, ':')) {
+        $key = faction_setting_key($key);
+    }
     if (one('SELECT name FROM settings WHERE name = ?', [$key])) {
         q('UPDATE settings SET value = ? WHERE name = ?', [$value, $key]);
     } else {
@@ -117,6 +134,7 @@ function audit(string $action, string $objectType = '', ?int $objectId = null, s
 {
     try {
         insert('audit_log', [
+            'faction_id'  => (int) ($GLOBALS['sams_fid'] ?? 1),
             'user_id'     => current_user()['id'] ?? null,
             'action'      => $action,
             'object_type' => $objectType,

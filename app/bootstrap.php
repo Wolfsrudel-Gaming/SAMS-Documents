@@ -9,6 +9,7 @@ umask(0002);
 
 require __DIR__ . '/config.php';
 
+define('PRODUCT_NAME', 'Wolfpack Documents');
 define('SAMS_VERSION', trim((string) @file_get_contents(SAMS_ROOT . '/VERSION')) ?: '0.0.0');
 
 if (!is_configured() && !SAMS_CLI && basename($_SERVER['SCRIPT_NAME'] ?? '') !== 'install.php') {
@@ -23,14 +24,55 @@ mb_internal_encoding('UTF-8');
 
 require __DIR__ . '/helpers.php';
 require __DIR__ . '/db.php';
+require __DIR__ . '/factions.php';
 require __DIR__ . '/migrations.php';
 require __DIR__ . '/system.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/permissions.php';
 require __DIR__ . '/totp.php';
 require __DIR__ . '/documents.php';
+require __DIR__ . '/document_types_extra.php';
+require __DIR__ . '/document_types_factions.php';
+require __DIR__ . '/document_types_medical.php';
+require __DIR__ . '/document_types_us.php';
+require __DIR__ . '/render_us.php';
+require __DIR__ . '/custom_types.php';
+require __DIR__ . '/i18n.php';
+require __DIR__ . '/locations.php';
 require __DIR__ . '/render.php';
 require __DIR__ . '/icons.php';
+require __DIR__ . '/printing.php';
+require __DIR__ . '/cases.php';
+require __DIR__ . '/workflow.php';
+require __DIR__ . '/billing.php';
+require __DIR__ . '/shares.php';
+require __DIR__ . '/duty.php';
+require __DIR__ . '/personnel.php';
+require __DIR__ . '/training.php';
+require __DIR__ . '/wiki.php';
+require __DIR__ . '/comms.php';
+require __DIR__ . '/discord.php';
+require __DIR__ . '/portal.php';
+require __DIR__ . '/notify.php';
+require __DIR__ . '/stats.php';
+require __DIR__ . '/attachments.php';
+require __DIR__ . '/merge.php';
+require __DIR__ . '/notifications.php';
+require __DIR__ . '/roster.php';
+require __DIR__ . '/pharmacy.php';
+require __DIR__ . '/agency.php';
+require __DIR__ . '/servers.php';
+require __DIR__ . '/game.php';
+require __DIR__ . '/authority.php';
+require __DIR__ . '/signing.php';
+require __DIR__ . '/sky.php';
+require __DIR__ . '/fire.php';
+require __DIR__ . '/dispatch.php';
+require __DIR__ . '/rescue.php';
+require __DIR__ . '/fitness.php';
+require __DIR__ . '/laws.php';
+require __DIR__ . '/forgery.php';
+require __DIR__ . '/integrations.php';
 
 set_exception_handler('handle_exception');
 set_error_handler(function (int $no, string $msg, string $file, int $line): bool {
@@ -54,9 +96,13 @@ function start_session(): void
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
     }
-    $sameSite = cfg('cookie_samesite', 'Lax');
-    $secure = $sameSite === 'None' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+    $sameSite = cfg('cookie_samesite', 'auto');
+    if ($sameSite === 'auto') {
+        // Das Ingame-Tablet bettet das System in einem fremden Ursprung ein (cfx-nui-…)
+        $sameSite = $https ? 'None' : 'Lax';
+    }
+    $secure = $sameSite === 'None' || $https;
     session_name('SAMSSESSID');
     session_set_cookie_params([
         'lifetime' => 0,
@@ -71,4 +117,9 @@ function start_session(): void
 if (!SAMS_CLI) {
     header('X-Content-Type-Options: nosniff');
     header('Referrer-Policy: same-origin');
+    // Optional: Einbetten nur in erlaubten Quellen (z. B. eigene Domain + FiveM-NUI). Leer = keine Einschränkung,
+    // damit Browser und Ingame-Tablet ohne weitere Einstellung funktionieren.
+    if (($fa = (string) cfg('frame_ancestors', '')) !== '') {
+        header('Content-Security-Policy: frame-ancestors ' . preg_replace('/[^\w\s:\/\.\-\*\'_]/', '', $fa));
+    }
 }

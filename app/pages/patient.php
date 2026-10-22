@@ -1,15 +1,75 @@
 <?php
 defined('SAMS_ROOT') || exit;
 $id = (int) ($_GET['id'] ?? 0);
-$p = one('SELECT * FROM patients WHERE id = ?', [$id]);
+$p = fone('patients', $id);
 if (!$p) {
-    not_found('Patientenakte nicht gefunden.');
+    not_found(term('record') . ' nicht gefunden.');
+}
+if ($p['merged_into']) {
+    flash('warn', 'Diese Akte wurde mit Akte ' . str_pad((string) $p['merged_into'], 6, '0', STR_PAD_LEFT) . ' zusammengeführt.');
+    redirect(url('patient', ['id' => $p['merged_into']]));
 }
 $me = current_user();
+$archived = patient_archived($p);
+
+if (is_post()) {
+    csrf_check();
+    if (handle_attachment_post($id, null)) {
+        redirect(url('patient', ['id' => $id]) . '#attachments');
+    }
+    if (post('action') === 'portal_link') {
+        require_perm('portal.link');
+        $c = link_citizen((string) post('code'), $id, (int) $me['id']);
+        if ($c) {
+            audit('portal.link', 'patient', $id, patient_name($p) . ' ↔ Discord ' . $c['discord_name']);
+            flash('success', 'Bürgerportal verknüpft: ' . ($c['ic_name'] ?: $c['discord_name']) . ' sieht jetzt die eigenen Dokumente.');
+        } else {
+            flash('error', 'Der Code ist ungültig oder abgelaufen.');
+        }
+        redirect(url('patient', ['id' => $id]));
+    }
+    if (post('action') === 'delete' && $archived) {
+        // Endgültig löschen nur aus dem Archiv heraus (Archivieren statt Löschen)
+        require_perm('patients.delete');
+        db()->beginTransaction();
+        foreach (all('SELECT * FROM attachments WHERE patient_id = ?', [$id]) as $att) {
+            delete_attachment($att);
+        }
+        q('DELETE FROM entries WHERE patient_id = ?', [$id]);
+        q('UPDATE documents SET case_id = NULL WHERE case_id IN (SELECT id FROM cases WHERE patient_id = ?)', [$id]);
+        q('DELETE FROM cases WHERE patient_id = ?', [$id]);
+        q('DELETE FROM patients WHERE id = ?', [$id]);
+        db()->commit();
+        audit('patient.delete', 'patient', $id, patient_name($p));
+        flash('success', term('record') . ' endgültig gelöscht. Ausgestellte Dokumente bleiben erhalten.');
+        redirect(url('patients', ['view' => 'archive']));
+    }
+    require_perm('patients.archive');
+    if (post('action') === 'archive' && !$archived) {
+        $reason = mb_substr(trim((string) post('reason')), 0, 190);
+        update('patients', $id, ['archived_at' => now(), 'archived_reason' => $reason, 'archived_by' => $me['id'], 'updated_at' => now()]);
+        q("UPDATE cases SET status = 'closed', closed_at = ?, closed_by = ? WHERE patient_id = ? AND status = 'open'", [now(), $me['id'], $id]);
+        audit('patient.archive', 'patient', $id, patient_name($p) . ($reason !== '' ? ' – ' . $reason : ''));
+        flash('success', 'Akte archiviert. Offene Fälle wurden abgeschlossen.');
+    } elseif (post('action') === 'restore' && $archived) {
+        update('patients', $id, ['archived_at' => null, 'archived_reason' => '', 'archived_by' => null, 'updated_at' => now()]);
+        audit('patient.restore', 'patient', $id, patient_name($p));
+        flash('success', 'Akte reaktiviert.');
+    }
+    redirect(url('patient', ['id' => $id]));
+}
+
 audit('patient.view', 'patient', $id, patient_name($p));
 
-$entries = all('SELECT e.*, u.name AS author, u.title AS author_title FROM entries e LEFT JOIN users u ON u.id = e.created_by
+$entries = all('SELECT e.*, u.name AS author, u.title AS author_title, c.number AS case_number, dp.name AS department
+    FROM entries e LEFT JOIN users u ON u.id = e.created_by LEFT JOIN cases c ON c.id = e.case_id LEFT JOIN departments dp ON dp.id = e.department_id
     WHERE e.patient_id = ? ORDER BY e.occurred_at DESC, e.id DESC', [$id]);
+$cases = all("SELECT c.*, d.name AS department,
+        (SELECT COUNT(*) FROM entries e WHERE e.case_id = c.id) AS entry_count,
+        (SELECT COUNT(*) FROM documents x WHERE x.case_id = c.id) AS doc_count
+    FROM cases c LEFT JOIN departments d ON d.id = c.department_id WHERE c.patient_id = ?
+    ORDER BY CASE WHEN c.status = 'open' THEN 0 ELSE 1 END, COALESCE(c.incident_at, c.created_at) DESC", [$id]);
+$archivedBy = $archived && $p['archived_by'] ? one('SELECT name FROM users WHERE id = ?', [$p['archived_by']]) : null;
 $docs = all('SELECT d.*, u.name AS issuer_name FROM documents d LEFT JOIN users u ON u.id = d.issued_by
     WHERE d.patient_id = ? ORDER BY d.issued_at DESC', [$id]);
 
@@ -23,10 +83,21 @@ foreach ($docs as $d) {
 }
 usort($timeline, fn($a, $b) => strcmp($b['at'], $a['at']));
 
-$canSeeConfidential = fn($en) => !$en['confidential'] || can('entries.confidential') || (int) $en['created_by'] === (int) $me['id'];
 
+$medical = faction_kind() === 'medical';
+$extraFields = record_extra_fields();
+$extra = record_extra($p);
 ob_start(); ?>
-<div class="patient-banner">
+<?php if ($archived): ?>
+<div class="flash warn archived-banner">
+    <div><strong>Archivierte Akte</strong> seit <?= e(fmt_datetime($p['archived_at'])) ?><?= $archivedBy ? ' durch ' . e($archivedBy['name']) : '' ?><?= $p['archived_reason'] ? ' · ' . e($p['archived_reason']) : '' ?>. Die Akte ist schreibgeschützt.</div>
+    <form method="post" class="inline-form"><?= csrf_field() ?>
+        <?php if (can('patients.archive')): ?><button class="btn small" name="action" value="restore">Reaktivieren</button><?php endif; ?>
+        <?php if (can('patients.delete')): ?><button class="btn small danger" name="action" value="delete" onclick="return confirm('Akte inkl. aller Einträge und Fälle endgültig löschen? Das kann nicht rückgängig gemacht werden. Ausgestellte Dokumente bleiben erhalten.')">Endgültig löschen</button><?php endif; ?>
+    </form>
+</div>
+<?php endif; ?>
+<div class="patient-banner<?= $archived ? ' archived' : '' ?>">
     <div class="pb-avatar"><?= icon('user') ?></div>
     <div>
         <div class="pb-name"><?= e(patient_name($p, true)) ?> <?= $p['deceased_at'] ? '<span class="badge black">† ' . e(fmt_date($p['deceased_at'])) . '</span>' : '' ?></div>
@@ -34,20 +105,30 @@ ob_start(); ?>
             <span><b>geb.</b><?= e(fmt_date($p['dob']) ?: '–') ?><?= $p['dob'] ? ' (' . e(age($p['dob'])) . ' J.)' : '' ?></span>
             <span><b>Geschl.</b><?= e(['m' => 'männlich', 'w' => 'weiblich', 'd' => 'divers'][$p['gender']] ?? '–') ?></span>
             <span><b>Bürger-ID</b><span class="mono"><?= e($p['citizen_id'] ?: '–') ?></span></span>
-            <span><b>Blutgruppe</b><?= e($p['blood_type'] ?: '–') ?></span>
+            <?php if ($medical): ?><span><b>Blutgruppe</b><?= e($p['blood_type'] ?: '–') ?></span><?php endif; ?>
+            <?php foreach (['license_driver' => 'Führerschein', 'license_weapon' => 'Waffenschein'] as $lk => $ll): if (($extra[$lk] ?? '') !== ''): ?><span><b><?= e($ll) ?></b><?= e(LICENSE_STATES[$extra[$lk]] ?? $extra[$lk]) ?></span><?php endif; endforeach; ?>
             <span><b>Akte</b><span class="mono"><?= str_pad((string) $p['id'], 6, '0', STR_PAD_LEFT) ?></span></span>
         </div>
     </div>
     <div class="btn-row">
-        <a class="btn" href="<?= e(url('patient_edit', ['id' => $id])) ?>"><?= icon('edit') ?>Stammdaten</a>
+        <?php if (!$archived): ?>
+            <?php if (can('patients.edit')): ?><a class="btn" href="<?= e(url('patient_edit', ['id' => $id])) ?>"><?= icon('edit') ?>Stammdaten</a><?php endif; ?>
+            <?php if (can('cases.manage')): ?><a class="btn" href="<?= e(url('case_edit', ['patient' => $id])) ?>"><?= icon('plus') ?><?= e(term('case')) ?></a><?php endif; ?>
+            <?php if (can('entries.create')): ?><a class="btn" href="<?= e(url('entry_edit', ['patient' => $id])) ?>"><?= icon('plus') ?>Akteneintrag</a><?php endif; ?>
+        <?php endif; ?>
         <a class="btn" href="<?= e(url('patient_print', ['id' => $id])) ?>" target="_blank"><?= icon('print') ?>Drucken</a>
-        <a class="btn" href="<?= e(url('entry_edit', ['patient' => $id])) ?>"><?= icon('plus') ?>Akteneintrag</a>
-        <?php if (can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new', ['patient' => $id])) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
+        <?php if (!$archived && can('patients.merge')): ?><a class="btn" href="<?= e(url('patient_merge', ['target' => $id])) ?>" title="Doppelte Akte übernehmen">Zusammenführen</a><?php endif; ?>
+        <?php if (!$archived && can_issue_any()): ?><a class="btn primary" href="<?= e(url('document_new', ['patient' => $id])) ?>"><?= icon('doc-plus') ?>Dokument ausstellen</a><?php endif; ?>
     </div>
 </div>
 
-<?php if (trim((string) $p['allergies']) !== '' || trim((string) $p['flags']) !== ''): ?>
+<?php foreach (wanted_for_record($p) as $w): ?>
+<div class="flash error wanted-alert"><strong>🚨 <?= $w['source'] === 'warrant' ? 'Offener Haftbefehl' : 'Zur Fahndung ausgeschrieben' ?>:</strong> <?= e(mb_strimwidth((string) $w['reason'], 0, 200, '…')) ?>
+    <span class="badge <?= (int) $w['danger'] >= 3 ? 'red' : 'orange' ?>"><?= e(WANTED_DANGER[(int) $w['danger']]) ?></span> <a href="<?= e(url('wanted')) ?>">Fahndung</a></div>
+<?php endforeach; ?>
+<?php if (trim((string) $p['allergies']) !== '' || trim((string) $p['flags']) !== '' || !empty($extra['danger'])): ?>
 <div class="alertbar">
+    <?php if (!empty($extra['danger'])): ?><div><strong><?= icon('warn') ?> Gefährdungshinweise:</strong> <?php foreach ((array) $extra['danger'] as $dk): ?><span class="badge red"><?= e(DANGER_FLAGS[$dk] ?? $dk) ?></span> <?php endforeach; ?></div><?php endif; ?>
     <?php if (trim((string) $p['allergies']) !== ''): ?><div><strong><?= icon('warn') ?> Allergien:</strong> <?= e($p['allergies']) ?></div><?php endif; ?>
     <?php if (trim((string) $p['flags']) !== ''): ?><div><strong>Hinweise:</strong> <?php foreach (array_filter(array_map('trim', explode(',', $p['flags']))) as $f): ?><span class="badge orange"><?= e($f) ?></span> <?php endforeach; ?></div><?php endif; ?>
 </div>
@@ -63,8 +144,15 @@ ob_start(); ?>
             <dt>Telefon</dt><dd><?= e($p['phone'] ?: '–') ?></dd>
             <dt>Anschrift</dt><dd><?= nl($p['address'] ?: '–') ?></dd>
             <dt>Beruf / Arbeitgeber</dt><dd><?= e(trim($p['occupation'] . ($p['employer'] ? ' · ' . $p['employer'] : '')) ?: '–') ?></dd>
-            <dt>Versicherung</dt><dd><?= e($p['insurance'] ?: '–') ?><?= $p['insurance_number'] ? '<br><span class="mono">' . e($p['insurance_number']) . '</span>' : '' ?></dd>
+            <?php if ($medical): ?><dt>Versicherung</dt><dd><?= e($p['insurance'] ?: '–') ?><?= $p['insurance_number'] ? '<br><span class="mono">' . e($p['insurance_number']) . '</span>' : '' ?></dd><?php endif; ?>
         </dl>
+        <?php if ($extraFields): ?>
+        <h2>Angaben der <?= e(current_faction()['short'] ?: current_faction()['name']) ?></h2>
+        <dl>
+            <?php foreach ($extraFields as $f): if ($f['name'] === 'danger') continue; ?><dt><?= e($f['label']) ?></dt><dd><?= nl(record_extra_value($f, $extra[$f['name']] ?? '') ?: '–') ?></dd><?php endforeach; ?>
+        </dl>
+        <?php endif; ?>
+        <?php if ($medical): ?>
         <h2>Medizinisch</h2>
         <dl>
             <dt>Blutgruppe</dt><dd><?= e($p['blood_type'] ?: 'unbekannt') ?></dd>
@@ -75,12 +163,88 @@ ob_start(); ?>
             <dt>Patientenverfügung</dt><dd><?= $p['living_will'] ? 'liegt vor' : 'nein' ?></dd>
             <dt>Notfallkontakt</dt><dd><?= nl($p['emergency_contact'] ?: '–') ?></dd>
         </dl>
+        <?php endif; ?>
+        <?php $vitals = $medical ? all('SELECT v.*, u.name AS by_name FROM patient_vitals v LEFT JOIN users u ON u.id = v.recorded_by WHERE v.patient_id = ? ORDER BY v.id DESC LIMIT 10', [$id]) : []; if ($vitals): ?>
+        <h2>Vitalverlauf</h2>
+        <table class="list compact"><thead><tr><th>Zeit</th><th>RR</th><th>HF</th><th>SpO₂</th><th>BZ</th></tr></thead><tbody>
+        <?php foreach ($vitals as $v): ?><tr<?= $v['cardiac_arrest'] ? ' class="text-danger"' : '' ?> title="<?= e(($v['by_name'] ?? '') . ' · ' . ($v['source'] === 'sky' ? 'aus dem Spiel (Sky Ambulance)' : $v['source'])) ?>">
+            <td class="small"><?= e(fmt_datetime($v['recorded_at'])) ?><?= $v['cardiac_arrest'] ? '<br><strong>Herzstillstand</strong>' : '' ?></td>
+            <td><?= $v['systolic'] !== null ? (int) $v['systolic'] . '/' . (int) $v['diastolic'] : '–' ?></td><td><?= e((string) ($v['heart_rate'] ?? '–')) ?></td>
+            <td><?= $v['spo2'] !== null ? (int) $v['spo2'] . ' %' : '–' ?></td><td><?= e((string) ($v['blood_sugar'] ?? '–')) ?></td></tr><?php endforeach; ?>
+        </tbody></table>
+        <?php endif; ?>
         <?php if (trim((string) $p['notes']) !== ''): ?>
             <h2>Notizen</h2><p><?= nl($p['notes']) ?></p>
+        <?php endif; ?>
+        <?php if (can('portal.link')): $linked = all('SELECT * FROM citizens WHERE patient_id = ?', [$id]); ?>
+            <h2>Bürgerportal</h2>
+            <?php foreach ($linked as $lc): ?><p class="small">Verknüpft mit Discord <strong><?= e($lc['discord_name']) ?></strong><?= $lc['linked_at'] ? ' seit ' . e(fmt_date($lc['linked_at'])) : '' ?></p><?php endforeach; ?>
+            <form method="post" class="inline-form">
+                <?= csrf_field() ?><input type="hidden" name="action" value="portal_link">
+                <input name="code" placeholder="Verknüpfungscode, z. B. K7F3-QX9M" maxlength="12" required>
+                <button class="btn small">Verknüpfen</button>
+            </form>
+        <?php endif; ?>
+                <?php if (!$archived && can('patients.archive')): ?>
+            <h2>Archiv</h2>
+            <form method="post" class="inline-form" onsubmit="return confirm('Akte archivieren? Sie bleibt lesbar, aber es können keine neuen Einträge oder Dokumente mehr angelegt werden.')">
+                <?= csrf_field() ?><input name="reason" placeholder="Grund (z. B. verzogen, verstorben)" maxlength="190">
+                <button class="btn small" name="action" value="archive">Archivieren</button>
+            </form>
         <?php endif; ?>
     </section>
 
     <section>
+        <?php
+        $cid = (string) $p['citizen_id'];
+        $register = criminal_record_visible() ? criminal_record($cid) : [];
+        $lics = (can('licenses.view') || in_array(faction_kind(), ['police', 'justice'], true)) && can('patients.view') && !$medical ? licenses_for_citizen($cid) : [];
+        $vehs = (can('vehicles.view') && $cid !== '') ? all('SELECT * FROM vehicles WHERE owner_citizen_id = ? AND faction_id IN (' . implode(',', factions_with_module('vehicles') ?: [0]) . ') ORDER BY plate', [$cid]) : [];
+        ?>
+        <?php if (criminal_record_visible() && $cid !== ''): ?>
+        <div class="card">
+            <div class="card-head"><h2>Strafregister</h2><span class="muted small">Polizei und Justiz · nur gültige Dokumente</span></div>
+            <table class="list compact">
+                <tbody>
+                <?php foreach ($register as $r): ?>
+                    <tr><td class="small"><?= e(fmt_date($r['date'])) ?></td><td><strong><?= e($r['kind']) ?></strong> <small class="muted"><?= e($r['agency']) ?></small><br><small><?= e($r['text']) ?></small></td>
+                        <td class="small mono right"><?= $r['document_id'] && $r['faction_id'] === fid() ? '<a href="' . e(url('document', ['id' => $r['document_id']])) . '">' . e($r['number']) . '</a>' : e($r['number']) ?></td></tr>
+                <?php endforeach; ?>
+                <?php if (!$register): ?><tr><td class="muted">Keine Einträge.</td></tr><?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+        <?php if ($lics || $vehs): ?>
+        <div class="card">
+            <?php if ($lics): ?><h2>Lizenzen</h2>
+            <table class="list compact"><tbody>
+                <?php foreach ($lics as $l): ?><tr><td><?= e($l['type']) ?><?= $l['classes'] !== '' ? ' <small class="muted">' . e($l['classes']) . '</small>' : '' ?></td><td class="small"><?= $l['expires_on'] ? 'bis ' . e(fmt_date($l['expires_on'])) : '' ?></td><td class="right"><?= status_badge(LICENSE_STATUS, $l['state']) ?></td></tr><?php endforeach; ?>
+            </tbody></table><?php endif; ?>
+            <?php if ($vehs): ?><h2>Fahrzeuge</h2>
+            <table class="list compact"><tbody>
+                <?php foreach ($vehs as $v): ?><tr><td class="mono"><?= e($v['plate']) ?></td><td><?= e(trim($v['model'] . ' ' . $v['color'])) ?></td><td class="right"><?= status_badge(VEHICLE_STATUS, $v['status']) ?></td></tr><?php endforeach; ?>
+            </tbody></table><?php endif; ?>
+        </div>
+        <?php endif; ?>
+        <div class="card">
+            <div class="card-head"><h2><?= e(term('cases')) ?></h2>
+                <?php if (!$archived && can('cases.manage')): ?><a class="btn small" href="<?= e(url('case_edit', ['patient' => $id])) ?>">+ <?= e(term('case')) ?></a><?php endif; ?></div>
+            <table class="list compact case-list">
+                <tbody>
+                <?php foreach ($cases as $c): ?>
+                    <tr onclick="location.href='<?= e(url('case', ['id' => $c['id']])) ?>'">
+                        <td><strong><?= e($c['title']) ?></strong><br><small class="muted mono"><?= e($c['number']) ?></small> <small class="muted">· <?= e(CASE_KINDS[$c['kind']] ?? $c['kind']) ?><?= $c['department'] ? ' · ' . e($c['department']) : '' ?></small></td>
+                        <td class="small"><?= e(fmt_datetime($c['incident_at'] ?: $c['created_at'])) ?></td>
+                        <td class="small right"><?= (int) $c['entry_count'] ?> Eintr. · <?= (int) $c['doc_count'] ?> Dok.</td>
+                        <td class="right"><?= case_status_badge($c) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (!$cases): ?><tr><td class="muted">Noch keine <?= e(term('cases')) ?>. Ein <?= e(term('case')) ?> bündelt Einträge und Dokumente zu einem Ereignis.</td></tr><?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <?= attachments_card($id, null, $archived) ?>
         <div class="card">
             <div class="card-head"><h2>Verlauf</h2>
                 <div class="tabs" data-filter="#timeline">
@@ -97,12 +261,14 @@ ob_start(); ?>
                                 <span class="badge"><?= e($r['type']) ?></span>
                                 <strong><?= e($r['title']) ?></strong>
                                 <?php if ($r['confidential']): ?><span class="badge purple" title="Nur ärztlicher Dienst und Verfasser">vertraulich</span><?php endif; ?>
-                                <a class="tl-edit" href="<?= e(url('entry_edit', ['id' => $r['id']])) ?>">bearbeiten</a>
+                                <?php if ($r['department']): ?><span class="badge" title="Nur für Mitglieder dieser Abteilung"><?= e($r['department']) ?></span><?php endif; ?>
+                                <?php if ($r['case_number']): ?><a class="badge blue" href="<?= e(url('case', ['id' => $r['case_id']])) ?>"><?= e($r['case_number']) ?></a><?php endif; ?>
+                                <?php if (!$archived): ?><a class="tl-edit" href="<?= e(url('entry_edit', ['id' => $r['id']])) ?>">bearbeiten</a><?php endif; ?>
                             </div>
-                            <?php if ($canSeeConfidential($r)): ?>
+                            <?php if (entry_visible($r)): ?>
                                 <div class="tl-text"><?= nl($r['content']) ?></div>
                             <?php else: ?>
-                                <div class="tl-text muted"><em>Inhalt nur für den ärztlichen Dienst einsehbar.</em></div>
+                                <div class="tl-text muted"><em>Inhalt für dich nicht einsehbar (vertraulich oder einer anderen Abteilung vorbehalten).</em></div>
                             <?php endif; ?>
                             <small class="muted"><?= e(trim($r['author_title'] . ' ' . $r['author'])) ?></small>
                         </div>

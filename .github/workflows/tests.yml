@@ -1,0 +1,69 @@
+# Automatische Prüfung bei jedem Push und Pull Request.
+# Der Server übernimmt neue Stände automatisch – diese Prüfung sollte vor dem
+# Zusammenführen nach main grün sein.
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }} (SQLite)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.2', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_sqlite, pdo_mysql, mbstring, curl
+          coverage: none
+      - name: Syntax aller PHP-Dateien
+        run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l > /dev/null
+      - name: Tests (frische Datenbank, alle Abläufe)
+        run: php tests/run.php
+
+  mariadb:
+    name: Migrationen auf MariaDB
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: mariadb:10.11
+        env:
+          MARIADB_DATABASE: sams
+          MARIADB_USER: sams
+          MARIADB_PASSWORD: sams
+          MARIADB_ROOT_PASSWORD: root
+        ports: ['3306:3306']
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_DRIVER: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: sams
+      DB_USERNAME: sams
+      DB_PASSWORD: sams
+      APP_URL: http://localhost
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring, curl
+          coverage: none
+      - name: Alle Migrationen von Grund auf
+        run: php bin/sams migrate
+      - name: Selbsttest
+        run: php bin/sams selftest
+
+  fivem:
+    name: FiveM-Resource (Lua-Syntax)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq lua5.4
+      # install/ enthält Schnipsel zum Einfügen in ox_inventory, keine eigenständigen Skripte
+      - run: find fivem -name '*.lua' -not -path '*/install/*' -print0 | xargs -0 -n1 luac5.4 -p

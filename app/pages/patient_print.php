@@ -2,16 +2,16 @@
 defined('SAMS_ROOT') || exit;
 /** Druckansicht der vollständigen Patientenakte (Karteikarte) */
 $id = (int) ($_GET['id'] ?? 0);
-$p = one('SELECT * FROM patients WHERE id = ?', [$id]);
+$p = fone('patients', $id);
 if (!$p) {
-    not_found('Patientenakte nicht gefunden.');
+    not_found(term('record') . ' nicht gefunden.');
 }
 audit('patient.print', 'patient', $id, patient_name($p));
 $me = current_user();
 $entries = all('SELECT e.*, u.name AS author, u.title AS author_title FROM entries e LEFT JOIN users u ON u.id = e.created_by WHERE e.patient_id = ? ORDER BY e.occurred_at', [$id]);
 $docs = all('SELECT * FROM documents WHERE patient_id = ? ORDER BY issued_at', [$id]);
 $doc = ['number' => 'AKTE-' . str_pad((string) $id, 6, '0', STR_PAD_LEFT), 'verify_code' => '', 'issuer_snapshot' => issuer_snapshot($me), 'issued_at' => now()];
-$protoTitle = 'Patientenakte';
+$protoTitle = term('record');
 $protoSub = 'Auszug · vertraulich · ärztliche Schweigepflicht';
 ob_start(); ?>
 <div class="page-head no-print"><h1>Akte drucken: <?= e(patient_name($p)) ?></h1><button class="btn primary" onclick="window.print()">Drucken / PDF</button></div>
@@ -36,9 +36,9 @@ ob_start(); ?>
     <table class="tbl">
         <thead><tr><th style="width:24mm">Datum</th><th>Eintrag</th><th style="width:34mm">Verfasser/in</th></tr></thead>
         <tbody>
-        <?php foreach ($entries as $en): $hidden = $en['confidential'] && !can('entries.confidential') && (int) $en['created_by'] !== (int) $me['id']; ?>
+        <?php foreach ($entries as $en): $hidden = !entry_visible($en); ?>
             <tr><td><?= e(fmt_datetime($en['occurred_at'])) ?></td>
-                <td><strong><?= e($en['type']) ?>: <?= e($en['title']) ?></strong><br><?= $hidden ? '<em>vertraulich</em>' : nl($en['content']) ?></td>
+                <td><strong><?= e($en['type']) ?>: <?= e($en['title']) ?></strong><br><?= $hidden ? '<em>nicht einsehbar</em>' : nl($en['content']) ?></td>
                 <td><?= e(trim($en['author_title'] . ' ' . $en['author'])) ?></td></tr>
         <?php endforeach; ?>
         </tbody>
