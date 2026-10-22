@@ -14,9 +14,21 @@ defined('SAMS_ROOT') || exit;
  */
 function render_document(array $doc, array $opts = []): string
 {
+    // Ausgestellte Dokumente im Vorlagenset ihres Ausstellungszeitpunkts (ältere ohne Angabe: deutsch), Vorschauen im aktuellen
+    $prevRegion = $GLOBALS['sams_doc_region'] ?? null;
+    $GLOBALS['sams_doc_region'] = isset(DOC_REGIONS[$doc['data']['_region'] ?? '']) ? $doc['data']['_region'] : (empty($doc['id']) && empty($doc['_forged']) ? doc_region() : 'de');
+    try {
+        return render_document_in_region($doc, $opts);
+    } finally {
+        $GLOBALS['sams_doc_region'] = $prevRegion;
+    }
+}
+
+function render_document_in_region(array $doc, array $opts): string
+{
     $type = doc_type($doc['type']) ?? custom_type_from_snapshot($doc);
     if (!$type) {
-        return '<p>Unbekannte Dokumentart.</p>';
+        return '<p>' . dt('Unbekannte Dokumentart.') . '</p>';
     }
     $d = $doc['data'] ?? [];
     $p = $doc['patient_snapshot'] ?? [];
@@ -58,24 +70,24 @@ function render_document(array $doc, array $opts = []): string
 function addendum_sheet(array $doc, array $addendum, int $n): string
 {
     $type = doc_type($doc['type']);
-    $protoTitle = 'Nachtrag Nr. ' . $n;
-    $protoSub = 'zu ' . ($type['short'] ?? 'Dokument') . ' vom ' . fmt_date($doc['issued_at'] ?? '');
+    $protoTitle = dt('Nachtrag Nr. {n}', ['n' => $n]);
+    $protoSub = dt('zu {doc} vom {date}', ['doc' => $type['short'] ?? dt('Dokument'), 'date' => fmt_date($doc['issued_at'] ?? '')]);
     $sigDoc = ['issuer_snapshot' => $addendum['author'], 'issued_at' => $addendum['created_at']] + $doc;
     $p = $doc['patient_snapshot'] ?? [];
     ob_start(); ?>
     <section class="paper a4 proto addendum">
         <?= doc_watermark($doc, false) ?>
         <?php require SAMS_ROOT . '/app/templates/_protohead.php'; ?>
-        <h3 class="psec">Bezug</h3>
+        <h3 class="psec"><?= e(dt('Bezug')) ?></h3>
         <div class="pgrid">
-            <div class="pc w4"><span class="fl">Dokument</span><span class="fv"><?= e($type['title'] ?? $doc['type']) ?></span></div>
-            <div class="pc w4"><span class="fl">Dokument-Nr. / Prüfcode</span><span class="fv mono"><?= e($doc['number'] ?? '') ?> · <?= e($doc['verify_code'] ?? '') ?></span></div>
-            <div class="pc w4"><span class="fl"><?= e(term('person')) ?></span><span class="fv"><?= e($p ? patient_name($p, true) : '–') ?></span></div>
+            <div class="pc w4"><span class="fl"><?= e(dt('Dokument')) ?></span><span class="fv"><?= e($type['title'] ?? $doc['type']) ?></span></div>
+            <div class="pc w4"><span class="fl"><?= e(dt('Dokument-Nr. / Prüfcode')) ?></span><span class="fv mono"><?= e(doc_code_display((string) ($doc['number'] ?? ''))) ?> · <?= e(doc_code_display((string) ($doc['verify_code'] ?? ''))) ?></span></div>
+            <div class="pc w4"><span class="fl"><?= e(dt(term('person'))) ?></span><span class="fv"><?= e($p ? patient_name($p, true) : '–') ?></span></div>
         </div>
-        <h3 class="psec">Nachtrag vom <?= e(fmt_datetime($addendum['created_at'])) ?></h3>
+        <h3 class="psec"><?= e(dt('Nachtrag vom {date}', ['date' => fmt_datetime($addendum['created_at'])])) ?></h3>
         <div class="addendum-text printed"><?= nl($addendum['text']) ?></div>
-        <p class="small">Dieser Nachtrag ergänzt bzw. berichtigt das oben genannte Dokument. Das Originaldokument bleibt unverändert gültig, soweit es durch diesen Nachtrag nicht berichtigt wird.</p>
-        <?= doc_signature($sigDoc, 'rect', 'Unterschrift Verfasser/in des Nachtrags') ?>
+        <p class="small"><?= e(dt('Dieser Nachtrag ergänzt bzw. berichtigt das oben genannte Dokument. Das Originaldokument bleibt unverändert gültig, soweit es durch diesen Nachtrag nicht berichtigt wird.')) ?></p>
+        <?= doc_signature($sigDoc, 'rect', dt('Unterschrift Verfasser/in des Nachtrags')) ?>
         <div style="flex:1"></div>
         <?= doc_footer($doc) ?>
     </section>
@@ -124,7 +136,9 @@ function org(string $key): string
     if ($loc && isset(LOCATION_FIELDS[$key]) && trim((string) ($loc[$key] ?? '')) !== '') {
         return (string) $loc[$key];
     }
-    return (string) setting($key, $defaults[$key] ?? '');
+    $value = (string) setting($key, $defaults[$key] ?? '');
+    // Musterangaben (nicht selbst eingetragen) im US-Vorlagenset auf Englisch
+    return isset($defaults[$key]) && $value === $defaults[$key] ? dt($value) : $value;
 }
 
 /** Firmenlogo (Star of Life) */
@@ -169,8 +183,8 @@ function doc_letterhead(array $doc, array $opts = []): string
         <div class="lh-contact">
             <?= e(org('org_street')) ?><br>
             <?= e(org('org_city')) ?><br>
-            Tel. <?= e(org('phone')) ?><br>
-            Fax <?= e(org('fax')) ?><br>
+            <?= e(dt('Tel.')) ?> <?= e(org('phone')) ?><br>
+            <?= e(dt('Fax')) ?> <?= e(org('fax')) ?><br>
             <?= e(org('email')) ?>
         </div>
     </header>
@@ -181,7 +195,7 @@ function doc_letterhead(array $doc, array $opts = []): string
         </div>
         <table class="lh-info">
             <?php foreach ($info as $k => $v): if ($v === '' || $v === null) continue; ?>
-                <tr><th><?= e($k) ?></th><td><?= e($v) ?></td></tr>
+                <tr><th><?= e(dt((string) $k)) ?></th><td><?= e($v) ?></td></tr>
             <?php endforeach; ?>
         </table>
     </div>
@@ -191,7 +205,7 @@ function doc_letterhead(array $doc, array $opts = []): string
 
 function patient_salutation_name(array $p): string
 {
-    $prefix = ['m' => 'Herrn', 'w' => 'Frau'][$p['gender'] ?? ''] ?? '';
+    $prefix = ['m' => dt('Herrn'), 'w' => dt('Frau')][$p['gender'] ?? ''] ?? '';
     return trim($prefix . ' ' . patient_name($p));
 }
 
@@ -205,17 +219,17 @@ function doc_patient_box(array $doc, bool $full = true): string
     ob_start(); ?>
     <table class="pbox">
         <tr>
-            <th>Name, Vorname</th><td><strong><?= e(patient_name($p, true)) ?></strong></td>
-            <th>geb. am</th><td><?= e(fmt_date($p['dob'] ?? '')) ?></td>
+            <th><?= e(dt('Name, Vorname')) ?></th><td><strong><?= e(patient_name($p, true)) ?></strong></td>
+            <th><?= e(dt('geb. am')) ?></th><td><?= e(fmt_date($p['dob'] ?? '')) ?></td>
         </tr>
         <?php if ($full): ?>
         <tr>
-            <th>Anschrift</th><td><?= e(str_replace("\n", ', ', (string) ($p['address'] ?? ''))) ?></td>
-            <th>Bürger-ID</th><td class="mono"><?= e($p['citizen_id'] ?? '') ?></td>
+            <th><?= e(dt('Anschrift')) ?></th><td><?= e(str_replace("\n", ', ', (string) ($p['address'] ?? ''))) ?></td>
+            <th><?= e(dt('Bürger-ID')) ?></th><td class="mono"><?= e($p['citizen_id'] ?? '') ?></td>
         </tr>
         <tr>
-            <th>Kostenträger</th><td><?= e($p['insurance'] ?? '') ?></td>
-            <th>Vers.-Nr.</th><td class="mono"><?= e($p['insurance_number'] ?? '') ?></td>
+            <th><?= e(dt('Kostenträger')) ?></th><td><?= e($p['insurance'] ?? '') ?></td>
+            <th><?= e(dt('Vers.-Nr.')) ?></th><td class="mono"><?= e($p['insurance_number'] ?? '') ?></td>
         </tr>
         <?php endif; ?>
     </table>
@@ -245,7 +259,9 @@ const ADMIN_STAMP_DEFAULTS = [
 
 function admin_stamp_setting(string $key): string
 {
-    return (string) (setting($key, '') ?: (ADMIN_STAMP_DEFAULTS[$key] ?? ''));
+    $value = (string) (setting($key, '') ?: (ADMIN_STAMP_DEFAULTS[$key] ?? ''));
+    // Vorgabetexte im US-Vorlagenset auf Englisch (selbst eingetragene Bezeichnungen bleiben)
+    return $value === (ADMIN_STAMP_DEFAULTS[$key] ?? null) ? dt($value) : $value;
 }
 
 /** Wurde das Dokument vom Hauptadministrator ausgestellt? (auch ältere Dokumente ohne Kennzeichen im Snapshot) */
@@ -265,11 +281,14 @@ function stamp_profile(?array $doc = null): array
 {
     if ($doc && doc_admin_issued($doc)) {
         $c = admin_stamp_setting('admin_stamp_color');
-        return ['color' => preg_match('/^#[0-9a-f]{6}$/i', $c) ? $c : ADMIN_STAMP_DEFAULTS['admin_stamp_color'], 'emblem' => 'state', 'seal_label' => 'AMTSSIEGEL',
-            'caption' => 'Unterschrift und Siegel der ' . admin_stamp_setting('admin_org_name'), 'head' => 'Verwaltung', 'admin' => true,
+        return ['color' => preg_match('/^#[0-9a-f]{6}$/i', $c) ? $c : ADMIN_STAMP_DEFAULTS['admin_stamp_color'], 'emblem' => 'state', 'seal_label' => dt('AMTSSIEGEL'),
+            'caption' => dt('Unterschrift und Siegel der {org}', ['org' => admin_stamp_setting('admin_org_name')]), 'head' => dt('Verwaltung'), 'admin' => true,
             'seal_text' => admin_stamp_setting('admin_seal_text'), 'seal_bottom' => admin_stamp_setting('admin_seal_bottom')];
     }
     $p = STAMP_PROFILES[faction_kind()] ?? STAMP_PROFILES['medical'];
+    foreach (['seal_label', 'caption', 'head'] as $k) {
+        $p[$k] = dt($p[$k]);
+    }
     $c = (string) setting('stamp_color', '');
     if (preg_match('/^#[0-9a-f]{6}$/i', $c)) {
         $p['color'] = $c;
@@ -283,7 +302,7 @@ function doc_signature(array $doc, string $stamp = 'rect', string $caption = '',
     $u = $doc['issuer_snapshot'] ?? [];
     $admin = doc_admin_issued($doc);
     $medicalDoctor = !$admin && faction_kind() === 'medical' && (($u['doctor_number'] ?? '') !== '' || in_array($u['role'] ?? '', ['doctor', 'admin'], true));
-    $caption = $caption ?: ($medicalDoctor ? 'Unterschrift und Stempel des Arztes / der Ärztin' : ($stamp !== '' || $admin ? stamp_profile($doc)['caption'] : 'Unterschrift'));
+    $caption = $caption !== '' ? dt($caption) : ($medicalDoctor ? dt('Unterschrift und Stempel des Arztes / der Ärztin') : ($stamp !== '' || $admin ? stamp_profile($doc)['caption'] : dt('Unterschrift')));
     if ($admin) {
         $u['rank_name'] = ($u['admin_title'] ?? '') ?: admin_stamp_setting('admin_title') . ' · ' . admin_stamp_setting('admin_org_name');
     }
@@ -291,7 +310,7 @@ function doc_signature(array $doc, string $stamp = 'rect', string $caption = '',
     ob_start(); ?>
     <div class="sigblock">
         <?php if ($withPlace): ?>
-        <div class="sig-place"><span class="hand-filled"><?= e(org('city')) ?>, <?= e(fmt_date($doc['issued_at'] ?? now())) ?></span><span class="sig-cap">Ort, Datum</span></div>
+        <div class="sig-place"><span class="hand-filled"><?= e(org('city')) ?>, <?= e(fmt_date($doc['issued_at'] ?? now())) ?></span><span class="sig-cap"><?= e(dt('Ort, Datum')) ?></span></div>
         <?php endif; ?>
         <div class="sig-sign">
             <div class="sig-area">
@@ -304,7 +323,7 @@ function doc_signature(array $doc, string $stamp = 'rect', string $caption = '',
         <?php if (!empty($u['cosigner'])): $c = $u['cosigner']; ?>
         <div class="sig-sign cosign">
             <div class="sig-area"><?= signature_html($c, doc_rand($doc, 'cosig', -3, 3)) ?></div>
-            <span class="sig-cap">Gegengezeichnet / freigegeben am <?= e(fmt_date($c['at'] ?? '')) ?></span>
+            <span class="sig-cap"><?= e(dt('Gegengezeichnet / freigegeben am {date}', ['date' => fmt_date($c['at'] ?? '')])) ?></span>
             <span class="sig-name"><?= e(user_display($c)) ?><?= !empty($c['rank_name']) ? ' · ' . e($c['rank_name']) : '' ?></span>
         </div>
         <?php endif; ?>
@@ -316,7 +335,7 @@ function doc_signature(array $doc, string $stamp = 'rect', string $caption = '',
 function signature_html(array $u, float $rot = -2): string
 {
     if (!empty($u['signature']) && str_starts_with((string) $u['signature'], 'data:image/png;base64,')) {
-        return '<img class="sig-img" style="transform:rotate(' . $rot . 'deg)" src="' . e($u['signature']) . '" alt="Unterschrift">';
+        return '<img class="sig-img" style="transform:rotate(' . $rot . 'deg)" src="' . e($u['signature']) . '" alt="' . e(dt('Unterschrift')) . '">';
     }
     return '<span class="sig-font" style="transform:rotate(' . $rot . 'deg)">' . e($u['name'] ?? '') . '</span>';
 }
@@ -360,8 +379,8 @@ function doctor_stamp_svg(array $doc): string
             ['t' => $u['department'] ?? '', 'c' => ''],
             ['t' => org('org_name'), 'c' => ''],
             ['t' => $place, 'c' => ''],
-            ['t' => trim((org('phone') !== '' ? 'Tel. ' . org('phone') : '') . (!empty($u['doctor_number']) ? ' · Arzt-Nr. ' . $u['doctor_number'] : ''), ' ·'), 'c' => 'small'],
-            ['t' => org('bsnr') !== '' ? 'BSNR ' . org('bsnr') : '', 'c' => 'small'],
+            ['t' => trim((org('phone') !== '' ? dt('Tel.') . ' ' . org('phone') : '') . (!empty($u['doctor_number']) ? ' · ' . dt('Arzt-Nr.') . ' ' . $u['doctor_number'] : ''), ' ·'), 'c' => 'small'],
+            ['t' => org('bsnr') !== '' ? dt('BSNR') . ' ' . org('bsnr') : '', 'c' => 'small'],
         ];
     } elseif (faction_kind() === 'law') {
         // Kanzleistempel: Name, Berufsbezeichnung, Kanzlei, Anschrift
@@ -370,17 +389,17 @@ function doctor_stamp_svg(array $doc): string
             ['t' => $u['rank_name'] ?? '', 'c' => ''],
             ['t' => org('org_name'), 'c' => 'head'],
             ['t' => $place, 'c' => 'small'],
-            ['t' => org('phone') !== '' ? 'Tel. ' . org('phone') : '', 'c' => 'small'],
+            ['t' => org('phone') !== '' ? dt('Tel.') . ' ' . org('phone') : '', 'c' => 'small'],
         ];
     } else {
-        $rankLine = trim(($u['rank_name'] ?? '') . (!empty($u['badge_number']) ? ' · Dienst-Nr. ' . $u['badge_number'] : ''), ' ·');
+        $rankLine = trim(($u['rank_name'] ?? '') . (!empty($u['badge_number']) ? ' · ' . dt('Dienst-Nr.') . ' ' . $u['badge_number'] : ''), ' ·');
         $lines = [
             ['t' => mb_strtoupper(org('org_name')), 'c' => 'head'],
             ['t' => $u['department'] ?? '', 'c' => ''],
             ['t' => user_display($u), 'c' => 'big'],
             ['t' => $rankLine, 'c' => ''],
             ['t' => $place, 'c' => 'small'],
-            ['t' => org('phone') !== '' ? 'Tel. ' . org('phone') : '', 'c' => 'small'],
+            ['t' => org('phone') !== '' ? dt('Tel.') . ' ' . org('phone') : '', 'c' => 'small'],
         ];
     }
     $lines = array_values(array_filter($lines, fn($l) => trim($l['t']) !== ''));
@@ -552,34 +571,40 @@ function doc_footer(array $doc, string $extra = ''): string
         <div class="df-verify">
             <?= qr_html($doc) ?>
             <div>
-                <strong>Echtheit prüfen</strong><br>
+                <strong><?= e(dt('Echtheit prüfen')) ?></strong><br>
                 <?= e(preg_replace('#^https?://#', '', base_url())) ?>/verify.php<br>
-                Prüfcode: <span class="mono"><?= e(chunk_split($doc['verify_code'] ?? '', 4, ' ')) ?></span>
-                <div class="df-barcode"><?= barcode_svg($doc['number'] ?? 'ENTWURF') ?><span class="mono"><?= e($doc['number'] ?? '') ?></span></div>
+                <?= e(dt('Prüfcode:')) ?> <span class="mono"><?= e(chunk_split(doc_code_display((string) ($doc['verify_code'] ?? '')), 4, ' ')) ?></span>
+                <div class="df-barcode"><?= barcode_svg(doc_code_display((string) ($doc['number'] ?? 'ENTWURF'))) ?><span class="mono"><?= e(doc_code_display((string) ($doc['number'] ?? ''))) ?></span></div>
             </div>
         </div>
         <div class="df-cols">
             <div><strong><?= e(org('org_name')) ?></strong><br><?= e(org('org_sub')) ?><br><?= e(org('org_street')) ?><br><?= e(org('org_city')) ?></div>
-            <div>Tel. <?= e(org('phone')) ?><br>Fax <?= e(org('fax')) ?><br><?= e(org('email')) ?><br><?= e(org('web')) ?></div>
-            <div><?= e(org('bank')) ?><?= org('iban') !== '' ? '<br>IBAN ' . e(org('iban')) : '' ?><?= org('bic') !== '' ? '<br>BIC ' . e(org('bic')) : '' ?><?= faction_kind() === 'medical' && org('ik_number') !== '' ? '<br>IK ' . e(org('ik_number')) : '' ?></div>
+            <div><?= e(dt('Tel.')) ?> <?= e(org('phone')) ?><br><?= e(dt('Fax')) ?> <?= e(org('fax')) ?><br><?= e(org('email')) ?><br><?= e(org('web')) ?></div>
+            <div><?= e(org('bank')) ?><?= org('iban') !== '' ? '<br>' . e(dt('IBAN')) . ' ' . e(org('iban')) : '' ?><?= org('bic') !== '' ? '<br>' . e(dt('BIC')) . ' ' . e(org('bic')) : '' ?><?= faction_kind() === 'medical' && org('ik_number') !== '' ? '<br>' . e(dt('IK')) . ' ' . e(org('ik_number')) : '' ?></div>
             <div><?= org('director') !== '' ? e(stamp_profile()['head']) . ':<br>' . e(org('director')) . '<br>' : '' ?><?= e(org('register')) ?><br><?= e(org('tax_id')) ?></div>
         </div>
         <?php if ($extra !== ''): ?><div class="df-extra"><?= $extra ?></div><?php endif; ?>
-        <?php if (!isset($doc['_forged']) || (int) $doc['_forged'] >= 85): ?><div class="df-micro" aria-hidden="true"><?= e(str_repeat(mb_strtoupper(org('org_short')) . ' · ECHT · ' . ($doc['number'] ?? '') . ' · ', 12)) ?></div><?php endif; ?>
+        <?php if (!isset($doc['_forged']) || (int) $doc['_forged'] >= 85): ?><div class="df-micro" aria-hidden="true"><?= e(str_repeat(mb_strtoupper(org('org_short')) . ' · ' . dt('ECHT') . ' · ' . doc_code_display((string) ($doc['number'] ?? '')) . ' · ', 12)) ?></div><?php endif; ?>
     </footer>
     <?php
     return ob_get_clean();
 }
 
-/** Datumsfelder im Formularstil (TT MM JJ). */
+/** Datumsfelder im Formularstil (TT MM JJ, im US-Vorlagenset MM DD YY). */
 function date_boxes($date): string
 {
-    $s = $date ? date('dmy', strtotime((string) $date)) : '      ';
+    $s = $date ? date(doc_us() ? 'mdy' : 'dmy', strtotime((string) $date)) : '      ';
     $out = '<span class="dboxes">';
     foreach (str_split($s, 2) as $part) {
         $out .= '<span>' . e($part) . '</span>';
     }
     return $out . '</span>';
+}
+
+/** Dokument-Nr./Prüfcode für die Anzeige: Platzhalter „ENTWURF…“ der Vorschau im US-Vorlagenset als „DRAFT…“. */
+function doc_code_display(string $code): string
+{
+    return str_starts_with($code, 'ENTWURF') ? dt('ENTWURF') . substr($code, 7) : $code;
 }
 
 /** Hilfsfunktion: Wert oder Platzhalterlinie */
@@ -608,10 +633,10 @@ function opt_label(array $type, string $field, $value): string
 function doc_watermark(array $doc, bool $draft): string
 {
     if ($draft) {
-        return '<div class="watermark">ENTWURF</div>';
+        return '<div class="watermark">' . e(dt('ENTWURF')) . '</div>';
     }
     if (($doc['status'] ?? '') === 'revoked') {
-        return '<div class="watermark red">STORNIERT</div>';
+        return '<div class="watermark red">' . e(dt('STORNIERT')) . '</div>';
     }
     return '';
 }

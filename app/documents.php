@@ -55,7 +55,7 @@ function billing_type_for(array $t, ?int $factionId = null): array
             $f['label'] = $l['items'];
             $f['columns']['text']['label'] = $l['item'];
             if (catalog_has_jail($factionId)) {
-                $f['columns'] = array_slice($f['columns'], 0, 3, true) + ['jail' => ['label' => 'Haft (Einh.)', 'type' => 'number']] + array_slice($f['columns'], 3, null, true);
+                $f['columns'] = array_slice($f['columns'], 0, 3, true) + ['jail' => ['label' => dt('Haft (Einh.)'), 'type' => 'number']] + array_slice($f['columns'], 3, null, true);
             }
         }
     }
@@ -65,9 +65,10 @@ function billing_type_for(array $t, ?int $factionId = null): array
 /** Alle Dokumentarten aller Fraktionen (zum Anzeigen bestehender Dokumente). */
 function document_types_all(): array
 {
-    static $types = null;
-    if ($types !== null) {
-        return $types;
+    static $cache = [];
+    $region = doc_region();
+    if (isset($cache[$region])) {
+        return $cache[$region];
     }
 
     $yesNo = ['unauffällig' => 'unauffällig', 'auffällig' => 'auffällig', 'n.d.' => 'nicht durchgeführt'];
@@ -516,11 +517,13 @@ function document_types_all(): array
         ],
     ];
 
-    $types = array_merge($types, document_types_extra(), document_types_medical(), document_types_factions());
+    $types = array_merge($types, document_types_extra(), document_types_medical(), document_types_factions(), document_types_us_only());
+    // Vorlagenset: Arten nur für ein Set ausblenden, im US-Set Bezeichnungen, Felder und Vorlagen auf Englisch
+    $types = $region === 'us' ? doc_types_us_apply($types) : array_filter($types, fn($t) => ($t['region'] ?? 'de') === 'de');
     foreach (custom_doc_types() as $row) {
         $types[$row['type_key']] = custom_type_definition($row);
     }
-    return $types;
+    return $cache[$region] = $types;
 }
 
 function doc_type(string $key): ?array

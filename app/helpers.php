@@ -96,6 +96,10 @@ function fmt_date($value, string $format = 'd.m.Y'): string
     if ($ts === false) {
         return (string) $value;
     }
+    if (doc_us()) {
+        // US-Vorlagenset: MM/DD/YYYY, englische Monats- und Tagesnamen
+        return date(strtr($format, ['d.m.Y' => 'm/d/Y', 'd.m.y' => 'm/d/y', 'd.m.' => 'm/d']), $ts);
+    }
     return strtr(date($format, $ts), [
         'Monday' => 'Montag', 'Tuesday' => 'Dienstag', 'Wednesday' => 'Mittwoch', 'Thursday' => 'Donnerstag',
         'Friday' => 'Freitag', 'Saturday' => 'Samstag', 'Sunday' => 'Sonntag',
@@ -124,7 +128,7 @@ function age($dob): string
 function money($value): string
 {
     $symbol = setting('currency', '$');
-    return $symbol . ' ' . number_format((float) $value, 2, ',', '.');
+    return doc_us() ? $symbol . number_format((float) $value, 2, '.', ',') : $symbol . ' ' . number_format((float) $value, 2, ',', '.');
 }
 
 function random_code(int $length = 8): string

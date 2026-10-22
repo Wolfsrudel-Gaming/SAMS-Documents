@@ -37,7 +37,7 @@ if ($layout === 'letter'):
         }
     }
     if ($recipient === '' && $emp) {
-        $recipient = trim(($emp['title'] ?? '') . ' ' . ($emp['name'] ?? '')) . "\n– im Hause –";
+        $recipient = trim(($emp['title'] ?? '') . ' ' . ($emp['name'] ?? '')) . "\n" . dt('– im Hause –');
     }
     echo a4_open($doc, $draft);
     echo doc_letterhead($doc, ['recipient' => $recipient, 'no_patient_address' => $recipient !== '' || !$isPatient]);
@@ -66,15 +66,15 @@ if ($layout === 'letter'):
     ?>
     <?php if ($isPatient): ?>
         <div class="pgrid">
-            <div class="pc w6"><span class="fl">Name, Vorname</span><span class="fv"><strong><?= e(patient_name($p, true)) ?></strong></span></div>
-            <div class="pc w3"><span class="fl">geb. am</span><span class="fv"><?= e(fmt_date($p['dob'] ?? '')) ?></span></div>
-            <div class="pc w3"><span class="fl">Bürger-ID</span><span class="fv mono"><?= e($p['citizen_id'] ?? '') ?></span></div>
+            <div class="pc w6"><span class="fl"><?= e(dt('Name, Vorname')) ?></span><span class="fv"><strong><?= e(patient_name($p, true)) ?></strong></span></div>
+            <div class="pc w3"><span class="fl"><?= e(dt('geb. am')) ?></span><span class="fv"><?= e(fmt_date($p['dob'] ?? '')) ?></span></div>
+            <div class="pc w3"><span class="fl"><?= e(dt('Bürger-ID')) ?></span><span class="fv mono"><?= e($p['citizen_id'] ?? '') ?></span></div>
         </div>
     <?php elseif ($emp): ?>
         <div class="pgrid">
-            <div class="pc w6"><span class="fl">Mitarbeiter/in</span><span class="fv"><strong><?= e(trim(($emp['title'] ?? '') . ' ' . ($emp['name'] ?? ''))) ?></strong></span></div>
-            <div class="pc w3"><span class="fl">Rang</span><span class="fv"><?= e($emp['rank_name'] ?? '') ?></span></div>
-            <div class="pc w3"><span class="fl">Dienstnummer</span><span class="fv mono"><?= e($emp['badge_number'] ?? '') ?></span></div>
+            <div class="pc w6"><span class="fl"><?= e(dt('Mitarbeiter/in')) ?></span><span class="fv"><strong><?= e(trim(($emp['title'] ?? '') . ' ' . ($emp['name'] ?? ''))) ?></strong></span></div>
+            <div class="pc w3"><span class="fl"><?= e(dt('Rang')) ?></span><span class="fv"><?= e($emp['rank_name'] ?? '') ?></span></div>
+            <div class="pc w3"><span class="fl"><?= e(dt('Dienstnummer')) ?></span><span class="fv mono"><?= e($emp['badge_number'] ?? '') ?></span></div>
         </div>
     <?php endif; ?>
     <?php
@@ -92,8 +92,8 @@ if ($layout === 'letter'):
         $v = $d[$f['name']] ?? '';
         $w = $wmap[$f['width'] ?? 'full'] ?? 'w12'; ?>
         <div class="pc <?= $w ?><?= $f['type'] === 'textarea' ? ' tall' : '' ?>"><span class="fl"><?= e($f['label']) ?></span>
-            <?php if ($f['type'] === 'checkbox'): ?><span class="fv chk"><?= box(!empty($v)) ?> ja</span>
-            <?php elseif (in_array($f['type'], ['checkboxes', 'radio', 'select'], true)): ?><span class="fv chk"><?php foreach ($f['options'] ?? [] as $o): ?><span class="nowrap"><?= box(is_array($v) ? in_array($o, $v, true) : (string) $v === (string) $o) ?> <?= e($o) ?></span> <?php endforeach; ?></span>
+            <?php if ($f['type'] === 'checkbox'): ?><span class="fv chk"><?= box(!empty($v)) ?> <?= e(dt('ja')) ?></span>
+            <?php elseif (in_array($f['type'], ['checkboxes', 'radio', 'select'], true)): ?><span class="fv chk"><?php foreach ($f['options'] ?? [] as $ov => $o): /* gespeichert wird der Schlüssel, gedruckt die (im US-Set übersetzte) Bezeichnung */ ?><span class="nowrap"><?= box(is_array($v) ? in_array((string) $ov, array_map('strval', $v), true) : (string) $v === (string) $ov) ?> <?= e((string) $o) ?></span> <?php endforeach; ?></span>
             <?php else: ?><span class="fv"><?= nl(custom_field_value($f, $v)) ?></span><?php endif; ?>
         </div>
     <?php endforeach;

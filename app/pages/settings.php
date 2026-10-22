@@ -26,7 +26,7 @@ $keys = [
         'bic'        => ['BIC', 'MAZESALSXXX'],
     ],
     'Sprache' => [
-        'language' => ['Sprache der Oberfläche (Dokumente bleiben deutsch)', 'de', 'select', UI_LANGUAGES],
+        'language' => ['Sprache der Oberfläche (Sprache der Dokumente: Vorlagenset)', 'de', 'select', UI_LANGUAGES],
     ],
     'Design' => [
         'theme_primary' => ['Primärfarbe (Schaltflächen, Markierungen)', '#0b4f9c', 'color'],
@@ -97,6 +97,9 @@ $keys = [
 // Weitere Fraktionen pflegen nur ihre eigenen Angaben; systemweite Einstellungen bleiben der Hauptfraktion vorbehalten
 // Übergeordnete Verwaltung: nur für den Hauptadministrator (gilt für alle Dokumente, die er ausstellt)
 if (!empty(current_user()['is_superadmin'])) {
+    $keys['Portal (alle Fraktionen)'] = [
+        'doc_region' => ['Vorlagenset der Dokumente (deutsche oder US-Vorlagen; bereits ausgestellte Dokumente bleiben unverändert)', 'de', 'select', DOC_REGIONS],
+    ];
     $keys['Administration (übergeordnet, Stempel des Hauptadministrators)'] = [
         'admin_org_name'    => ['Bezeichnung der Verwaltung', ADMIN_STAMP_DEFAULTS['admin_org_name']],
         'admin_department'  => ['Abteilung (Stempel)', ADMIN_STAMP_DEFAULTS['admin_department']],
@@ -134,6 +137,9 @@ if (is_post()) {
             if ($k === 'language' && !isset(UI_LANGUAGES[$v])) {
                 $v = 'de';
             }
+            if ($k === 'doc_region' && !isset(DOC_REGIONS[$v])) {
+                $v = 'de';
+            }
             if ($k === 'session_idle_minutes') {
                 $v = (string) max(0, min(1440, (int) $v));
             }
@@ -161,8 +167,16 @@ if (is_post()) {
             if (($items = $group[$k]) && ($items[2] ?? '') === 'select' && !isset($items[3][$v])) {
                 $v = $items[1];
             }
+            if ($k === 'doc_region' && $v !== doc_region()) {
+                audit('settings.doc_region', 'setting', null, DOC_REGIONS[$v]);
+                $regionChanged = $v;
+            }
             save_setting($k, $v);
         }
+    }
+    if (($regionChanged ?? '') === 'us') {
+        setting('__reset');
+        doc_region_grant_permissions(); // neue US-Dokumentarten für die Ränge der verwandten Arten
     }
     if (post('modules_form')) {
         $mods = array_values(array_intersect((array) ($_POST['modules'] ?? []), array_keys(FACTION_MODULES)));

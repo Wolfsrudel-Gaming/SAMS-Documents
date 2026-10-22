@@ -494,7 +494,8 @@ const BILLING_LABELS = [
 
 function billing_labels(?int $factionId = null): array
 {
-    return BILLING_LABELS[faction_kind($factionId)] ?? BILLING_LABELS['medical'];
+    // im US-Vorlagenset englisch (Invoice, Citation, Statement of Costs …)
+    return array_map(fn($label) => dt($label), BILLING_LABELS[faction_kind($factionId)] ?? BILLING_LABELS['medical']);
 }
 
 /** Arbeitet der Katalog mit Haft-Einheiten (Polizei, Justiz)? */

@@ -154,11 +154,11 @@ function receipt_sheet(array $doc): string
     $img = (string) ($doc['data'][IC_RECEIPT_FIELD] ?? '');
     ob_start(); ?>
     <section class="paper a6l receipt-sheet">
-        <h3 class="psec">Empfangsbestätigung</h3>
-        <p>Hiermit bestätige ich den Empfang des Dokuments <strong><?= e($type['title'] ?? 'Dokument') ?></strong> Nr. <span class="mono"><?= e($doc['number'] ?? '') ?></span>
-            vom <?= e(fmt_date($doc['issued_at'] ?? '')) ?>.</p>
+        <h3 class="psec"><?= e(dt('Empfangsbestätigung')) ?></h3>
+        <p><?= e(dt('Hiermit bestätige ich den Empfang des Dokuments')) ?> <strong><?= e($type['title'] ?? dt('Dokument')) ?></strong> <?= e(dt('Nr.')) ?> <span class="mono"><?= e(doc_code_display((string) ($doc['number'] ?? ''))) ?></span>
+            <?= e(dt('vom {date}.', ['date' => fmt_date($doc['issued_at'] ?? '')])) ?></p>
         <div class="sigblock"><div class="sig-sign"><div class="sig-area"><?= $img !== '' ? '<img class="sig-img" src="' . e($img) . '" alt="">' : '' ?></div>
-            <span class="sig-cap"><?= $sig ? e($sig['signer_name']) . ', ' . e(fmt_datetime($sig['created_at'])) : 'Unterschrift Empfänger/in' ?></span></div></div>
+            <span class="sig-cap"><?= $sig ? e($sig['signer_name']) . ', ' . e(fmt_datetime($sig['created_at'])) : e(dt('Unterschrift Empfänger/in')) ?></span></div></div>
     </section>
     <?php return (string) ob_get_clean();
 }

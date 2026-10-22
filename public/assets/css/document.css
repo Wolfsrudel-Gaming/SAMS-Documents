@@ -449,3 +449,28 @@
 .forged.q-low .sig-stamp { filter: blur(1.1px) grayscale(.3); transform: translate(4mm, -2mm) rotate(-6deg); opacity: .6; }
 .forged.q-low .doc-logo, .forged.q-low .lh-name, .forged.q-low .seal, .forged.q-low .psec { filter: hue-rotate(28deg) saturate(.6) contrast(.9); }
 .forged.q-low .qr, .forged.q-low .df-barcode { filter: blur(1.2px); }
+
+/* ---------------------------------------------------- US-Vorlagenset: Prescription */
+.paper.us-rx { background: #f4f8fb; border-top: 3mm solid #1f4e79; font-family: Arial, Helvetica, sans-serif; }
+.paper.us-rx.us-rx-cii { border-top-color: #8a1c1c; background: #fdf6f2; }
+.us-rx-head { display: flex; gap: 3mm; align-items: center; border-bottom: .3mm solid #1f4e79; padding-bottom: 1.5mm; }
+.us-rx-logo { width: 11mm; height: 11mm; object-fit: contain; }
+.us-rx-head > div:nth-child(2) { flex: 1; }
+.us-rx-org { font-weight: 700; font-size: 10pt; }
+.us-rx-addr, .us-rx-dr { font-size: 7pt; color: #333; }
+.us-rx-badge { border: .5mm solid #8a1c1c; color: #8a1c1c; font-weight: 800; font-size: 13pt; padding: 1mm 2.5mm; text-align: center; line-height: 1; }
+.us-rx-badge small { display: block; font-size: 5.5pt; font-weight: 600; }
+.us-rx-badge.light { border-color: #1f4e79; color: #1f4e79; font-size: 8pt; }
+.us-rx-pt { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1mm 3mm; font-size: 8pt; }
+.us-rx-pt .wide { grid-column: span 3; }
+.us-rx-pt .fl { display: block; font-size: 5.8pt; color: #555; }
+.us-rx-pt .fv { display: block; border-bottom: .2mm solid #999; min-height: 4mm; font-family: "Courier New", monospace; }
+.us-rx-body { display: flex; gap: 3mm; flex: 1; }
+.us-rx-sym { font-size: 26pt; font-weight: 700; color: #1f4e79; line-height: 1; }
+.us-rx-items { flex: 1; font-size: 8.5pt; }
+.us-rx-line { border-bottom: .2mm dashed #aaa; padding: 1mm 0; font-family: "Courier New", monospace; }
+.us-rx-daw { font-family: Arial, sans-serif; font-size: 6.5pt; color: #444; margin-top: .5mm; }
+.us-rx-note { font-size: 7.5pt; margin-top: 1mm; }
+.us-rx-flags { display: flex; flex-wrap: wrap; gap: 1mm 3mm; font-size: 6.5pt; color: #444; margin-top: 1.5mm; }
+.us-rx-sign { align-self: flex-end; width: 55mm; text-align: center; }
+.us-rx-sign .sig-area { border-bottom: .25mm solid #333; min-height: 10mm; position: relative; }

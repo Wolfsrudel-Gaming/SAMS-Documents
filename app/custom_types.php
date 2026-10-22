@@ -143,18 +143,22 @@ function custom_placeholder_help(): array
     ];
 }
 
-/** Wert eines Feldes für die Ausgabe (Datum formatiert, Optionen als Text). */
+/** Wert eines Feldes für die Ausgabe (Datum formatiert, Optionen als Bezeichnung – im US-Set übersetzt, gespeichert bleibt der Wert). */
 function custom_field_value(array $f, $v): string
 {
+    $opts = is_array($f['options'] ?? null) ? $f['options'] : [];
     if (is_array($v)) {
-        return implode(', ', $v);
+        return implode(', ', array_map(fn($x) => is_scalar($x) && isset($opts[(string) $x]) && is_string($opts[(string) $x]) ? $opts[(string) $x] : (string) (is_scalar($x) ? $x : ''), $v));
     }
     $v = (string) $v;
     if ($f['type'] === 'date') {
         return fmt_date($v);
     }
     if ($f['type'] === 'checkbox') {
-        return $v !== '' ? 'ja' : 'nein';
+        return $v !== '' ? dt('ja') : dt('nein');
+    }
+    if ($v !== '' && in_array($f['type'], ['select', 'radio'], true) && isset($opts[$v]) && is_string($opts[$v])) {
+        return $opts[$v];
     }
     return $v;
 }
