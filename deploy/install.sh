@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# SAMS – Server-Einrichtung für Ubuntu/Debian
+# Wolfpack Documents – Server-Einrichtung für Ubuntu/Debian
 #
 # Richtet alles ein, was für den Betrieb mit Auto-Update nötig ist:
 #   Pakete, Systembenutzer, Deploy-Key, Code, .env, Datenbank, Webserver,
@@ -73,7 +73,7 @@ svc_up() { # Dienst aktivieren und starten bzw. neu laden
 [[ $EUID -eq 0 ]] || die "Bitte als root ausführen: sudo bash $0"
 command -v apt-get >/dev/null || die "Dieses Skript unterstützt Ubuntu/Debian (apt)."
 
-echo "${B}SAMS Dokumenten- & Aktensystem – Server-Einrichtung${N}"
+echo "${B}Wolfpack Documents – Server-Einrichtung${N}"
 echo "Ziel: $APP_DIR · Benutzer: $APP_USER · Repository: $REPO_URL"
 
 # ------------------------------------------------------------- Fragen ------

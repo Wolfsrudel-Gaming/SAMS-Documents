@@ -1,5 +1,5 @@
 --[[
-    SAMS Tablet – Apotheke (Server)
+    Wolfpack Documents Tablet – Apotheke (Server)
     Rezepte im Inventar finden, beim Websystem prüfen und einlösen, Medikamenten-Items ausgeben.
     Doppeltes Einlösen verhindert das Websystem (jede Position nur einmal).
 ]]

@@ -1,4 +1,4 @@
---[[ Tablet: öffnet das SAMS-Websystem im Spiel (Login-Maske, danach Websystem im Tablet-Rahmen) ]]
+--[[ Tablet: öffnet das Websystem (Wolfpack Documents) im Spiel (Login-Maske, danach Websystem im Tablet-Rahmen) ]]
 
 local isOpen = false
 

@@ -1,5 +1,5 @@
 --[[
-    SAMS Tablet – Spielserver-Anbindung (ESX)
+    Wolfpack Documents Tablet – Spielserver-Anbindung (ESX)
     - Einstellungen aus dem Websystem (Einstellungen → Spielserver): Befehle, Society-Konten, Jobs, Schalter
     - Rechnungen ins Spiel: legt Einträge in der Tabelle von esx_billing an und meldet die Zahlung zurück
     - /akte: Spielerdaten (identifier, Name, Geburtsdatum, Geschlecht) des nächsten Spielers an das Websystem

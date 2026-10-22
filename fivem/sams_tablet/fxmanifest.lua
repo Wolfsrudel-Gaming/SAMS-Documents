@@ -3,8 +3,8 @@ game 'gta5'
 lua54 'yes'
 
 name 'sams_tablet'
-description 'SAMS Tablet – Dokumentensystem im Spiel, Drucker und Dokument-Items'
-author 'SAMS'
+description 'Wolfpack Documents – Tablet, Drucker und Dokument-Items im Spiel'
+author 'Wolfpack Gaming'
 version '1.12.0'
 
 shared_scripts {

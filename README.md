@@ -1,6 +1,8 @@
-# SAMS – Dokumenten- & Aktensystem
+# Wolfpack Documents – Dokumenten- & Aktensystem
 
-Webbasiertes Dokumenten- und Aktensystem für den **San Andreas Medical Service (SAMS)** auf FiveM-Roleplay-Servern.
+Webbasiertes Dokumenten- und Aktensystem für FiveM-Roleplay-Server: Rettungsdienst (z. B. **San Andreas Medical Services – SAMS**), Polizei, Justiz, Feuerwehr, Behörden und Kanzleien in einem Portal.
+
+> Technische Namen bleiben aus Kompatibilitätsgründen gleich: Resource `sams_tablet`, Convars `sams_url`/`sams_api_key`, Items `sams_document`/`sams_tablet`, Kommandozeile `bin/sams`.
 Medics und Ärzt/innen führen Patientenakten und stellen Dokumente aus, die wie echte deutsche Praxis- und Klinikdokumente
 aussehen: Vordrucke in Originalfarben, Briefkopf nach DIN 5008 mit Falz- und Lochmarken, Arztstempel und Dienstsiegel
 mit Tinteneffekt, handschriftliche Unterschrift, Barcode und QR-Code zur Echtheitsprüfung.

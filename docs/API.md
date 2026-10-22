@@ -1,6 +1,6 @@
-# SAMS – Andock-Schnittstelle für eigene Skripte
+# Wolfpack Documents – Andock-Schnittstelle für eigene Skripte
 
-Mit dieser Schnittstelle docken eigene Skripte an SAMS an, z. B. ein Discord-Bot, eine Webseite, ein Blitzer- oder Kennzeichenscanner, ein Krankenbett-Skript oder ein eigenes MDT.
+Mit dieser Schnittstelle docken eigene Skripte an Wolfpack Documents an, z. B. ein Discord-Bot, eine Webseite, ein Blitzer- oder Kennzeichenscanner, ein Krankenbett-Skript oder ein eigenes MDT.
 Es gibt zwei Wege. Beide nutzen **dieselben Aufrufe** mit denselben Feldern.
 
 | Weg | Für | Anmeldung |
@@ -34,7 +34,7 @@ end)
 
 | Kurzform | entspricht |
 |---|---|
-| `GetUser(source)` | SAMS-Konto des Spielers: `{ id, name, rank, badge, faction, faction_id, faction_kind, on_duty, … }` oder `nil` |
+| `GetUser(source)` | Konto des Spielers im Dokumentensystem: `{ id, name, rank, badge, faction, faction_id, faction_kind, on_duty, … }` oder `nil` |
 | `IsOnDuty(source)` / `SetOnDuty(source, on)` | Dienst des Spielers (sofort, ohne Websystem-Abfrage für `IsOnDuty`) |
 | `GetOnDuty(faction)` | `duty` |
 | `SetDuty(who, on)` | `duty_set` (`who` = Spieler-ID oder `{ username = … }`) |
@@ -64,8 +64,8 @@ AddEventHandler('sams:dutyChanged', function(source, onDuty) end)       -- sofor
 Der Schlüssel (`samsi_…`) wird nur einmal angezeigt.
 
 ```
-GET  https://dein-sams.example/integration.php?action=ping
-POST https://dein-sams.example/integration.php?action=entry_create
+GET  https://dein-portal.example/integration.php?action=ping
+POST https://dein-portal.example/integration.php?action=entry_create
 Authorization: Bearer samsi_…
 Content-Type: application/json
 ```
@@ -80,7 +80,7 @@ Parameter gehen als JSON-Body (POST) oder als Query (GET).
 - Zu viele Anfragen: `{"ok": false, "error": "rate_limited"}`. Die Vorgabe sind 240 Anfragen pro Minute und Schlüssel, einstellbar.
 
 ```bash
-curl -s -H "Authorization: Bearer $SAMS_TOKEN" "https://dein-sams.example/integration.php?action=person&citizen_id=ABC123"
+curl -s -H "Authorization: Bearer $SAMS_TOKEN" "https://dein-portal.example/integration.php?action=person&citizen_id=ABC123"
 ```
 
 ```js
@@ -200,5 +200,5 @@ $ok = hash_equals('sha256=' . hash_hmac('sha256', $_SERVER['HTTP_X_SAMS_TIMESTAM
 - Schlüssel nur serverseitig speichern, nie in einen Browser oder in einen FiveM-Client. In der `server.cfg` mit `set` eintragen, nie mit `setr`.
 - Jedem Skript nur die Rechte und Fraktionen geben, die es braucht.
 - Den Schlüssel bei Verdacht sofort unter *Schnittstellen* neu erzeugen oder sperren.
-- SAMS speichert nur einen Hash des Schlüssels. Ein verlorener Schlüssel lässt sich nicht wieder anzeigen, sondern nur neu erzeugen.
+- Wolfpack Documents speichert nur einen Hash des Schlüssels. Ein verlorener Schlüssel lässt sich nicht wieder anzeigen, sondern nur neu erzeugen.
 - Die älteren Aktionen von `api.php` (Tablet, Drucker, Rechnungen …) gehören zu `sams_tablet` und brauchen den Schlüssel des Spielservers. Eigene Skripte nutzen stattdessen die Aufrufe dieser Seite.

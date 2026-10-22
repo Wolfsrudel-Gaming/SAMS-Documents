@@ -105,7 +105,7 @@ if (!$installed && is_post()) {
 <body class="no-nav page-install">
 <main class="main">
 <div class="card narrow">
-    <div class="verify-head"><img src="assets/img/logo.svg" alt=""><div><h1>Installation</h1><p class="muted">SAMS Dokumenten- &amp; Aktensystem <?= e(version_label()) ?></p></div></div>
+    <div class="verify-head"><img src="assets/img/logo.svg" alt=""><div><h1>Installation</h1><p class="muted"><?= e(version_label()) ?> · Dokumenten- &amp; Aktensystem</p></div></div>
 
 <?php if ($installed): ?>
     <div class="flash success">Das System ist bereits eingerichtet.</div>

@@ -278,7 +278,7 @@ function integration_signature(string $body, string $secret, string $timestamp):
 function integration_http_post(string $url, string $body, array $headers, int $timeout = 4): array
 {
     $ctx = stream_context_create(['http' => ['method' => 'POST', 'timeout' => $timeout, 'ignore_errors' => true, 'content' => $body,
-        'header' => implode("\r\n", array_merge(['User-Agent: SAMS-Dokumentensystem (' . SAMS_VERSION . ')', 'Content-Type: application/json'], $headers))]]);
+        'header' => implode("\r\n", array_merge(['User-Agent: Wolfpack-Documents (' . SAMS_VERSION . ')', 'Content-Type: application/json'], $headers))]]);
     $res = @file_get_contents($url, false, $ctx);
     $status = 0;
     foreach ($http_response_header ?? [] as $h) {

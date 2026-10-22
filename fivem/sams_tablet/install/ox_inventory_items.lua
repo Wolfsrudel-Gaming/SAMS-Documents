@@ -1,5 +1,5 @@
 --[[
-    SAMS – Items für ox_inventory
+    Wolfpack Documents – Items für ox_inventory
     1. Den Inhalt in ox_inventory/data/items.lua einfügen (innerhalb der return { … }-Tabelle).
     2. Alle Bilder aus install/images/ nach ox_inventory/web/images/ kopieren.
     3. ox_inventory neu starten.
@@ -15,7 +15,7 @@
 -- ============================================================ A  Tablet und Dokument
 
 ['sams_tablet'] = {
-    label = 'SAMS Tablet',
+    label = 'Dienst-Tablet',
     weight = 600,
     stack = false,
     close = true,

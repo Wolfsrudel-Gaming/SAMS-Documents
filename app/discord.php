@@ -16,7 +16,7 @@ function discord_configured(): bool
 function discord_http(string $method, string $url, array $headers = [], ?string $body = null, int $timeout = 8): array
 {
     $ctx = stream_context_create(['http' => [
-        'method' => $method, 'header' => implode("\r\n", array_merge(['User-Agent: SAMS-Dokumentensystem (' . SAMS_VERSION . ')'], $headers)),
+        'method' => $method, 'header' => implode("\r\n", array_merge(['User-Agent: Wolfpack-Documents (' . SAMS_VERSION . ')'], $headers)),
         'content' => $body ?? '', 'timeout' => $timeout, 'ignore_errors' => true,
     ]]);
     $res = @file_get_contents($url, false, $ctx);

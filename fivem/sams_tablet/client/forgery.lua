@@ -1,4 +1,4 @@
---[[ SAMS Tablet – Fälscherwerkstatt: Rechner mit Drucker an geheimen Orten (ohne Kartenmarkierung). ]]
+--[[ Wolfpack Documents Tablet – Fälscherwerkstatt: Rechner mit Drucker an geheimen Orten (ohne Kartenmarkierung). ]]
 
 local points, props = {}, {}
 local busy, shown = false, false

@@ -1,4 +1,4 @@
-/* SAMS Dokumentensystem – Oberfläche */
+/* Wolfpack Documents – Oberfläche */
 (function () {
     'use strict';
 

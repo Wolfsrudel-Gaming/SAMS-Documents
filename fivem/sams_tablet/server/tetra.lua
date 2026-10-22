@@ -1,5 +1,5 @@
 --[[
-    SAMS Tablet – Brücke zur Leitstelle tetrascript (Resource tetra-core). Vollständig optional:
+    Wolfpack Documents Tablet – Brücke zur Leitstelle tetrascript (Resource tetra-core). Vollständig optional:
     Läuft tetra-core nicht oder ist die Anbindung im Websystem aus (Einstellungen → Spielserver → „Leitstelle tetrascript“),
     passiert hier nichts. Beide Systeme bleiben allein lauffähig.
 

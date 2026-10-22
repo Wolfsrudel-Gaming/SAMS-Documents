@@ -1,4 +1,4 @@
-/* SAMS Tablet – NUI */
+/* Wolfpack Documents Tablet – NUI */
 (function () {
     'use strict';
     var resource = typeof GetParentResourceName === 'function' ? GetParentResourceName() : 'sams_tablet';

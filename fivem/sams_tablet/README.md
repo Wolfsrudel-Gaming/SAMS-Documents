@@ -1,6 +1,6 @@
 # sams_tablet – FiveM-Resource
 
-Bringt das SAMS-Dokumentensystem ins Spiel:
+Bringt **Wolfpack Documents** (Dokumenten- und Aktensystem) ins Spiel:
 
 - **Tablet** (Item oder `/tablet`) mit Tablet-Animation. Anmeldung mit denselben Zugangsdaten wie im Browser (inkl. 2FA), danach läuft das komplette Websystem im Tablet.
 - **Drucker** in der Spielwelt. Die Leitung legt sie im Tablet unter *Verwaltung → Drucker* an: hinstellen, „Aktuelle Position übernehmen“, speichern. Ein Drucker-Objekt erscheint innerhalb einer Minute.
@@ -14,7 +14,7 @@ Bringt das SAMS-Dokumentensystem ins Spiel:
 - [ox_lib](https://github.com/overextended/ox_lib), [ox_inventory](https://github.com/overextended/ox_inventory)
 - optional [ox_target](https://github.com/overextended/ox_target) (sonst Interaktion per Taste E)
 - optional es_extended (ESX Legacy) mit esx_billing, esx_addonaccount und [oxmysql](https://github.com/overextended/oxmysql) für Rechnungen und `/akte`
-- SAMS-Websystem ab Version 1.4 über **HTTPS** erreichbar (das Tablet bettet die Seite ein; ohne HTTPS funktioniert die Anmeldung im Tablet nicht)
+- Websystem ab Version 1.4 über **HTTPS** erreichbar (das Tablet bettet die Seite ein; ohne HTTPS funktioniert die Anmeldung im Tablet nicht)
 
 ## Installation
 
@@ -124,12 +124,12 @@ Hinweis: Die Vitalwerte stammen aus dem Spiel des Patienten und dienen nur der D
 
 ## Leitstelle tetrascript (tetra-core)
 
-SAMS und tetrascript sind zwei eigenständige Systeme. Jedes läuft allein; `sams_tablet` hat **keine** Abhängigkeit zu tetra-core, und SAMS bringt tetrascript weder mit noch installiert oder startet es. Die Verbindung entsteht nur, wenn beide auf dem Server laufen **und** sie ausdrücklich eingeschaltet wird: *Einstellungen → Spielserver → „Leitstelle tetrascript anbinden“* (Vorgabe: aus). Je Fraktion wird die Organisation der Leitstelle eingetragen (Vorgabe: Feuerwehr `fire`, Rettungsdienst `ems`, Polizei `police`).
+Wolfpack Documents und tetrascript sind zwei eigenständige Systeme. Jedes läuft allein; `sams_tablet` hat **keine** Abhängigkeit zu tetra-core, und Wolfpack Documents bringt tetrascript weder mit noch installiert oder startet es. Die Verbindung entsteht nur, wenn beide auf dem Server laufen **und** sie ausdrücklich eingeschaltet wird: *Einstellungen → Spielserver → „Leitstelle tetrascript anbinden“* (Vorgabe: aus). Je Fraktion wird die Organisation der Leitstelle eingetragen (Vorgabe: Feuerwehr `fire`, Rettungsdienst `ems`, Polizei `police`).
 
 - **FMS-Status**: Die Brücke hängt sich an den Hook `statusChanged` von tetra-core. Ist der Träger des Funkgeräts im Tablet angemeldet, erscheint sein Status (mit Rufname) im Websystem. Mit „Dienst automatisch mit Funkstatus“ beginnt Status 1–4 den Dienst, Status 6 beendet ihn.
 - **Einsätze**: Die Brücke liest den Einsatzstand der Leitstelle aus der gemeinsamen Datenbank (Tabelle `tetra_dispatch_cad`, nur lesend) und überträgt neue bzw. geänderte Einsätze alle 20 Sekunden (einstellbar). Im Tablet unter *Leitstelle*: laufende und abgeschlossene Einsätze, Einheiten, Verlauf, Gefahren, passender Objektplan; „Einsatzbericht erstellen“ übernimmt Ort, Zeiten, Kräfte und Verlauf.
 - Mit tetra-core ab Schnittstelle 2 (Branch `claude/sams-anbindung` von tetrascript, Export `GetApiVersion`) kommen Einsätze sofort über den Hook `incidentsChanged` statt alle 20 Sekunden. Zusätzlich lassen sich – jeweils einzeln einzuschalten, Vorgabe aus – der **FMS-Status bei Dienstbeginn/-ende** setzen und **Objektpläne mit Position als POI** ins Objektverzeichnis der Leitstelle übertragen. Ältere tetra-core-Stände funktionieren weiter wie oben.
-- Läuft tetra-core nicht (oder die Anbindung ist aus), passiert nichts. tetra-core selbst kennt SAMS nicht: Es bietet nur allgemeine Exports/Hooks an, die jede Ressource nutzen kann.
+- Läuft tetra-core nicht (oder die Anbindung ist aus), passiert nichts. tetra-core selbst kennt Wolfpack Documents nicht: Es bietet nur allgemeine Exports/Hooks an, die jede Ressource nutzen kann.
 
 ## Fälscherwerkstatt (optional)
 
@@ -177,7 +177,7 @@ Dienstausweise erscheinen nicht auf dem Klemmbrett, sondern als Karte in der Han
 local res = exports.sams_tablet:Call('person', { citizen_id = 'ABC123' })
 
 -- Kurzformen
-exports.sams_tablet:GetUser(source)                         -- SAMS-Konto des Spielers (oder nil)
+exports.sams_tablet:GetUser(source)                         -- Konto des Spielers im Dokumentensystem (oder nil)
 exports.sams_tablet:GetOnDuty('lspd')                       -- wer ist im Dienst (ID, Code oder Kürzel; nil = alle)
 exports.sams_tablet:SetDuty(source, true)                   -- Dienst für das eigene Konto des Spielers
 exports.sams_tablet:VerifyDocument('ABCD1234')              -- Echtheitsprüfung

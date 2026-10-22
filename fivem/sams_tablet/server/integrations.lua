@@ -1,5 +1,5 @@
 --[[
-    SAMS Tablet – Andock-Schnittstelle für eigene Resourcen auf diesem Server.
+    Wolfpack Documents Tablet – Andock-Schnittstelle für eigene Resourcen auf diesem Server.
     Andere Skripte brauchen keinen eigenen Schlüssel: sams_tablet spricht mit seinem Server-Schlüssel mit dem Websystem.
     Alle Exports nur serverseitig und aus einem Thread (CreateThread) aufrufen – sie warten auf die Antwort.
 

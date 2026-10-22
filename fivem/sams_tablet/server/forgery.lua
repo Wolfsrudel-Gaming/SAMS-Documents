@@ -1,5 +1,5 @@
 --[[
-    SAMS Tablet – Fälscherwerkstatt (optional, im Websystem unter Administration → Fälschungen einzuschalten).
+    Wolfpack Documents Tablet – Fälscherwerkstatt (optional, im Websystem unter Administration → Fälschungen einzuschalten).
     Hürden, alle serverseitig geprüft: Werkstatt in Reichweite, Verbrauchsmaterial, echtes Original als Vorlage,
     Mindest-Arbeitszeit, Abklingzeit je Spieler, Alarm-Risiko. Die Qualität ergibt sich aus den bestandenen
     Geschicklichkeitsprüfungen. Das gedruckte Blatt ist ein normales Dokument-Item – nur der Prüfcode existiert nicht.

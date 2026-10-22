@@ -9,6 +9,7 @@ umask(0002);
 
 require __DIR__ . '/config.php';
 
+define('PRODUCT_NAME', 'Wolfpack Documents');
 define('SAMS_VERSION', trim((string) @file_get_contents(SAMS_ROOT . '/VERSION')) ?: '0.0.0');
 
 if (!is_configured() && !SAMS_CLI && basename($_SERVER['SCRIPT_NAME'] ?? '') !== 'install.php') {

@@ -1,5 +1,5 @@
 --[[
-    SAMS Tablet – Einstellungen
+    Wolfpack Documents Tablet – Einstellungen
 
     Adresse und API-Schlüssel des Websystems gehören NICHT hierher, sondern in die server.cfg
     (nur der Server kennt sie, Spieler können sie nicht auslesen):
@@ -106,7 +106,7 @@ Config.Text = {
     pickedUp = 'Du hast %s erhalten.',
     jobReady = 'Dein Dokument liegt am Drucker „%s“ bereit.',
     noTablet = 'Du hast kein Tablet dabei.',
-    offline = 'Das SAMS-System ist gerade nicht erreichbar.',
+    offline = 'Das Dokumentensystem ist gerade nicht erreichbar.',
     noSpace = 'Du hast keinen Platz im Inventar.',
     nobodyNear = 'Niemand in der Nähe.',
     showed = 'Du zeigst das Dokument.',

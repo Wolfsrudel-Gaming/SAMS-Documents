@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# SAMS Auto-Update
+# Wolfpack Documents – Auto-Update
 #
 # Prüft, ob es auf GitHub einen neuen Stand gibt, und spielt ihn ein:
 #   1. git fetch – nichts zu tun, wenn der Stand aktuell ist

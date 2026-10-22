@@ -1,5 +1,5 @@
 --[[
-    SAMS Tablet – Server
+    Wolfpack Documents Tablet – Server
     Tablet-Anmeldungen, Drucker, Druckaufträge abholen, Dokumente zeigen.
 ]]
 

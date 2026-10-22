@@ -1,5 +1,5 @@
 --[[
-    Verbindung zum SAMS-Websystem (api.php).
+    Verbindung zum Websystem (Wolfpack Documents) (api.php).
     Adresse und Schlüssel kommen aus der server.cfg (set sams_url / set sams_api_key).
 ]]
 

@@ -1,5 +1,5 @@
 --[[
-    SAMS Tablet – Anbindung Sky Ambulance (sky_ambulancejob), nur über dessen dokumentierte Schnittstellen.
+    Wolfpack Documents Tablet – Anbindung Sky Ambulance (sky_ambulancejob), nur über dessen dokumentierte Schnittstellen.
     Einschalten im Websystem: Einstellungen → Spielserver → „Sky Ambulance anbinden“.
 
     - Vitalwerte: Der Patient-Client liest exports.sky_ambulancejob:GetLocalInjuryProfile() (vitalSchemaVersion 2)

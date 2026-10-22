@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 /**
- * SAMS Kommandozeile
+ * Wolfpack Documents – Kommandozeile
  *
  *   php bin/sams status                     Version, Datenbank, offene Migrationen
  *   php bin/sams migrate                    Offene Datenbank-Migrationen ausführen

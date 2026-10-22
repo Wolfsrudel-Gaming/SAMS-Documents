@@ -1,4 +1,4 @@
-# SAMS Dokumenten- & Aktensystem – Konzept Version 1
+# Wolfpack Documents – Konzept Version 1
 
 Stand: 17.10.2026 · Status: **freigegeben** · Grundgerüst, Design und Etappe 1–7 umgesetzt (Version 1 vollständig)
 
