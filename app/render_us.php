@@ -401,7 +401,7 @@ function us_footer(array $doc, array $cfg = [], array $type = []): string
         <div class="us-foot-row">
             <span class="us-form mono"><?= e(us_form_number($doc, $cfg, $type)) ?></span>
             <span class="us-verify"><?= qr_html($doc, 'qr qr-small') ?><span><?= e(dt('Echtheit prüfen')) ?>: <?= e(preg_replace('#^https?://#', '', base_url())) ?>/verify.php<br><?= e(dt('Prüfcode:')) ?> <b class="mono"><?= e(chunk_split(doc_code_display((string) ($doc['verify_code'] ?? '')), 4, ' ')) ?></b></span></span>
-            <span class="us-page"><?= e(dt('Seite {n} von {m}', ['n' => 1, 'm' => 1])) ?></span>
+            <span class="us-page"></span>
         </div>
         <?php if (!isset($doc['_forged']) || (int) $doc['_forged'] >= 85): ?><div class="df-micro" aria-hidden="true"><?= e(str_repeat(mb_strtoupper(org('org_short')) . ' · ' . dt('ECHT') . ' · ' . doc_code_display((string) ($doc['number'] ?? '')) . ' · ', 12)) ?></div><?php endif; ?>
     </footer>
