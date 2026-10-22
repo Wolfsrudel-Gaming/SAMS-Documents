@@ -103,7 +103,16 @@ function us_field_value(array $f, $v): string
     if ($type === 'checkbox') {
         return '<span class="us-opts"><span class="us-opt">' . box(!empty($v)) . ' ' . e(dt('ja')) . '</span><span class="us-opt">' . box(empty($v)) . ' ' . e(dt('nein')) . '</span></span>';
     }
-    return nl(custom_field_value($f, $v));
+    return nl(us_text_value($f, $v));
+}
+
+/** Textwert eines Feldes; Beträge (Beschriftung mit „($)“) als $1,234.56. */
+function us_text_value(array $f, $v): string
+{
+    if (is_scalar($v) && is_numeric($v) && str_contains((string) ($f['label'] ?? ''), '($)') && !str_contains((string) $v, ' ')) {
+        return money((float) $v);
+    }
+    return custom_field_value($f, $v);
 }
 
 /** Behördenkopf je Familie. */
@@ -121,7 +130,7 @@ function us_header(array $doc, array $cfg, array $type = []): string
         <?php if ($style === 'pleading'): $u = $doc['issuer_snapshot'] ?? []; ?>
         <div class="us-atty">
             <?= e(user_display($u)) ?><?= ($u['badge_number'] ?? '') !== '' ? ' (' . e(dt('Zulassungs-Nr.')) . ' ' . e($u['badge_number']) . ')' : '' ?><br>
-            <?= e(org('org_name')) ?><br><?= e(org('org_street')) ?><br><?= e(org('org_city')) ?><br><?= e(dt('Tel.')) ?> <?= e(org('phone')) ?><br>
+            <?= e(org('org_name')) ?><br><?= e(org('org_street')) ?><br><?= e(org('org_city')) ?><br><?= org('phone') !== '' ? e(dt('Tel.')) . ' ' . e(org('phone')) . '<br>' : '' ?>
             <?= e(dt('Rechtsbeistand für')) ?>: <?= e(($doc['patient_snapshot'] ?? []) ? patient_name($doc['patient_snapshot']) : '—') ?>
         </div>
         <?php endif; ?>
@@ -234,6 +243,18 @@ function us_fields(array $fields, array $d, array $cfg, int &$n, array $skip = [
     $prose = in_array($cfg['style'], ['court', 'pleading', 'gov', 'certificate'], true);
     ob_start();
     $open = false;
+    $row = []; // [Spalten, Klassen, HTML] der aktuellen Rasterzeile
+    $flush = function () use (&$row) {
+        if (!$row) {
+            return;
+        }
+        $sum = array_sum(array_column($row, 0));
+        foreach ($row as $i => [$span, $cls, $html]) {
+            $style = $i === count($row) - 1 && $sum < 12 ? ' style="grid-column: span ' . ($span + 12 - $sum) . '"' : '';
+            echo '<div class="us-cell ' . $cls . '"' . $style . '>' . $html . '</div>';
+        }
+        $row = [];
+    };
     foreach ($fields as $f) {
         $t = $f['type'] ?? 'text';
         if ($t === 'signature' || (isset($f['name']) && in_array($f['name'], $skip, true)) || ($f['print'] ?? true) === false) {
@@ -241,6 +262,7 @@ function us_fields(array $fields, array $d, array $cfg, int &$n, array $skip = [
         }
         if ($t === 'heading') {
             if ($open) {
+                $flush();
                 echo '</div>';
                 $open = false;
             }
@@ -253,7 +275,7 @@ function us_fields(array $fields, array $d, array $cfg, int &$n, array $skip = [
             if (trim(is_array($v) ? implode('', $v) : (string) $v) === '' || ($t === 'checkbox' && empty($v))) {
                 continue;
             }
-            echo '<div class="us-para"><b>' . e(($cfg['numbered'] ? (++$n) . '. ' : '') . dt((string) $f['label'])) . ':</b> ' . (in_array($t, ['radio', 'select', 'checkboxes'], true) ? e(custom_field_value($f, $v)) : nl(custom_field_value($f, $v))) . '</div>';
+            echo '<div class="us-para"><b>' . e(($cfg['numbered'] ? (++$n) . '. ' : '') . dt((string) $f['label'])) . ':</b> ' . (in_array($t, ['radio', 'select', 'checkboxes'], true) ? e(custom_field_value($f, $v)) : nl(us_text_value($f, $v))) . '</div>';
             continue;
         }
         if (!$open) {
@@ -264,9 +286,17 @@ function us_fields(array $fields, array $d, array $cfg, int &$n, array $skip = [
         $w = in_array($t, ['textarea', 'items'], true) || (in_array($t, ['radio', 'checkboxes', 'select'], true) && $nOpt > 5) ? 'w12'
             : (in_array($t, ['radio', 'checkboxes', 'select'], true) && $nOpt > 3 ? 'w6' : ($wmap[$f['width'] ?? ''] ?? 'w4'));
         $val = $t === 'items' ? us_items_table($f, (array) $v) : us_field_value($f, $v);
-        echo '<div class="us-cell ' . $w . ($t === 'textarea' ? ' tall' : '') . '"><span class="fl">' . e(($cfg['numbered'] ? (++$n) . '. ' : '') . dt((string) $f['label'])) . '</span><span class="fv">' . $val . '</span></div>';
+        $span = (int) substr($w, 1);
+        if (array_sum(array_column($row, 0)) + $span > 12) {
+            $flush();
+        }
+        $row[] = [$span, $w . ($t === 'textarea' ? ' tall' : ''), '<span class="fl">' . e(($cfg['numbered'] ? (++$n) . '. ' : '') . dt((string) $f['label'])) . '</span><span class="fv">' . $val . '</span>'];
+        if (array_sum(array_column($row, 0)) >= 12) {
+            $flush();
+        }
     }
     if ($open) {
+        $flush();
         echo '</div>';
     }
     return ob_get_clean();

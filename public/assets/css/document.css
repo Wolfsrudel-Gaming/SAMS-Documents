@@ -944,3 +944,22 @@
 .us-gen-fit-result.r-bedingt { border-color: #8a5a00; } .us-gen-fit-result.r-bedingt .on { color: #8a5a00; }
 .us-gen-fit-result.r-befristet, .us-gen-fit-result.r-nicht { border-color: #a00; }
 .us-gen-fit-result.r-befristet .on, .us-gen-fit-result.r-nicht .on { color: #a00; }
+
+/* US-Gestaltung: Korrekturen aus der optischen Prüfung */
+.us-sig-area .sig-stamp { bottom: 2mm; mix-blend-mode: multiply; z-index: 0; pointer-events: none; }
+.us-sig-area .sig-stamp.rect { width: 34mm; bottom: 2mm; }
+.us-sig-area .sig-stamp.round { width: 24mm; bottom: 1mm; }
+.us-sigs:has(.sig-stamp.round) { margin-top: 16mm; }
+.us-sigs:has(.sig-stamp.rect) { margin-top: 6mm; }
+.us-box + .us-sigs, .us-oath + .us-sigs { margin-top: 16mm; }
+.us-idrow + .us-sigs { margin-top: 22mm; }
+.paper.us-gen-inv .us-sigs { margin-top: 18mm; }
+.paper.us .us-body { padding-bottom: 6mm; }
+.us-sig-name { overflow-wrap: anywhere; }
+.us-sigs { flex-wrap: wrap; }
+.us-mtitle .mono, .us-mtitle > span { white-space: nowrap; flex: none; }
+.us-mtitle small { flex-basis: 30%; }
+.us-foot { margin-top: auto; }
+.paper.us-cert .us-foot { margin-bottom: 8mm; }
+.us-sigs:has(.us-sig:nth-child(4)) { flex-wrap: nowrap; }
+.us-sigs:has(.us-sig:nth-child(4)) .us-sig { flex: 1 1 36mm; min-width: 0; }
