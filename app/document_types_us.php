@@ -32,8 +32,11 @@ function doc_type_us(string $key, array $t): array
             $t[$k] = dt($t[$k]);
         }
     }
-    if (isset(DOC_US_TEMPLATES[$key])) {
-        $t['template'] = DOC_US_TEMPLATES[$key];
+    if (doc_us()) {
+        // US-Gestaltung: eigene Druckvorlage bzw. US-Familie der Vorlagen-Engine
+        // eigene Datei app/templates/us_<vorlage>.php wird automatisch verwendet
+        $tpl = (string) ($t['template'] ?? '');
+        $t['template'] = DOC_US_TEMPLATES[$key] ?? ($tpl === 'custom' ? 'us_custom' : (is_file(SAMS_ROOT . '/app/templates/us_' . $tpl . '.php') ? 'us_' . $tpl : $tpl));
     }
     $t['fields'] = array_map(fn($f) => doc_field_us($f, DOC_US_DROP_OPTIONS[$key][$f['name'] ?? ''] ?? []), $t['fields'] ?? []);
     if (isset($t['custom'])) {
@@ -78,15 +81,18 @@ function doc_field_us(array $f, array $drop = []): array
     return $f;
 }
 
-/** Alle eingebauten Arten fürs US-Set: deutsche Sonderarten raus, Rest übersetzen. */
-function doc_types_us_apply(array $types): array
+/**
+ * Eingebaute Arten für Gestaltung und Sprache: Arten nur eines Sets ausblenden, Texte über dt() (Dokumentsprache),
+ * bei US-Gestaltung US-Druckvorlagen.
+ */
+function doc_types_us_apply(array $types, string $region): array
 {
     $out = [];
     foreach ($types as $key => $t) {
-        if (($t['region'] ?? 'us') === 'de') {
+        if (($t['region'] ?? $region) !== $region) {
             continue;
         }
-        $out[$key] = ($t['region'] ?? '') === 'us' ? $t : doc_type_us((string) $key, $t);
+        $out[$key] = $region === 'de' && !doc_en() ? $t : doc_type_us((string) $key, $t);
     }
     return $out;
 }
@@ -113,20 +119,20 @@ function doc_region_grant_permissions(): int
     return $n;
 }
 
-/** Dokumentarten, die es nur im US-Set gibt (englisch, Vorlagen-Engine). */
+/** Dokumentarten, die es nur im US-Set gibt (deutsche Texte, bei Dokumentsprache Englisch über dt() übersetzt; Vorlagen-Engine). */
 function document_types_us_only(): array
 {
-    $t = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'text', 'width' => 'full'] + $o;
-    $date = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'date', 'width' => 'quarter'] + $o;
+    $t = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'text', 'width' => 'full'];
+    $date = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'date', 'width' => 'quarter'];
     $time = fn(string $name, string $label) => ['name' => $name, 'label' => $label, 'type' => 'time', 'width' => 'quarter'];
-    $num = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'number', 'width' => 'quarter'] + $o;
-    $area = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'textarea', 'rows' => 4, 'width' => 'full'] + $o;
-    $sel = fn(string $name, string $label, array $opts, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'select', 'width' => 'third', 'options' => array_combine($opts, $opts)] + $o;
-    $radio = fn(string $name, string $label, array $opts, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'radio', 'width' => 'full', 'options' => array_combine($opts, $opts)] + $o;
-    $check = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'checkbox', 'width' => 'third'] + $o;
+    $num = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'number', 'width' => 'quarter'];
+    $area = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'textarea', 'rows' => 4, 'width' => 'full'];
+    $sel = fn(string $name, string $label, array $opts, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'select', 'width' => 'third', 'options' => array_combine($opts, $opts)];
+    $radio = fn(string $name, string $label, array $opts, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'radio', 'width' => 'full', 'options' => array_combine($opts, $opts)];
+    $check = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'checkbox', 'width' => 'third'];
     $head = fn(string $label) => ['type' => 'heading', 'label' => $label];
     $sign = fn(string $name, string $label) => ['name' => $name, 'label' => $label, 'type' => 'signature', 'width' => 'half'];
-    $case = $t('aktenzeichen', 'Case number', ['width' => 'third', 'placeholder' => 'e.g. LS-CR-2026-00123']);
+    $case = $t('aktenzeichen', 'Fallnummer', ['width' => 'third', 'placeholder' => 'z. B. LS-CR-2026-00123']);
 
     $def = function (string $title, string $short, string $code, string $kind, string $role, string $category, string $layout, array $fields, string $like, string $body = '', string $patient = 'required', string $seal = 'round', ?string $valid = null): array {
         return array_filter([
@@ -137,148 +143,148 @@ function document_types_us_only(): array
     };
 
     return [
-        // ================================================================ Police
-        'us_citation' => $def('Notice to Appear / Citation', 'Citation', 'CIT', 'police', 'officer', 'Traffic', 'protocol', [
-            $head('Violation'), $date('datum', 'Date', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Time'),
-            $t('ort', 'Location (street / cross street)', ['width' => 'half', 'required' => true]),
-            $radio('art', 'Type', ['Traffic infraction', 'Misdemeanor', 'Parking', 'Equipment violation (fix-it ticket)'], ['required' => true, 'default' => 'Traffic infraction']),
-            $t('delikte', 'Violation(s) – code section and description', ['required' => true, 'list' => 'laws']),
-            $t('fahrzeug', 'Vehicle (make, model, color)', ['width' => 'half']), $t('kennzeichen', 'License plate', ['width' => 'quarter']),
-            $num('speed', 'Speed (mph)', ['width' => 'quarter']), $num('limit', 'Posted limit (mph)', ['width' => 'quarter']),
-            $head('Penalty'), $num('fine', 'Fine ($)', ['width' => 'quarter']), $date('due', 'Pay by / appear by'),
-            $t('court', 'Court', ['width' => 'half', 'default' => 'San Andreas Superior Court']),
-            $check('appearance', 'Mandatory court appearance'),
-            $area('notes', 'Officer notes', ['rows' => 2]),
-            $sign('sig_violator', 'Signature (not an admission of guilt – promise to appear)'),
-        ], 'pd_platzverweis', "Without admitting guilt, I promise to appear at the time and place indicated or to pay the fine by the due date."),
-        'us_miranda' => $def('Miranda Rights Advisement and Waiver', 'Miranda Waiver', 'MIR', 'police', 'officer', 'Investigations', 'letter', [
-            $date('datum', 'Date', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Time advised'), $t('ort', 'Location', ['width' => 'half']),
+        // ================================================================ Polizei
+        'us_citation' => $def('Strafzettel / Vorladung (Citation)', 'Strafzettel', 'CIT', 'police', 'officer', 'Verkehr', 'protocol', [
+            $head('Verstoß'), $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Uhrzeit'),
+            $t('ort', 'Ort (Straße / Querstraße)', ['width' => 'half', 'required' => true]),
+            $radio('art', 'Art', ['Verkehrsordnungswidrigkeit (Infraction)', 'Vergehen (Misdemeanor)', 'Parkverstoß', 'Mangel am Fahrzeug (Fix-it-Ticket)'], ['required' => true, 'default' => 'Verkehrsordnungswidrigkeit (Infraction)']),
+            $t('delikte', 'Verstoß / Verstöße – Paragraf und Beschreibung', ['required' => true, 'list' => 'laws']),
+            $t('fahrzeug', 'Fahrzeug (Marke, Modell, Farbe)', ['width' => 'half']), $t('kennzeichen', 'Kennzeichen', ['width' => 'quarter']),
+            $num('speed', 'Gefahrene Geschwindigkeit (mph)', ['width' => 'quarter']), $num('limit', 'Erlaubte Höchstgeschwindigkeit (mph)', ['width' => 'quarter']),
+            $head('Strafe'), $num('fine', 'Bußgeld ($)', ['width' => 'quarter']), $date('due', 'Zahlen bzw. erscheinen bis'),
+            $t('court', 'Gericht', ['width' => 'half', 'default' => 'Superior Court von San Andreas']),
+            $check('appearance', 'Persönliches Erscheinen vor Gericht erforderlich'),
+            $area('notes', 'Anmerkungen des Beamten / der Beamtin', ['rows' => 2]),
+            $sign('sig_violator', 'Unterschrift (kein Schuldeingeständnis – Zusage des Erscheinens)'),
+        ], 'pd_platzverweis', "Ohne damit eine Schuld einzugestehen, verpflichte ich mich, zur angegebenen Zeit am angegebenen Ort zu erscheinen oder das Bußgeld bis zum Fälligkeitsdatum zu bezahlen."),
+        'us_miranda' => $def('Miranda-Belehrung und Verzichtserklärung', 'Miranda-Verzicht', 'MIR', 'police', 'officer', 'Ermittlungen', 'letter', [
+            $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Uhrzeit der Belehrung'), $t('ort', 'Ort', ['width' => 'half']),
             $case,
-            $radio('waiver', 'Decision', ['I understand my rights and wish to speak without an attorney', 'I invoke my right to remain silent', 'I request an attorney'], ['required' => true]),
-            $t('zeuge', 'Witnessing officer', ['width' => 'half']),
-            $sign('sig_suspect', 'Signature of person advised'),
-        ], 'pd_vernehmung', "**You have the right to remain silent.** Anything you say can and will be used against you in a court of law.\n**You have the right to an attorney** and to have one present during questioning. If you cannot afford an attorney, one will be appointed for you before any questioning if you wish.\nYou can decide at any time to exercise these rights and not answer any questions or make any statements.\n\nI have read this statement of my rights and I understand what my rights are."),
-        'us_use_of_force' => $def('Use of Force Report', 'Use of Force', 'UOF', 'police', 'officer', 'Field Operations', 'protocol', [
-            $head('Incident'), $date('datum', 'Date', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Time'), $t('ort', 'Location', ['width' => 'half', 'required' => true]),
-            $case, $t('anlass', 'Reason for contact', ['width' => 'half']),
-            $head('Force used'), ['name' => 'force', 'label' => 'Force options', 'type' => 'checkboxes', 'width' => 'full', 'options' => array_combine(
-                ['Verbal commands', 'Control hold / takedown', 'Handcuffs / restraints', 'OC spray', 'Baton / impact weapon', 'Taser / CEW', 'K9', 'Less-lethal munition', 'Firearm pointed', 'Firearm discharged', 'Vehicle intervention (PIT)'],
-                ['Verbal commands', 'Control hold / takedown', 'Handcuffs / restraints', 'OC spray', 'Baton / impact weapon', 'Taser / CEW', 'K9', 'Less-lethal munition', 'Firearm pointed', 'Firearm discharged', 'Vehicle intervention (PIT)'])],
-            $sel('resistance', 'Subject resistance', ['Passive', 'Active', 'Assaultive', 'Life-threatening']),
-            $area('hergang', 'Narrative – why force was necessary and proportional', ['required' => true, 'rows' => 6]),
-            $head('Injuries and medical'), $area('verletzungen', 'Injuries (subject / officers / bystanders)', ['rows' => 2]),
-            $check('ems', 'EMS requested'), $check('hospital', 'Transported to hospital'), $check('photos', 'Injuries photographed'),
-            $t('supervisor', 'Supervisor notified', ['width' => 'half']), $t('bodycam', 'Body camera / dashcam reference', ['width' => 'half']),
+            $radio('waiver', 'Entscheidung', ['Ich habe meine Rechte verstanden und möchte ohne Anwalt aussagen', 'Ich mache von meinem Recht zu schweigen Gebrauch', 'Ich verlange einen Anwalt'], ['required' => true]),
+            $t('zeuge', 'Anwesende/r Beamte/r als Zeuge/Zeugin', ['width' => 'half']),
+            $sign('sig_suspect', 'Unterschrift der belehrten Person'),
+        ], 'pd_vernehmung', "**Sie haben das Recht zu schweigen.** Alles, was Sie sagen, kann und wird vor Gericht gegen Sie verwendet werden.\n**Sie haben das Recht auf einen Anwalt** und darauf, dass er während der Vernehmung anwesend ist. Wenn Sie sich keinen Anwalt leisten können, wird Ihnen auf Wunsch vor jeder Vernehmung einer gestellt.\nSie können jederzeit entscheiden, von diesen Rechten Gebrauch zu machen und keine Fragen zu beantworten oder keine Aussagen zu machen.\n\nIch habe diese Belehrung über meine Rechte gelesen und verstehe, welche Rechte ich habe."),
+        'us_use_of_force' => $def('Bericht über Gewaltanwendung (Use of Force)', 'Gewaltanwendung', 'UOF', 'police', 'officer', 'Streifendienst', 'protocol', [
+            $head('Vorfall'), $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Uhrzeit'), $t('ort', 'Ort', ['width' => 'half', 'required' => true]),
+            $case, $t('anlass', 'Anlass des Einschreitens', ['width' => 'half']),
+            $head('Angewandte Gewalt'), ['name' => 'force', 'label' => 'Eingesetzte Zwangsmittel', 'type' => 'checkboxes', 'width' => 'full', 'options' => array_combine(
+                ['Verbale Anweisungen', 'Haltegriff / zu Boden gebracht', 'Handschellen / Fesselung', 'Pfefferspray (OC)', 'Schlagstock / Schlagwaffe', 'Taser / Elektroimpulswaffe', 'Diensthund (K9)', 'Weniger letale Munition (Less-lethal)', 'Schusswaffe auf Person gerichtet', 'Schusswaffe abgefeuert', 'Eingreifen mit Fahrzeug (PIT-Manöver)'],
+                ['Verbale Anweisungen', 'Haltegriff / zu Boden gebracht', 'Handschellen / Fesselung', 'Pfefferspray (OC)', 'Schlagstock / Schlagwaffe', 'Taser / Elektroimpulswaffe', 'Diensthund (K9)', 'Weniger letale Munition (Less-lethal)', 'Schusswaffe auf Person gerichtet', 'Schusswaffe abgefeuert', 'Eingreifen mit Fahrzeug (PIT-Manöver)'])],
+            $sel('resistance', 'Widerstand der Person', ['Passiv', 'Aktiv', 'Tätlicher Angriff', 'Lebensbedrohlich']),
+            $area('hergang', 'Sachverhalt – warum die Gewaltanwendung notwendig und verhältnismäßig war', ['required' => true, 'rows' => 6]),
+            $head('Verletzungen und medizinische Versorgung'), $area('verletzungen', 'Verletzungen (Person / Beamte / Unbeteiligte)', ['rows' => 2]),
+            $check('ems', 'Rettungsdienst angefordert'), $check('hospital', 'Ins Krankenhaus transportiert'), $check('photos', 'Verletzungen fotografiert'),
+            $t('supervisor', 'Informierte/r Vorgesetzte/r', ['width' => 'half']), $t('bodycam', 'Verweis auf Bodycam- / Dashcam-Aufnahme', ['width' => 'half']),
         ], 'pd_festnahme', '', 'optional'),
-        'us_incident' => $def('Incident Report', 'Incident Report', 'IR', 'police', 'officer', 'Investigations', 'protocol', [
-            $date('datum', 'Date', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Time'), $t('ort', 'Location', ['width' => 'half', 'required' => true]), $case,
-            $t('art', 'Incident type', ['width' => 'half', 'required' => true, 'placeholder' => 'e.g. Burglary, Assault, Disturbance']),
-            $t('delikte', 'Offense(s)', ['list' => 'laws']),
-            $area('beteiligte', 'Involved persons (victim / suspect / witness / reporting party)', ['rows' => 3]),
-            $area('sachverhalt', 'Narrative', ['required' => true, 'rows' => 8]),
-            $area('beweise', 'Evidence collected / property', ['rows' => 2]),
-            $sel('status', 'Case status', ['Open', 'Closed – arrest', 'Closed – cleared', 'Referred to detectives', 'Unfounded']),
+        'us_incident' => $def('Ereignisbericht (Incident Report)', 'Ereignisbericht', 'IR', 'police', 'officer', 'Ermittlungen', 'protocol', [
+            $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Uhrzeit'), $t('ort', 'Ort', ['width' => 'half', 'required' => true]), $case,
+            $t('art', 'Art des Ereignisses', ['width' => 'half', 'required' => true, 'placeholder' => 'z. B. Einbruch, Körperverletzung, Ruhestörung']),
+            $t('delikte', 'Delikt(e)', ['list' => 'laws']),
+            $area('beteiligte', 'Beteiligte Personen (Geschädigte/r / Tatverdächtige/r / Zeuge/Zeugin / Anzeigeerstatter/in)', ['rows' => 3]),
+            $area('sachverhalt', 'Sachverhalt', ['required' => true, 'rows' => 8]),
+            $area('beweise', 'Sichergestellte Beweismittel / Gegenstände', ['rows' => 2]),
+            $sel('status', 'Bearbeitungsstand', ['Offen', 'Abgeschlossen – Festnahme', 'Abgeschlossen – aufgeklärt', 'An die Kriminalpolizei (Detectives) abgegeben', 'Unbegründet']),
         ], 'pd_anzeige', '', 'optional'),
-        'us_dui' => $def('DUI Arrest Report and Field Sobriety Tests', 'DUI Report', 'DUI', 'police', 'officer', 'Traffic', 'protocol', [
-            $head('Stop'), $date('datum', 'Date', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Time'), $t('ort', 'Location', ['width' => 'half', 'required' => true]),
-            $t('fahrzeug', 'Vehicle', ['width' => 'half']), $t('kennzeichen', 'License plate', ['width' => 'quarter']), $t('grund', 'Reason for stop', ['width' => 'full']),
-            $head('Observations'), ['name' => 'signs', 'label' => 'Signs of impairment', 'type' => 'checkboxes', 'width' => 'full', 'options' => array_combine(
-                ['Odor of alcohol', 'Slurred speech', 'Bloodshot / watery eyes', 'Unsteady on feet', 'Open container', 'Admitted drinking', 'Odor of marijuana'],
-                ['Odor of alcohol', 'Slurred speech', 'Bloodshot / watery eyes', 'Unsteady on feet', 'Open container', 'Admitted drinking', 'Odor of marijuana'])],
-            $head('Standardized field sobriety tests'),
-            $sel('hgn', 'Horizontal gaze nystagmus (clues of 6)', ['0', '1', '2', '3', '4', '5', '6', 'Refused', 'Not performed']),
-            $sel('walk', 'Walk and turn (clues of 8)', ['0', '1', '2', '3', '4', '5', '6', '7', '8', 'Refused', 'Not performed']),
-            $sel('stand', 'One-leg stand (clues of 4)', ['0', '1', '2', '3', '4', 'Refused', 'Not performed']),
-            $t('pas', 'Preliminary breath test (PAS) result', ['width' => 'third', 'placeholder' => 'e.g. 0.12 % BAC']),
-            $radio('chemical', 'Chemical test', ['Breath', 'Blood', 'Refused (implied consent advised)'], ['required' => true]),
-            $t('bac', 'Result (BAC)', ['width' => 'third']),
-            $area('notes', 'Narrative', ['rows' => 4]),
+        'us_dui' => $def('DUI-Festnahmebericht und Standardisierte Nüchternheitstests', 'DUI-Bericht', 'DUI', 'police', 'officer', 'Verkehr', 'protocol', [
+            $head('Anhaltung'), $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Uhrzeit'), $t('ort', 'Ort', ['width' => 'half', 'required' => true]),
+            $t('fahrzeug', 'Fahrzeug', ['width' => 'half']), $t('kennzeichen', 'Kennzeichen', ['width' => 'quarter']), $t('grund', 'Grund der Anhaltung', ['width' => 'full']),
+            $head('Beobachtungen'), ['name' => 'signs', 'label' => 'Anzeichen einer Beeinträchtigung', 'type' => 'checkboxes', 'width' => 'full', 'options' => array_combine(
+                ['Alkoholgeruch', 'Verwaschene Aussprache', 'Gerötete / wässrige Augen', 'Unsicherer Stand / Gang', 'Geöffnetes Alkoholbehältnis (Open Container)', 'Alkoholkonsum eingeräumt', 'Marihuanageruch'],
+                ['Alkoholgeruch', 'Verwaschene Aussprache', 'Gerötete / wässrige Augen', 'Unsicherer Stand / Gang', 'Geöffnetes Alkoholbehältnis (Open Container)', 'Alkoholkonsum eingeräumt', 'Marihuanageruch'])],
+            $head('Standardisierte Nüchternheitstests (SFST)'),
+            $sel('hgn', 'Horizontaler Blickrichtungsnystagmus (Auffälligkeiten von 6)', ['0', '1', '2', '3', '4', '5', '6', 'Verweigert', 'Nicht durchgeführt']),
+            $sel('walk', 'Gehen und Drehen (Auffälligkeiten von 8)', ['0', '1', '2', '3', '4', '5', '6', '7', '8', 'Verweigert', 'Nicht durchgeführt']),
+            $sel('stand', 'Einbeinstand (Auffälligkeiten von 4)', ['0', '1', '2', '3', '4', 'Verweigert', 'Nicht durchgeführt']),
+            $t('pas', 'Ergebnis Atemalkohol-Vortest (PAS)', ['width' => 'third', 'placeholder' => 'z. B. 0.12 % BAK']),
+            $radio('chemical', 'Beweissicherer Test', ['Atemalkohol', 'Blutprobe', 'Verweigert (über Implied Consent belehrt)'], ['required' => true]),
+            $t('bac', 'Ergebnis (BAK)', ['width' => 'third']),
+            $area('notes', 'Sachverhalt', ['rows' => 4]),
         ], 'pd_unfall'),
-        'us_impound' => $def('Vehicle Impound / Tow Report', 'Impound', 'TOW', 'police', 'officer', 'Traffic', 'protocol', [
-            $date('datum', 'Date', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Time'), $t('ort', 'Location', ['width' => 'half', 'required' => true]),
-            $t('fahrzeug', 'Vehicle (make, model, color)', ['width' => 'half', 'required' => true]), $t('kennzeichen', 'License plate', ['width' => 'quarter', 'required' => true]),
-            $t('vin', 'VIN', ['width' => 'quarter']),
-            $radio('grund', 'Reason', ['Evidence hold', 'Arrest of driver', 'Unlicensed / suspended driver', 'Abandoned', 'Parking violation', 'Stolen vehicle recovered', 'Hazard / blocking traffic'], ['required' => true]),
-            $t('tow', 'Tow company / storage', ['width' => 'half']), $num('days', 'Hold (days)', ['width' => 'quarter']),
-            $area('inventar', 'Inventory of vehicle contents and damage', ['rows' => 4]),
+        'us_impound' => $def('Abschlepp- / Verwahrungsbericht', 'Verwahrung', 'TOW', 'police', 'officer', 'Verkehr', 'protocol', [
+            $date('datum', 'Datum', ['required' => true, 'default' => 'today']), $time('uhrzeit', 'Uhrzeit'), $t('ort', 'Ort', ['width' => 'half', 'required' => true]),
+            $t('fahrzeug', 'Fahrzeug (Marke, Modell, Farbe)', ['width' => 'half', 'required' => true]), $t('kennzeichen', 'Kennzeichen', ['width' => 'quarter', 'required' => true]),
+            $t('vin', 'Fahrgestellnummer (VIN)', ['width' => 'quarter']),
+            $radio('grund', 'Grund', ['Sicherstellung als Beweismittel', 'Festnahme des Fahrers / der Fahrerin', 'Fahren ohne bzw. trotz entzogener Fahrerlaubnis', 'Zurückgelassenes Fahrzeug', 'Falschparken', 'Gestohlenes Fahrzeug aufgefunden', 'Gefahr / Verkehrsbehinderung'], ['required' => true]),
+            $t('tow', 'Abschleppunternehmen / Verwahrort', ['width' => 'half']), $num('days', 'Verwahrdauer (Tage)', ['width' => 'quarter']),
+            $area('inventar', 'Inventar des Fahrzeuginhalts und Schäden', ['rows' => 4]),
         ], 'pd_sicherstellung', '', 'optional'),
 
-        // ================================================================ Justice
-        'us_complaint' => $def('Criminal Complaint', 'Complaint', 'CC', 'justice', 'prosecutor', 'Criminal Proceedings', 'letter', [
-            $case, $t('court', 'Court', ['width' => 'half', 'default' => 'Superior Court of the State of San Andreas']),
-            $area('counts', 'Counts (code section, description, date)', ['required' => true, 'rows' => 6, 'list' => 'laws']),
-            $area('sachverhalt', 'Statement of probable cause', ['required' => true, 'rows' => 6]),
-            $sel('felony', 'Classification', ['Felony', 'Misdemeanor', 'Wobbler']),
-        ], 'doj_anklage', "The People of the State of San Andreas, plaintiff, against the defendant named below. The undersigned, on information and belief, complains that the defendant committed the following offenses:"),
-        'us_subpoena' => $def('Subpoena', 'Subpoena', 'SUB', 'justice', 'clerk', 'Proceedings', 'letter', [
-            $case, $t('empfaenger', 'To (name and address)', ['required' => true]),
-            $radio('art', 'Type', ['Subpoena to appear and testify', 'Subpoena duces tecum (produce documents)'], ['required' => true]),
-            $date('termin', 'Date', ['required' => true]), $time('uhrzeit', 'Time'), $t('ort', 'Courtroom / location', ['width' => 'half']),
-            $area('documents', 'Documents or items to produce', ['rows' => 3]),
-        ], 'doj_ladung', "YOU ARE ORDERED TO APPEAR in this court at the date, time and place shown below to testify as a witness. Failure to obey this subpoena may be punished as contempt of court.", 'optional'),
-        'us_plea' => $def('Plea Agreement', 'Plea Agreement', 'PLEA', 'justice', 'prosecutor', 'Criminal Proceedings', 'letter', [
-            $case, $area('counts', 'Charges pleaded to', ['required' => true, 'rows' => 3, 'list' => 'laws']),
-            $radio('plea', 'Plea', ['Guilty', 'No contest (nolo contendere)'], ['required' => true]),
-            $area('dismissed', 'Charges to be dismissed', ['rows' => 2]),
-            $area('sentence', 'Agreed sentence (custody, fine, probation, conditions)', ['required' => true, 'rows' => 4]),
-            $t('verteidiger', 'Defense counsel', ['width' => 'half']),
-            $sign('sig_defendant', 'Signature of defendant'), $sign('sig_counsel', 'Signature of defense counsel'),
-        ], 'doj_strafbefehl', "The defendant, with the advice of counsel, knowingly and voluntarily waives the right to a jury trial, to confront witnesses and against self-incrimination, and enters the plea stated below in exchange for the terms of this agreement."),
-        'us_bail' => $def('Bail Order', 'Bail Order', 'BAIL', 'justice', 'judge', 'Orders', 'letter', [
-            $case, $num('amount', 'Bail amount ($)', ['width' => 'third', 'required' => true]),
-            $radio('art', 'Type', ['Cash bail', 'Bail bond', 'Own recognizance (OR)', 'Bail denied'], ['required' => true]),
-            $area('conditions', 'Conditions of release', ['rows' => 4, 'placeholder' => 'e.g. no contact with victim, surrender passport, curfew 22:00–06:00']),
-            $date('next', 'Next court date'),
-        ], 'doj_haftbefehl', "Upon review of the charges, the defendant's criminal history and risk of flight, the Court orders as follows:"),
-        'us_restraining' => $def('Restraining Order', 'Restraining Order', 'RO', 'justice', 'judge', 'Orders', 'letter', [
-            $case, $t('geschuetzt', 'Protected person(s)', ['required' => true]),
-            $radio('art', 'Type', ['Emergency protective order', 'Temporary restraining order', 'Restraining order after hearing'], ['required' => true]),
-            $num('distance', 'Stay-away distance (yards)', ['width' => 'quarter', 'default' => '100']),
-            $area('orders', 'Orders', ['required' => true, 'rows' => 4, 'default' => "Do not harass, threaten, contact or follow the protected person(s).\nStay away from their home, workplace and vehicle."]),
-            $date('gueltig_bis', 'Expires on', ['required' => true]),
-        ], 'doj_beschluss', "Violation of this order is a crime and may result in arrest, a fine and/or imprisonment.", 'required', 'round', 'gueltig_bis'),
-        'us_probation' => $def('Order of Probation', 'Probation', 'PROB', 'justice', 'judge', 'Orders', 'letter', [
-            $case, $num('months', 'Probation term (months)', ['width' => 'quarter', 'required' => true]),
-            $sel('art', 'Type', ['Summary (informal)', 'Formal (supervised)']),
-            $area('conditions', 'Conditions', ['required' => true, 'rows' => 5, 'default' => "Obey all laws.\nReport to the probation officer as directed.\nSubmit to search and seizure at any time.\nDo not possess firearms or ammunition."]),
-            $t('officer', 'Probation officer', ['width' => 'half']),
+        // ================================================================ Justiz
+        'us_complaint' => $def('Strafanzeige der Staatsanwaltschaft (Criminal Complaint)', 'Anklage (Complaint)', 'CC', 'justice', 'prosecutor', 'Strafverfahren', 'letter', [
+            $case, $t('court', 'Gericht', ['width' => 'half', 'default' => 'Superior Court des Staates San Andreas']),
+            $area('counts', 'Anklagepunkte (Paragraf, Beschreibung, Datum)', ['required' => true, 'rows' => 6, 'list' => 'laws']),
+            $area('sachverhalt', 'Darlegung des hinreichenden Tatverdachts (Probable Cause)', ['required' => true, 'rows' => 6]),
+            $sel('felony', 'Einstufung', ['Verbrechen (Felony)', 'Vergehen (Misdemeanor)', 'Verbrechen oder Vergehen (Wobbler)']),
+        ], 'doj_anklage', "Das Volk des Staates San Andreas (The People), Anklägerin, gegen die unten genannte angeklagte Person. Die unterzeichnende Person erhebt aufgrund der vorliegenden Erkenntnisse den Vorwurf, dass die angeklagte Person folgende Straftaten begangen hat:"),
+        'us_subpoena' => $def('Zeugenladung (Subpoena)', 'Zeugenladung', 'SUB', 'justice', 'clerk', 'Verfahren', 'letter', [
+            $case, $t('empfaenger', 'An (Name und Anschrift)', ['required' => true]),
+            $radio('art', 'Art', ['Ladung zum Erscheinen und zur Aussage', 'Ladung zur Vorlage von Unterlagen (Subpoena duces tecum)'], ['required' => true]),
+            $date('termin', 'Termin', ['required' => true]), $time('uhrzeit', 'Uhrzeit'), $t('ort', 'Gerichtssaal / Ort', ['width' => 'half']),
+            $area('documents', 'Vorzulegende Unterlagen oder Gegenstände', ['rows' => 3]),
+        ], 'doj_ladung', "SIE WERDEN HIERMIT GELADEN, zu dem unten angegebenen Termin, zur angegebenen Uhrzeit und am angegebenen Ort vor diesem Gericht zu erscheinen und als Zeuge/Zeugin auszusagen. Wer dieser Ladung nicht Folge leistet, kann wegen Missachtung des Gerichts (Contempt of Court) bestraft werden.", 'optional'),
+        'us_plea' => $def('Strafabsprache (Plea Agreement)', 'Strafabsprache', 'PLEA', 'justice', 'prosecutor', 'Strafverfahren', 'letter', [
+            $case, $area('counts', 'Anklagepunkte, auf die sich die Erklärung bezieht', ['required' => true, 'rows' => 3, 'list' => 'laws']),
+            $radio('plea', 'Erklärung zur Schuldfrage (Plea)', ['Schuldig', 'Keine Anfechtung der Anklage (nolo contendere)'], ['required' => true]),
+            $area('dismissed', 'Fallengelassene Anklagepunkte', ['rows' => 2]),
+            $area('sentence', 'Vereinbarte Strafe (Haft, Geldstrafe, Bewährung, Auflagen)', ['required' => true, 'rows' => 4]),
+            $t('verteidiger', 'Verteidigung (Rechtsanwalt/Rechtsanwältin)', ['width' => 'half']),
+            $sign('sig_defendant', 'Unterschrift der angeklagten Person'), $sign('sig_counsel', 'Unterschrift der Verteidigung'),
+        ], 'doj_strafbefehl', "Die angeklagte Person verzichtet nach Beratung durch ihre Verteidigung wissentlich und freiwillig auf das Recht auf ein Geschworenenverfahren, auf die Befragung der Zeugen und auf das Recht, sich nicht selbst belasten zu müssen, und gibt im Gegenzug für die Bedingungen dieser Vereinbarung die unten genannte Erklärung ab."),
+        'us_bail' => $def('Kautionsbeschluss', 'Kautionsbeschluss', 'BAIL', 'justice', 'judge', 'Beschlüsse und Anordnungen', 'letter', [
+            $case, $num('amount', 'Kautionshöhe ($)', ['width' => 'third', 'required' => true]),
+            $radio('art', 'Art', ['Barkaution', 'Kautionsbürgschaft (Bail Bond)', 'Freilassung ohne Kaution (Own Recognizance)', 'Kaution abgelehnt'], ['required' => true]),
+            $area('conditions', 'Auflagen für die Freilassung', ['rows' => 4, 'placeholder' => 'z. B. kein Kontakt zum Opfer, Abgabe des Reisepasses, Ausgangssperre 22:00–06:00']),
+            $date('next', 'Nächster Gerichtstermin'),
+        ], 'doj_haftbefehl', "Nach Prüfung der Anklagepunkte, der Vorstrafen der angeklagten Person und der Fluchtgefahr ordnet das Gericht Folgendes an:"),
+        'us_restraining' => $def('Kontaktverbot / Schutzanordnung (Restraining Order)', 'Kontaktverbot', 'RO', 'justice', 'judge', 'Beschlüsse und Anordnungen', 'letter', [
+            $case, $t('geschuetzt', 'Geschützte Person(en)', ['required' => true]),
+            $radio('art', 'Art', ['Notfall-Schutzanordnung (Emergency Protective Order)', 'Vorläufiges Kontaktverbot (Temporary Restraining Order)', 'Kontaktverbot nach Anhörung'], ['required' => true]),
+            $num('distance', 'Mindestabstand (yards)', ['width' => 'quarter', 'default' => '100']),
+            $area('orders', 'Anordnungen', ['required' => true, 'rows' => 4, 'default' => "Die geschützte(n) Person(en) weder belästigen, bedrohen, kontaktieren noch verfolgen.\nWohnung, Arbeitsplatz und Fahrzeug der geschützten Person(en) fernbleiben."]),
+            $date('gueltig_bis', 'Läuft ab am', ['required' => true]),
+        ], 'doj_beschluss', "Ein Verstoß gegen diese Anordnung ist eine Straftat und kann Festnahme, Geldstrafe und/oder Freiheitsstrafe nach sich ziehen.", 'required', 'round', 'gueltig_bis'),
+        'us_probation' => $def('Bewährungsbeschluss (Probation)', 'Bewährung (Probation)', 'PROB', 'justice', 'judge', 'Beschlüsse und Anordnungen', 'letter', [
+            $case, $num('months', 'Bewährungszeit (Monate)', ['width' => 'quarter', 'required' => true]),
+            $sel('art', 'Art', ['Einfache Bewährung (ohne Aufsicht)', 'Förmliche Bewährung (unter Aufsicht)']),
+            $area('conditions', 'Auflagen', ['required' => true, 'rows' => 5, 'default' => "Alle Gesetze befolgen.\nSich nach Anweisung bei der Bewährungshilfe melden.\nDurchsuchungen und Beschlagnahmen jederzeit dulden.\nKeine Schusswaffen oder Munition besitzen."]),
+            $t('officer', 'Bewährungshelfer/in', ['width' => 'half']),
         ], 'doj_urteil'),
 
-        // ================================================================ Medical
-        'us_dnr' => $def('Do Not Resuscitate Order (DNR / POLST)', 'DNR / POLST', 'DNR', 'medical', 'doctor', 'Consent Forms', 'protocol', [
-            $head('A – Cardiopulmonary resuscitation (no pulse and not breathing)'),
-            $radio('cpr', 'CPR', ['Attempt resuscitation / CPR', 'Do not attempt resuscitation (DNR)'], ['required' => true]),
-            $head('B – Medical interventions (pulse and/or breathing)'),
-            $radio('level', 'Treatment level', ['Full treatment (including intubation)', 'Selective treatment (no intubation)', 'Comfort-focused treatment only'], ['required' => true]),
-            $radio('nutrition', 'Artificially administered nutrition', ['Long-term', 'Trial period', 'None']),
-            $area('notes', 'Additional orders', ['rows' => 2]),
-            $t('decision_maker', 'Discussed with (patient / legal decision maker)', ['width' => 'half']),
-            $sign('sig_patient', 'Signature of patient or decision maker'),
+        // ================================================================ Medizin
+        'us_dnr' => $def('Patientenverfügung zur Wiederbelebung (DNR / POLST)', 'DNR / POLST', 'DNR', 'medical', 'doctor', 'Einwilligungen und Verfügungen', 'protocol', [
+            $head('A – Herz-Lungen-Wiederbelebung (kein Puls und keine Atmung)'),
+            $radio('cpr', 'Wiederbelebung (CPR)', ['Wiederbelebung versuchen / CPR', 'Keine Wiederbelebung versuchen (DNR)'], ['required' => true]),
+            $head('B – Medizinische Maßnahmen (Puls und/oder Atmung vorhanden)'),
+            $radio('level', 'Behandlungsumfang', ['Volle Behandlung (einschließlich Intubation)', 'Eingeschränkte Behandlung (keine Intubation)', 'Ausschließlich lindernde Behandlung (Comfort Care)'], ['required' => true]),
+            $radio('nutrition', 'Künstlich zugeführte Ernährung', ['Langfristig', 'Befristeter Versuch', 'Keine künstliche Ernährung']),
+            $area('notes', 'Weitere Anordnungen', ['rows' => 2]),
+            $t('decision_maker', 'Besprochen mit (Patient/in / rechtliche Vertretung)', ['width' => 'half']),
+            $sign('sig_patient', 'Unterschrift Patient/in oder rechtliche Vertretung'),
         ], 'med_patientenverfuegung', '', 'required', 'rect'),
-        'us_hipaa' => $def('Authorization for Release of Protected Health Information (HIPAA)', 'HIPAA Release', 'HIPAA', 'medical', 'doctor', 'Consent Forms', 'letter', [
-            $t('empfaenger', 'Release to (name / agency)', ['required' => true]),
-            ['name' => 'scope', 'label' => 'Information to be released', 'type' => 'checkboxes', 'width' => 'full', 'options' => array_combine(
-                ['Entire medical record', 'Emergency / ER records', 'Lab and toxicology results', 'Imaging reports', 'Mental health records', 'Fitness-for-duty results only'],
-                ['Entire medical record', 'Emergency / ER records', 'Lab and toxicology results', 'Imaging reports', 'Mental health records', 'Fitness-for-duty results only'])],
-            $t('zweck', 'Purpose', ['width' => 'half', 'default' => 'At the request of the patient']),
-            $date('gueltig_bis', 'This authorization expires on', ['required' => true]),
-            $sign('sig_patient', 'Signature of patient'),
-        ], 'med_schweigepflicht', "I authorize the release of my protected health information as described below. I understand that I may revoke this authorization in writing at any time and that treatment does not depend on my signing it.", 'required', 'rect', 'gueltig_bis'),
+        'us_hipaa' => $def('Schweigepflichtentbindung (HIPAA)', 'HIPAA-Entbindung', 'HIPAA', 'medical', 'doctor', 'Einwilligungen und Verfügungen', 'letter', [
+            $t('empfaenger', 'Weitergabe an (Name / Behörde)', ['required' => true]),
+            ['name' => 'scope', 'label' => 'Freigegebene Informationen', 'type' => 'checkboxes', 'width' => 'full', 'options' => array_combine(
+                ['Gesamte Patientenakte', 'Notfall- / Notaufnahmeunterlagen', 'Labor- und Toxikologiebefunde', 'Befunde der Bildgebung', 'Unterlagen zur psychischen Gesundheit', 'Nur Ergebnis der Diensttauglichkeitsprüfung'],
+                ['Gesamte Patientenakte', 'Notfall- / Notaufnahmeunterlagen', 'Labor- und Toxikologiebefunde', 'Befunde der Bildgebung', 'Unterlagen zur psychischen Gesundheit', 'Nur Ergebnis der Diensttauglichkeitsprüfung'])],
+            $t('zweck', 'Zweck', ['width' => 'half', 'default' => 'Auf Wunsch des Patienten / der Patientin']),
+            $date('gueltig_bis', 'Diese Entbindung gilt bis', ['required' => true]),
+            $sign('sig_patient', 'Unterschrift des Patienten / der Patientin'),
+        ], 'med_schweigepflicht', "Ich willige in die Weitergabe meiner geschützten Gesundheitsdaten wie unten beschrieben ein. Mir ist bekannt, dass ich diese Einwilligung jederzeit schriftlich widerrufen kann und dass meine Behandlung nicht von meiner Unterschrift abhängt.", 'required', 'rect', 'gueltig_bis'),
 
-        // ================================================================ Fire
-        'us_burn_permit' => $def('Burn Permit', 'Burn Permit', 'BP', 'fire', 'fire', 'Fire Prevention', 'letter', [
-            $t('ort', 'Burn location (address / parcel)', ['required' => true]),
-            $radio('art', 'Type of burn', ['Residential debris', 'Agricultural', 'Campfire / recreational', 'Controlled / prescribed burn', 'Special event (bonfire, pyrotechnics)'], ['required' => true]),
-            $date('von', 'Valid from', ['required' => true, 'default' => 'today']), $date('gueltig_bis', 'Valid until', ['required' => true]),
-            $area('conditions', 'Conditions', ['rows' => 4, 'default' => "Burn only on permissive burn days.\nAttended at all times with water source and tools on site.\nPiles no larger than 4 ft × 4 ft; 25 ft clearance from structures."]),
-        ], 'fd_bescheinigung', "This permit may be revoked at any time if conditions become unsafe or the conditions below are not met.", 'required', 'round', 'gueltig_bis'),
+        // ================================================================ Feuerwehr
+        'us_burn_permit' => $def('Feuererlaubnis (Burn Permit)', 'Feuererlaubnis', 'BP', 'fire', 'fire', 'Vorbeugender Brandschutz', 'letter', [
+            $t('ort', 'Ort des Feuers (Anschrift / Grundstück)', ['required' => true]),
+            $radio('art', 'Art des Feuers', ['Gartenabfälle (privat)', 'Landwirtschaftlich', 'Lagerfeuer / Freizeit', 'Kontrolliertes Abbrennen (Prescribed Burn)', 'Veranstaltung (Freudenfeuer, Pyrotechnik)'], ['required' => true]),
+            $date('von', 'Gültig ab', ['required' => true, 'default' => 'today']), $date('gueltig_bis', 'Gültig bis', ['required' => true]),
+            $area('conditions', 'Auflagen', ['rows' => 4, 'default' => "Nur an freigegebenen Brenntagen verbrennen.\nFeuer ständig beaufsichtigen; Wasser und Werkzeug vor Ort bereithalten.\nHaufen höchstens 4 ft × 4 ft; 25 ft Abstand zu Gebäuden."]),
+        ], 'fd_bescheinigung', "Diese Erlaubnis kann jederzeit widerrufen werden, wenn die Lage unsicher wird oder die unten genannten Auflagen nicht eingehalten werden.", 'required', 'round', 'gueltig_bis'),
 
-        // ================================================================ Government
-        'us_marriage' => $def('Certificate of Marriage', 'Marriage Certificate', 'MC', 'government', 'gov', 'Vital Records', 'letter', [
-            $t('spouse2', 'Spouse (second party) – full name', ['required' => true]), $t('spouse2_id', 'Citizen ID (second party)', ['width' => 'third']),
-            $date('datum', 'Date of marriage', ['required' => true, 'default' => 'today']), $t('ort', 'Place of ceremony', ['width' => 'half']),
-            $t('officiant', 'Officiant', ['width' => 'half']), $t('zeuge1', 'Witness', ['width' => 'half']), $t('zeuge2', 'Witness', ['width' => 'half']),
-            $sign('sig_spouse1', 'Signature of spouse'), $sign('sig_spouse2', 'Signature of spouse'),
-        ], 'gov_bescheinigung', "This is to certify that the persons named below were united in marriage in accordance with the laws of the State of San Andreas."),
+        // ================================================================ Verwaltung
+        'us_marriage' => $def('Heiratsurkunde', 'Eheurkunde', 'MC', 'government', 'gov', 'Personenstandswesen', 'letter', [
+            $t('spouse2', 'Ehepartner/in (zweite Person) – vollständiger Name', ['required' => true]), $t('spouse2_id', 'Bürger-ID (zweite Person)', ['width' => 'third']),
+            $date('datum', 'Datum der Eheschließung', ['required' => true, 'default' => 'today']), $t('ort', 'Ort der Trauung', ['width' => 'half']),
+            $t('officiant', 'Trauung vollzogen durch', ['width' => 'half']), $t('zeuge1', 'Trauzeuge/Trauzeugin', ['width' => 'half']), $t('zeuge2', 'Trauzeuge/Trauzeugin', ['width' => 'half']),
+            $sign('sig_spouse1', 'Unterschrift Ehepartner/in'), $sign('sig_spouse2', 'Unterschrift Ehepartner/in'),
+        ], 'gov_bescheinigung', "Hiermit wird bescheinigt, dass die unten genannten Personen nach den Gesetzen des Staates San Andreas die Ehe miteinander geschlossen haben."),
     ];
 }

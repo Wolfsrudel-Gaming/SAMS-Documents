@@ -98,7 +98,8 @@ $keys = [
 // Übergeordnete Verwaltung: nur für den Hauptadministrator (gilt für alle Dokumente, die er ausstellt)
 if (!empty(current_user()['is_superadmin'])) {
     $keys['Portal (alle Fraktionen)'] = [
-        'doc_region' => ['Vorlagenset der Dokumente (deutsche oder US-Vorlagen; bereits ausgestellte Dokumente bleiben unverändert)', 'de', 'select', DOC_REGIONS],
+        'doc_region' => ['Gestaltung der Dokumente (deutsche Vordrucke oder US-Gestaltung; bereits ausgestellte Dokumente bleiben unverändert)', 'de', 'select', DOC_REGIONS],
+        'doc_lang'   => ['Sprache der Dokumente (Beschriftungen in Eingabemaske und Ausdruck)', 'de', 'select', DOC_LANGS],
     ];
     $keys['Administration (übergeordnet, Stempel des Hauptadministrators)'] = [
         'admin_org_name'    => ['Bezeichnung der Verwaltung', ADMIN_STAMP_DEFAULTS['admin_org_name']],
@@ -138,6 +139,9 @@ if (is_post()) {
                 $v = 'de';
             }
             if ($k === 'doc_region' && !isset(DOC_REGIONS[$v])) {
+                $v = 'de';
+            }
+            if ($k === 'doc_lang' && !isset(DOC_LANGS[$v])) {
                 $v = 'de';
             }
             if ($k === 'session_idle_minutes') {

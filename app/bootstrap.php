@@ -35,6 +35,7 @@ require __DIR__ . '/document_types_extra.php';
 require __DIR__ . '/document_types_factions.php';
 require __DIR__ . '/document_types_medical.php';
 require __DIR__ . '/document_types_us.php';
+require __DIR__ . '/render_us.php';
 require __DIR__ . '/custom_types.php';
 require __DIR__ . '/i18n.php';
 require __DIR__ . '/locations.php';

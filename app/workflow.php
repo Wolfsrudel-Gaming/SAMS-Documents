@@ -125,7 +125,8 @@ function issue_document(array $type, ?array $patient, ?array $case, array $data,
     if (($type['template'] ?? '') === 'custom') {
         $data['_tpl'] = custom_template_snapshot($type); // Vorlage einfrieren
     }
-    $data['_region'] = doc_region(); // Vorlagenset (deutsch/US) bleibt beim Dokument
+    $data['_region'] = doc_region(); // Gestaltung (deutsch/US) und Sprache bleiben beim Dokument
+    $data['_lang'] = doc_lang();
     // Foto-URL (z. B. Dienstausweis): Bild herunterladen und fest im Dokument speichern
     $fieldNames = array_column($type['fields'] ?? [], 'name');
     if (in_array('photo_file', $fieldNames, true) && empty($data['photo_file']) && preg_match('#^https?://#i', (string) ($data['photo'] ?? ''))) {

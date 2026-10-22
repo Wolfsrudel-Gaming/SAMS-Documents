@@ -16,7 +16,7 @@ $sections = [
 <div class="doc-body">
     <h2 class="doc-subject"><?= e(isset($d['kind']) ? opt_label($type, 'kind', $d['kind']) : dt('Entlassungsbericht')) ?></h2>
     <p><?= e(dt('Sehr geehrte Frau Kollegin, sehr geehrter Herr Kollege,')) ?></p>
-    <p><?php if (doc_us()): ?><?= e(dt('wir berichten über {name}, geb. am {dob}, {address}der/die sich vom {from} bis {to} {unit} befand.', [
+    <p><?php if (doc_en()): ?><?= e(dt('wir berichten über {name}, geb. am {dob}, {address}der/die sich vom {from} bis {to} {unit} befand.', [
         'name' => patient_salutation_name($p) ?: dt('o.g. Patienten'),
         'dob' => fmt_date($p['dob'] ?? ''),
         'address' => ($p['address'] ?? '') !== '' ? dt('wohnhaft {address},', ['address' => str_replace("\n", ', ', $p['address'])]) . ' ' : '',

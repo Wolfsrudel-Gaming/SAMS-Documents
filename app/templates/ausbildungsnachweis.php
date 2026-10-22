@@ -17,7 +17,7 @@ $contents = array_filter(array_map('trim', explode("\n", (string) ($d['contents'
         <p class="cert-small"><?= e($emp['rank_name'] ?? '') ?><?= !empty($emp['badge_number']) ? ' · ' . e(dt('Dienstnummer {number}', ['number' => $emp['badge_number']])) : '' ?></p>
         <p class="cert-text"><?= e(dt('{period} an dem Lehrgang', ['period' => $period])) ?></p>
         <div class="cert-rank"><?= e($d['course'] ?? '') ?></div>
-        <p class="cert-text"><?= !empty($d['hours']) ? e(dt('im Umfang von {hours} Unterrichtseinheiten ', ['hours' => (int) $d['hours']])) : '' ?><strong><?= e(dt($results[$d['result'] ?? ''] ?? '')) ?></strong><?= doc_us() ? '.' : ' hat.' ?><?= !empty($d['grade']) ? ' ' . e(dt('Ergebnis:')) . ' <strong>' . e($d['grade']) . '</strong>.' : '' ?></p>
+        <p class="cert-text"><?= !empty($d['hours']) ? e(dt('im Umfang von {hours} Unterrichtseinheiten ', ['hours' => (int) $d['hours']])) : '' ?><strong><?= e(dt($results[$d['result'] ?? ''] ?? '')) ?></strong><?= doc_en() ? '.' : ' hat.' ?><?= !empty($d['grade']) ? ' ' . e(dt('Ergebnis:')) . ' <strong>' . e($d['grade']) . '</strong>.' : '' ?></p>
         <?php if ($contents): ?>
             <h3 class="doc-h"><?= e(dt('Lehrgangsinhalte')) ?></h3>
             <ul class="cert-list"><?php foreach ($contents as $c): ?><li><?= e($c) ?></li><?php endforeach; ?></ul>

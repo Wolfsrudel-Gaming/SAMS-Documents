@@ -29,7 +29,7 @@ echo doc_letterhead($doc, [
         <div class="prose"><?= nl($d['facts'] ?? '') ?></div>
         <p><?= e(dt('Mit diesem Verhalten haben Sie gegen Ihre Pflichten aus dem Arbeitsverhältnis verstoßen, insbesondere gegen:')) ?></p>
         <div class="prose strong"><?= nl($d['duty'] ?? '') ?></div>
-        <p><?= doc_us() ? e(['ermahnung' => 'You are hereby formally counseled regarding this conduct.', 'letzte' => 'You are hereby issued a final written warning.'][$d['level'] ?? ''] ?? 'You are hereby issued a written warning.')
+        <p><?= doc_en() ? e(['ermahnung' => 'You are hereby formally counseled regarding this conduct.', 'letzte' => 'You are hereby issued a final written warning.'][$d['level'] ?? ''] ?? 'You are hereby issued a written warning.')
             : 'Wir ' . (($d['level'] ?? '') === 'ermahnung' ? 'ermahnen' : 'mahnen') . ' Sie hiermit' . (($d['level'] ?? '') === 'letzte' ? ' letztmalig' : '') . ' ' . (($d['level'] ?? '') === 'ermahnung' ? '' : 'ab') . '.' ?> <?= nl($d['expectation'] ?? '') ?></p>
         <?php if (($d['level'] ?? '') !== 'ermahnung' && !empty($d['consequence'])): ?><p><strong><?= nl($d['consequence']) ?></strong></p><?php endif; ?>
         <p><?= e(dt('Eine Kopie dieses Schreibens wird zu Ihrer Personalakte genommen. Sie haben das Recht, eine Gegendarstellung abzugeben, die ebenfalls zur Personalakte genommen wird.')) ?></p>

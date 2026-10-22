@@ -67,8 +67,9 @@ function document_types_all(): array
 {
     static $cache = [];
     $region = doc_region();
-    if (isset($cache[$region])) {
-        return $cache[$region];
+    $ck = $region . ':' . doc_lang();
+    if (isset($cache[$ck])) {
+        return $cache[$ck];
     }
 
     $yesNo = ['unauffällig' => 'unauffällig', 'auffällig' => 'auffällig', 'n.d.' => 'nicht durchgeführt'];
@@ -519,11 +520,11 @@ function document_types_all(): array
 
     $types = array_merge($types, document_types_extra(), document_types_medical(), document_types_factions(), document_types_us_only());
     // Vorlagenset: Arten nur für ein Set ausblenden, im US-Set Bezeichnungen, Felder und Vorlagen auf Englisch
-    $types = $region === 'us' ? doc_types_us_apply($types) : array_filter($types, fn($t) => ($t['region'] ?? 'de') === 'de');
+    $types = doc_types_us_apply($types, $region);
     foreach (custom_doc_types() as $row) {
         $types[$row['type_key']] = custom_type_definition($row);
     }
-    return $cache[$region] = $types;
+    return $cache[$ck] = $types;
 }
 
 function doc_type(string $key): ?array

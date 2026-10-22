@@ -16,11 +16,17 @@ function render_document(array $doc, array $opts = []): string
 {
     // Ausgestellte Dokumente im Vorlagenset ihres Ausstellungszeitpunkts (ältere ohne Angabe: deutsch), Vorschauen im aktuellen
     $prevRegion = $GLOBALS['sams_doc_region'] ?? null;
-    $GLOBALS['sams_doc_region'] = isset(DOC_REGIONS[$doc['data']['_region'] ?? '']) ? $doc['data']['_region'] : (empty($doc['id']) && empty($doc['_forged']) ? doc_region() : 'de');
+    $prevLang = $GLOBALS['sams_doc_lang'] ?? null;
+    $preview = empty($doc['id']) && empty($doc['_forged']);
+    $data = $doc['data'] ?? [];
+    $GLOBALS['sams_doc_region'] = isset(DOC_REGIONS[$data['_region'] ?? '']) ? $data['_region'] : ($preview ? doc_region() : 'de');
+    // Dokumente aus der ersten US-Fassung (nur _region) waren englisch
+    $GLOBALS['sams_doc_lang'] = isset(DOC_LANGS[$data['_lang'] ?? '']) ? $data['_lang'] : ($preview ? doc_lang() : (($data['_region'] ?? '') === 'us' ? 'en' : 'de'));
     try {
         return render_document_in_region($doc, $opts);
     } finally {
         $GLOBALS['sams_doc_region'] = $prevRegion;
+        $GLOBALS['sams_doc_lang'] = $prevLang;
     }
 }
 
@@ -154,6 +160,9 @@ function logo_html(string $class = 'doc-logo'): string
 /** Briefkopf nach DIN 5008 mit Anschriftenfeld und Informationsblock. */
 function doc_letterhead(array $doc, array $opts = []): string
 {
+    if (doc_us()) {
+        return us_letterhead($doc, $opts);
+    }
     $p = $doc['patient_snapshot'] ?? [];
     $u = $doc['issuer_snapshot'] ?? [];
     $recipient = $opts['recipient'] ?? '';
@@ -299,6 +308,10 @@ function stamp_profile(?array $doc = null): array
 /** Unterschriftsblock mit optionalem Stempel. $stamp: 'rect' | 'round' | '' */
 function doc_signature(array $doc, string $stamp = 'rect', string $caption = '', bool $withPlace = true): string
 {
+    if (doc_us()) {
+        $type = doc_type((string) ($doc['type'] ?? '')) ?? [];
+        return us_signatures($doc, ['seal' => $stamp, 'sig_caption' => $caption] + ($type ? us_layout($type) : ['style' => 'gov']));
+    }
     $u = $doc['issuer_snapshot'] ?? [];
     $admin = doc_admin_issued($doc);
     $medicalDoctor = !$admin && faction_kind() === 'medical' && (($u['doctor_number'] ?? '') !== '' || in_array($u['role'] ?? '', ['doctor', 'admin'], true));
@@ -566,6 +579,10 @@ function qr_html(array $doc, string $class = 'qr'): string
 /** Fußzeile mit Bankverbindung, Registrierung, Prüfcode. */
 function doc_footer(array $doc, string $extra = ''): string
 {
+    if (doc_us()) {
+        $type = doc_type((string) ($doc['type'] ?? '')) ?? [];
+        return us_footer($doc, $type ? us_layout($type) : [], $type);
+    }
     ob_start(); ?>
     <footer class="df">
         <div class="df-verify">
@@ -644,6 +661,9 @@ function doc_watermark(array $doc, bool $draft): string
 /** Standard-A4-Seite mit Briefkopf, Inhalt, Fußzeile. */
 function a4_open(array $doc, bool $draft, string $extraClass = ''): string
 {
+    if (doc_us()) {
+        return us_paper_open($doc, $draft, $extraClass); // US Letter ohne Falzmarken
+    }
     return '<section class="paper a4 ' . e($extraClass) . '">'
         . '<span class="fold f1"></span><span class="fold f2"></span><span class="fold punch"></span>'
         . doc_watermark($doc, $draft);

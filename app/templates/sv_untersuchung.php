@@ -4,7 +4,7 @@ defined('SAMS_ROOT') || exit;
 $protoTitle = dt('Untersuchungsbogen Sonderverwendungsfähigkeit');
 $protoSub = dt('Arbeitsmedizinische Untersuchung Spezialkräfte · VERTRAULICH – ärztliche Schweigepflicht');
 // Im US-Set: Messwerte mit Dezimalpunkt, feste Auswahlwerte (z. B. „unauffällig“) übersetzt
-$usv = fn(string $s) => doc_us() ? preg_replace(['/(\d),(\d)/', '/^Klasse (\d)$/'], ['$1.$2', 'Class $1'], implode(' / ', array_map('dt', explode(' / ', $s)))) : $s;
+$usv = fn(string $s) => doc_en() ? preg_replace(['/(\d),(\d)/', '/^Klasse (\d)$/'], ['$1.$2', 'Class $1'], implode(' / ', array_map('dt', explode(' / ', $s)))) : $s;
 $v = fn(string $k, string $unit = '') => ($d[$k] ?? '') !== '' && $d[$k] !== [] ? e($usv((string) $d[$k])) . ($unit !== '' ? ' ' . e($unit) : '') : '—';
 $kinds = array_values(array_filter((array) ($d['verwendungen'] ?? []), fn($k) => isset(FITNESS_KINDS[$k])));
 foreach (array_keys(FITNESS_KINDS) as $k) {

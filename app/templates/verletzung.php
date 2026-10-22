@@ -12,7 +12,7 @@ $dangerLabels = ['nein' => dt('Lebensgefahr bestand nicht.'), 'abstrakt' => dt('
 <div class="doc-body">
     <h1 class="doc-title"><?= e(dt('Ärztlicher Befundbericht')) ?> <small><?= e(dt('über die Untersuchung auf Verletzungen')) ?></small></h1>
     <?= doc_patient_box($doc) ?>
-    <p class="lead-in"><?php if (doc_us()): ?><?= e(dt('Untersuchung am {date}{time} in den Räumen des {org}.', [
+    <p class="lead-in"><?php if (doc_en()): ?><?= e(dt('Untersuchung am {date}{time} in den Räumen des {org}.', [
         'date' => fmt_date($d['exam_date'] ?? ''),
         'time' => !empty($d['exam_time']) ? ' ' . dt('um {time} Uhr', ['time' => $d['exam_time']]) : '',
         'org' => org('org_sub'),

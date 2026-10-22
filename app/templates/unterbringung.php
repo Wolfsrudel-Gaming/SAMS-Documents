@@ -15,7 +15,7 @@ require __DIR__ . '/_protohead.php';
 <div class="pgrid">
     <div class="pc w5"><span class="fl"><?= e(dt('Name, Vorname')) ?></span><span class="fv"><strong><?= e($p ? patient_name($p, true) : '') ?></strong></span></div>
     <div class="pc w2"><span class="fl"><?= e(dt('geb. am')) ?></span><span class="fv"><?= e(fmt_date($p['dob'] ?? '')) ?></span></div>
-    <div class="pc w2"><span class="fl"><?= e(dt('Geschl.')) ?></span><span class="fv"><?= e(strtoupper(doc_us() ? strtr((string) ($p['gender'] ?? ''), ['w' => 'f', 'd' => 'x']) : ($p['gender'] ?? ''))) ?></span></div>
+    <div class="pc w2"><span class="fl"><?= e(dt('Geschl.')) ?></span><span class="fv"><?= e(strtoupper(doc_en() ? strtr((string) ($p['gender'] ?? ''), ['w' => 'f', 'd' => 'x']) : ($p['gender'] ?? ''))) ?></span></div>
     <div class="pc w3"><span class="fl"><?= e(dt('Bürger-ID')) ?></span><span class="fv mono"><?= e($p['citizen_id'] ?? '') ?></span></div>
     <div class="pc w12"><span class="fl"><?= e(dt('Anschrift')) ?></span><span class="fv"><?= e(str_replace("\n", ', ', (string) ($p['address'] ?? ''))) ?></span></div>
 </div>

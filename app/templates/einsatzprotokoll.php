@@ -34,7 +34,7 @@ require __DIR__ . '/_protohead.php';
     <?php if ($p): ?>
         <div class="pc w5"><span class="fl"><?= e(dt('Name, Vorname')) ?></span><span class="fv"><strong><?= e(patient_name($p, true)) ?></strong></span></div>
         <div class="pc w2"><span class="fl"><?= e(dt('geb. am')) ?></span><span class="fv"><?= e(fmt_date($p['dob'] ?? '')) ?></span></div>
-        <div class="pc w1"><span class="fl"><?= e(dt('Geschl.')) ?></span><span class="fv"><?= e(strtoupper(doc_us() ? strtr((string) ($p['gender'] ?? ''), ['w' => 'f', 'd' => 'x']) : ($p['gender'] ?? ''))) ?></span></div>
+        <div class="pc w1"><span class="fl"><?= e(dt('Geschl.')) ?></span><span class="fv"><?= e(strtoupper(doc_en() ? strtr((string) ($p['gender'] ?? ''), ['w' => 'f', 'd' => 'x']) : ($p['gender'] ?? ''))) ?></span></div>
         <div class="pc w2"><span class="fl"><?= e(dt('Bürger-ID')) ?></span><span class="fv mono"><?= e($p['citizen_id'] ?? '') ?></span></div>
         <div class="pc w2"><span class="fl"><?= e(dt('Blutgruppe')) ?></span><span class="fv"><?= e($p['blood_type'] ?? '') ?></span></div>
         <div class="pc w6"><span class="fl"><?= e(dt('Kostenträger / Vers.-Nr.')) ?></span><span class="fv"><?= e(trim(($p['insurance'] ?? '') . ' ' . ($p['insurance_number'] ?? ''))) ?></span></div>

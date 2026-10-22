@@ -8,15 +8,15 @@ defined('SAMS_ROOT') || exit;
  */
 function document_types_medical(): array
 {
-    $t = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'text', 'width' => 'full'] + $o;
-    $date = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'date', 'width' => 'quarter'] + $o;
+    $t = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'text', 'width' => 'full'];
+    $date = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'date', 'width' => 'quarter'];
     $time = fn(string $name, string $label) => ['name' => $name, 'label' => $label, 'type' => 'time', 'width' => 'quarter'];
     $num = fn(string $name, string $label, string $w = 'quarter') => ['name' => $name, 'label' => $label, 'type' => 'number', 'width' => $w];
-    $area = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'textarea', 'rows' => 4, 'width' => 'full'] + $o;
-    $sel = fn(string $name, string $label, array $opts, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'select', 'width' => 'third', 'options' => array_combine($opts, $opts)] + $o;
-    $radio = fn(string $name, string $label, array $opts, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'radio', 'width' => 'full', 'options' => array_combine($opts, $opts)] + $o;
+    $area = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'textarea', 'rows' => 4, 'width' => 'full'];
+    $sel = fn(string $name, string $label, array $opts, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'select', 'width' => 'third', 'options' => array_combine($opts, $opts)];
+    $radio = fn(string $name, string $label, array $opts, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'radio', 'width' => 'full', 'options' => array_combine($opts, $opts)];
     $multi = fn(string $name, string $label, array $opts) => ['name' => $name, 'label' => $label, 'type' => 'checkboxes', 'width' => 'full', 'options' => array_combine($opts, $opts)];
-    $check = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'checkbox', 'width' => 'third'] + $o;
+    $check = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'checkbox', 'width' => 'third'];
     $head = fn(string $label) => ['type' => 'heading', 'label' => $label];
     $sign = fn(string $name, string $label) => ['name' => $name, 'label' => $label, 'type' => 'signature', 'width' => 'half'];
     $icd = fn(string $name = 'diagnose', string $label = 'Diagnose(n)') => ['name' => $name, 'label' => $label, 'type' => 'textarea', 'rows' => 2, 'width' => 'full', 'list' => 'icd'];

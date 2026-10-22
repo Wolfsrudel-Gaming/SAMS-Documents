@@ -10,13 +10,13 @@ defined('SAMS_ROOT') || exit;
  */
 function document_types_factions(): array
 {
-    $t = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'text', 'width' => 'full'] + $o;
-    $date = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'date', 'width' => 'quarter'] + $o;
+    $t = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'text', 'width' => 'full'];
+    $date = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'date', 'width' => 'quarter'];
     $time = fn(string $name, string $label) => ['name' => $name, 'label' => $label, 'type' => 'time', 'width' => 'quarter'];
-    $area = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'textarea', 'rows' => 4, 'width' => 'full'] + $o;
-    $sel = fn(string $name, string $label, array $opts, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'select', 'width' => 'third', 'options' => array_combine($opts, $opts)] + $o;
-    $radio = fn(string $name, string $label, array $opts, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'radio', 'width' => 'full', 'options' => array_combine($opts, $opts)] + $o;
-    $check = fn(string $name, string $label, array $o = []) => ['name' => $name, 'label' => $label, 'type' => 'checkbox', 'width' => 'third'] + $o;
+    $area = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'textarea', 'rows' => 4, 'width' => 'full'];
+    $sel = fn(string $name, string $label, array $opts, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'select', 'width' => 'third', 'options' => array_combine($opts, $opts)];
+    $radio = fn(string $name, string $label, array $opts, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'radio', 'width' => 'full', 'options' => array_combine($opts, $opts)];
+    $check = fn(string $name, string $label, array $o = []) => $o + ['name' => $name, 'label' => $label, 'type' => 'checkbox', 'width' => 'third'];
     $head = fn(string $label) => ['type' => 'heading', 'label' => $label];
     $sign = fn(string $name, string $label) => ['name' => $name, 'label' => $label, 'type' => 'signature', 'width' => 'half'];
     $az = $t('aktenzeichen', 'Aktenzeichen', ['width' => 'third', 'placeholder' => 'z. B. 2 Js 123/26']);

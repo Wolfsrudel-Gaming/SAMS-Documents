@@ -38,6 +38,7 @@ if ($open && is_post() && $type) {
     $fields = array_values(array_filter($type['fields'], fn($fl) => ($fl['type'] ?? '') !== 'signature'));
     [$data, $errors] = collect_fields($fields, is_array($_POST['d'] ?? null) ? $_POST['d'] : []);
     $data['_region'] = doc_region();
+    $data['_lang'] = doc_lang();
     $sig = (string) post('sig');
     $patient = ['first_name' => $txt($p, 'first_name'), 'last_name' => $txt($p, 'last_name'), 'dob' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($p['dob'] ?? '')) ? $p['dob'] : '',
         'citizen_id' => $txt($p, 'citizen_id', 64), 'gender' => in_array($p['gender'] ?? '', ['m', 'w', 'd'], true) ? $p['gender'] : ''];
