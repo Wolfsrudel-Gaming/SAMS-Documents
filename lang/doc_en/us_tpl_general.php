@@ -133,4 +133,6 @@ return array (
   'Untersuchte Person' => 'Examinee',
   'Angaben zur Untersuchung' => 'Examination details',
   'Einschränkungen / Auflagen (Work Restrictions)' => 'Work restrictions',
+  'unbefristet' => 'indefinite',
+  'befristet' => 'fixed-term',
 );

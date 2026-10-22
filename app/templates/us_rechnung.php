@@ -27,8 +27,8 @@ $cfg = us_layout($type);
 if ($cfg['form'] === '') {
     $cfg['form'] = mb_strtoupper(org('org_short')) . ($notice ? ' FIN 215' : ' FIN 100');
 }
-$cols = 4 + ($jail ? 1 : 0);
-echo us_paper_open($doc, $draft, 'us-gen-inv' . ($notice ? ' us-gen-notice us-' . (['police' => 'police', 'justice' => 'court'][$kind] ?? 'gov') : ' us-hr'));
+$accent = ['medical' => 'us-medical', 'police' => 'us-police', 'justice' => 'us-court', 'law' => 'us-pleading', 'fire' => 'us-fire', 'rescue' => 'us-rescue', 'government' => 'us-gov'][faction_kind()] ?? 'us-gov';
+echo us_paper_open($doc, $draft, 'us-gen-inv' . ($notice ? ' us-gen-notice ' : ' ') . $accent);
 ?>
 <div class="us-body">
 <?php if ($notice): ?>

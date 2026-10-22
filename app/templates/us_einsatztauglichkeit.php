@@ -25,7 +25,7 @@ foreach ($type['fields'] as $f) {
         $scopeOptions = array_keys((array) ($f['options'] ?? []));
     }
 }
-$scopeAll = array_values(array_unique(array_merge(array_map('strval', $scopeOptions), array_map('strval', $umfang))));
+$scopeAll = $sv ? array_map('strval', $umfang) : array_values(array_unique(array_merge(array_map('strval', $scopeOptions), array_map('strval', $umfang))));
 $cfg = ['style' => 'medical', 'title' => $sv ? 'Bescheinigung über die Sonderverwendungsfähigkeit' : 'Bescheinigung über die Einsatztauglichkeit',
     'subtitle' => 'Ärztliche Bescheinigung zur Vorlage bei der Dienststelle (Fitness-for-Duty Certificate)', 'banner' => '', 'seal' => 'round', 'sig_caption' => 'Untersuchende/r Arzt/Ärztin'] + us_layout($type);
 if ($cfg['form'] === '') {
@@ -55,8 +55,8 @@ echo us_paper_open($doc, $draft, 'us-medical us-gen-fit');
     <div class="us-sec"><?= e(mb_strtoupper(dt('Angaben zur Untersuchung'))) ?></div>
     <div class="us-grid">
         <div class="us-cell w6"><span class="fl"><?= e($L($sv ? 'Untersuchungsstandard' : 'Untersuchung')) ?></span><span class="fv"><?= e(dt($sv ? $standard : $art)) ?: '—' ?></span></div>
-        <div class="us-cell w3"><span class="fl"><?= e($L('Untersucht am')) ?></span><span class="fv"><?= e(fmt_date($d['exam_date'] ?? '')) ?></span></div>
-        <div class="us-cell w3"><span class="fl"><?= e($L('Anlass')) ?></span><span class="fv"><?= ($d['anlass'] ?? '') !== '' ? e(dt((string) $d['anlass'])) : '—' ?></span></div>
+        <div class="us-cell w2"><span class="fl"><?= e($L('Untersucht am')) ?></span><span class="fv"><?= e(fmt_date($d['exam_date'] ?? '')) ?></span></div>
+        <div class="us-cell w4"><span class="fl"><?= e($L('Anlass')) ?></span><span class="fv"><?= ($d['anlass'] ?? '') !== '' ? e(dt((string) $d['anlass'])) : '—' ?></span></div>
         <div class="us-cell w4"><span class="fl"><?= e($L('Gültig bis')) ?></span><span class="fv"><b><?= e(fmt_date($d['valid_until'] ?? '')) ?: '—' ?></b></span></div>
         <div class="us-cell w4"><span class="fl"><?= e($L('Nachuntersuchung spätestens')) ?></span><span class="fv"><?= e(fmt_date($d['nachuntersuchung'] ?? '')) ?: '—' ?></span></div>
         <div class="us-cell w4"><span class="fl"><?= e($L('Untersuchungsbogen')) ?></span><span class="fv mono"><?= e($d['protokoll'] ?? '') ?: '—' ?></span></div>

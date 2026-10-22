@@ -18,7 +18,8 @@ $admin = doc_admin_issued($doc);
 $sigTitle = $admin ? (($u['admin_title'] ?? '') ?: admin_stamp_setting('admin_title')) : (string) ($u['rank_name'] ?? '');
 $sigOrg = $admin ? admin_stamp_setting('admin_org_name') : org('org_name');
 $refs = array_filter([dt('Ihr Zeichen') => (string) ($d['your_ref'] ?? ''), dt('Unser Zeichen') => (string) ($d['our_ref'] ?? '')], fn($v) => trim($v) !== '');
-echo us_paper_open($doc, $draft, 'us-gov us-gen-letter');
+$accent = ['medical' => 'us-medical', 'police' => 'us-police', 'justice' => 'us-court', 'law' => 'us-pleading', 'fire' => 'us-fire', 'rescue' => 'us-rescue', 'government' => 'us-gov'][faction_kind()] ?? 'us-gov';
+echo us_paper_open($doc, $draft, $accent . ' us-gen-letter');
 ?>
 <div class="us-body">
     <header class="us-gen-lh">

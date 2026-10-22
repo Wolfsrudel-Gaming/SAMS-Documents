@@ -43,6 +43,19 @@ echo us_paper_open($doc, $draft, 'us-certificate us-gen-train');
         <p class="us-gen-cert-text"><?= e(dt($lines[$result] ?? $lines['bestanden'])) ?></p>
         <div class="us-gen-cert-rank"><?= e($d['course'] ?? '') ?: '&nbsp;' ?></div>
         <p class="us-gen-cert-text"><?= e($period) ?><?= !empty($d['hours']) ? ' · ' . e(dt('Umfang: {hours} Unterrichtseinheiten', ['hours' => (int) $d['hours']])) : '' ?></p>
+        <div class="us-gen-train-signs">
+            <div class="us-gen-cert-sign">
+                <div class="us-gen-cert-sigarea"><?php if (!empty($d['instructor'])): ?><span class="printed"><?= e($d['instructor']) ?></span><?php endif; ?></div>
+                <span class="us-gen-cert-line"></span>
+                <small><?= e(dt('Ausbilder/in')) ?></small>
+            </div>
+            <div class="us-gen-cert-seal small"><?= seal_svg($doc) ?></div>
+            <div class="us-gen-cert-sign">
+                <div class="us-gen-cert-sigarea"><?= signature_html($u, doc_rand($doc, 'tsig', -3, 2)) ?></div>
+                <span class="us-gen-cert-line"></span>
+                <b><?= e(user_display($u)) ?></b><small><?= e(dt('Leitung Aus- und Fortbildung')) ?> · <?= e(fmt_date($doc['issued_at'] ?? now())) ?></small>
+            </div>
+        </div>
     </div>
 
     <div class="us-sec"><?= e(mb_strtoupper(dt('Ausbildungsnachweis (Training Record)'))) ?></div>
@@ -60,19 +73,6 @@ echo us_paper_open($doc, $draft, 'us-certificate us-gen-train');
     </div>
     <?php if (!empty($d['valid_until'])): ?><p class="us-gen-small"><?= e(dt('Die Qualifikation ist gültig bis {date} und ist danach durch eine Rezertifizierung zu erneuern.', ['date' => fmt_date($d['valid_until'])])) ?></p><?php endif; ?>
 
-    <div class="us-gen-train-signs">
-        <div class="us-gen-cert-sign">
-            <div class="us-gen-cert-sigarea"><?php if (!empty($d['instructor'])): ?><span class="printed"><?= e($d['instructor']) ?></span><?php endif; ?></div>
-            <span class="us-gen-cert-line"></span>
-            <small><?= e(dt('Ausbilder/in')) ?></small>
-        </div>
-        <div class="us-gen-cert-seal small"><?= seal_svg($doc) ?></div>
-        <div class="us-gen-cert-sign">
-            <div class="us-gen-cert-sigarea"><?= signature_html($u, doc_rand($doc, 'tsig', -3, 2)) ?></div>
-            <span class="us-gen-cert-line"></span>
-            <b><?= e(user_display($u)) ?></b><small><?= e(dt('Leitung Aus- und Fortbildung')) ?> · <?= e(fmt_date($doc['issued_at'] ?? now())) ?></small>
-        </div>
-    </div>
 </div>
 <?= us_footer($doc, $cfg, $type) ?>
 <?= a4_close() ?>
